@@ -1,0 +1,10 @@
+{"role":"agent","utterance":"Hi Sam, this is Riley, a virtual recruiting assistant with Acme Health, calling about the ICU nurse position you applied for. Do you have about ten minutes to talk right now?"}
+{"role":"user","utterance":"Yeah, I'm on my lunch break, so now works."}
+{"role":"agent","utterance":"Perfect. Quick heads-up before we start: this call is recorded, and your answers will be shared with our recruiting team. Is it okay if we go ahead?"}
+{"role":"user","utterance":"Sure, that's fine."}
+{"role":"agent","utterance":"Thanks. First, do you hold an active Colorado RN license, or an active multistate compact RN license?"}
+{"role":"user","utterance":"Colorado. I've had it about six years."}
+{"role":"agent","utterance":"Great. And which certifications do you have right now? BLS and ACLS are the two we require."}
+{"role":"user","utterance":"BLS and ACLS, both current, and I've got PALS too."}
+{"role":"agent","utterance":"Good to hear, and PALS is a nice extra. Now I'd like to ask about your experience. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?"}
+{"role":"user","utterance":"Okay, um. We had a patient on a ventilator, and his brother was really frustrated because he kept getting different updates depending on who he talked to. The day team told him one thing, nights told him something else. He got pretty loud at the bedside one evening. So I brought the charge nurse into the room so we could all sit down and talk together. We agreed who would call him each evening, and he told me he finally knew what to expect."}

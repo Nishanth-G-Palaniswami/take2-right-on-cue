@@ -1,0 +1,2 @@
+# Keep prompts and transcripts byte-identical on every OS so their recorded sha256 hashes stay valid.
+* text=auto eol=lf

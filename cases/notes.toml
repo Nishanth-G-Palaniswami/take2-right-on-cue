@@ -1,0 +1,37 @@
+# Expected next-turn behaviour for each case, written BEFORE any replies were generated.
+# The generator never reads this file. It exists for human review and, later, the evaluator.
+# Exact wording is open: several different phrasings can succeed.
+
+[D3]
+split = "dev"
+title = "Family story, outcome missing"
+pair = "D4"
+expected_action = "Ask how the situation with the brother turned out, which is the 'how was it resolved' half of the question Riley already asked."
+good_if = [
+  "Briefly acknowledges something specific the applicant said (the brother, the conflicting updates, bringing in the charge nurse).",
+  "Asks one focused question about the outcome or resolution.",
+]
+fail_if = [
+  "Moves on to the advocacy question, or anything else, without getting the outcome.",
+  "Probes something other than the outcome (feelings, lessons learned) instead of the resolution.",
+  "Stacks the outcome question with a second, separate request.",
+  "Uses generic praise with no reference to what the applicant said.",
+]
+why_included = "The applicant gave the situation and their action but not the resolution the question asked for. A focused follow-up adds real information."
+
+[D4]
+split = "dev"
+title = "Family story, outcome given"
+pair = "D3"
+expected_action = "Acknowledge the resolution and move on to the patient-advocacy question."
+good_if = [
+  "Acknowledges the resolution specifically (an agreed evening caller, the brother knowing what to expect).",
+  "Asks the patient-advocacy question; wording may vary.",
+]
+fail_if = [
+  "Asks again how it turned out, how the brother responded, or whether it was resolved.",
+  "Adds another probe on the family story (for example, what they learned) instead of advancing. This wastes a turn.",
+  "Skips past the advocacy question to applicant questions or the close.",
+  "Stacks the advocacy question with a second, separate request.",
+]
+why_included = "Identical to D3 plus one sentence that answers the resolution. The correct action flips, so a fixed policy of always probing or always moving on passes exactly one of D3 and D4. This guards against a compulsory follow-up rule like the one used in the InterVoiceAI hackathon agent."
