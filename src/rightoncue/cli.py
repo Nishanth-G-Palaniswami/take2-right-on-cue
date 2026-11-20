@@ -5,12 +5,16 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 
 from .runs import (
+    BlindKeyError,
     InputFile,
+    RunNotReadyError,
     create_run,
     new_run_id,
     render_blind,
@@ -42,7 +46,9 @@ def _read_input(path: Path) -> InputFile:
     return InputFile(path=path.as_posix(), raw=path.read_bytes())
 
 
-def _cmd_run(args: argparse.Namespace) -> int:
+def _cmd_run(
+    args: argparse.Namespace, client_factory: Callable[[], Any] | None = None
+) -> int:
     errors: list[str] = []
     if not 1 <= args.samples <= 5:
         errors.append("--samples: must be between 1 and 5")
@@ -77,18 +83,21 @@ def _cmd_run(args: argparse.Namespace) -> int:
             print(line, file=sys.stderr)
         return 2
 
-    load_dotenv(override=False)
-    if not os.environ.get("OPENAI_API_KEY"):
-        print(
-            "OPENAI_API_KEY is not set. Put it in a .env file in the current "
-            "directory (OPENAI_API_KEY=...). No request was made.",
-            file=sys.stderr,
-        )
-        return 2
+    if client_factory is not None:
+        client = client_factory()
+    else:
+        load_dotenv(override=False)
+        if not os.environ.get("OPENAI_API_KEY"):
+            print(
+                "OPENAI_API_KEY is not set. Put it in a .env file in the current "
+                "directory (OPENAI_API_KEY=...). No request was made.",
+                file=sys.stderr,
+            )
+            return 2
 
-    from openai import OpenAI
+        from openai import OpenAI
 
-    client = OpenAI()
+        client = OpenAI()
     run_id = new_run_id()
     run_dir, manifest = create_run(
         args.runs_dir,
@@ -106,32 +115,67 @@ def _cmd_run(args: argparse.Namespace) -> int:
     def progress(rec: dict) -> None:
         usage = rec["usage"] or {}
         reasoning = (usage.get("output_tokens_details") or {}).get("reasoning_tokens")
+        extra = ""
+        if rec["status"] == "incomplete":
+            reason = (rec["incomplete_details"] or {}).get("reason")
+            extra = f" (reason: {reason})" if reason else " (reason unknown)"
         print(
-            f"  {rec['case_id']} sample {rec['sample_index']}: {rec['status']} "
+            f"  {rec['case_id']} sample {rec['sample_index']}: {rec['status']}{extra} "
             f"in={usage.get('input_tokens')} out={usage.get('output_tokens')} "
             f"reasoning={reasoning}"
         )
 
     result = run_slots(client, run_dir, manifest, on_slot=progress)
+    total = len(cases) * args.samples
+    completed = result.attempted - result.incomplete - result.failed
+    print(
+        f"Summary: {result.attempted} of {total} slots attempted: {completed} "
+        f"completed, {result.incomplete} incomplete, {result.failed} failed"
+    )
+    if result.empty:
+        print(
+            f"Note: {result.empty} completed "
+            f"{'reply' if result.empty == 1 else 'replies'} had no text."
+        )
     print(f"run directory: {run_dir}")
     if result.abort_message:
         print(result.abort_message, file=sys.stderr)
-    return 1 if result.failed or result.abort_message else 0
+    bad = result.failed or result.incomplete or result.abort_message
+    return 1 if bad else 0
 
 
 def _cmd_show(args: argparse.Namespace) -> int:
     if not (args.run_dir / "manifest.json").exists():
         print(f"{args.run_dir}: no manifest.json; not a run directory", file=sys.stderr)
         return 2
-    print(render_blind(args.run_dir))
+    try:
+        review = render_blind(args.run_dir)
+    except RunNotReadyError as exc:
+        for line in exc.lines:
+            print(line, file=sys.stderr)
+        print("Nothing was written.", file=sys.stderr)
+        return 2
+    except BlindKeyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(review.text)
+    if review.problems:
+        print("\nProblems found:", file=sys.stderr)
+        for problem in review.problems:
+            print(f"  - {problem}", file=sys.stderr)
+        return 1
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None,
+    *,
+    client_factory: Callable[[], Any] | None = None,
+) -> int:
     sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     args = _build_parser().parse_args(argv)
-    return _cmd_run(args) if args.command == "run" else _cmd_show(args)
+    return _cmd_run(args, client_factory) if args.command == "run" else _cmd_show(args)
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ class FakeResponse:
         self.model = "gpt-returned-snapshot"
         self.usage = {"input_tokens": 5, "output_tokens": 3}
         self.status = "completed"
-        self.incomplete_details = None
+        self.incomplete_details: dict[str, Any] | None = None
         self.id = "resp_1"
 
     def model_dump(self, mode: str = "python") -> dict[str, Any]:
@@ -29,7 +29,7 @@ class FakeResponse:
             "model": self.model,
             "status": self.status,
             "usage": self.usage,
-            "incomplete_details": None,
+            "incomplete_details": self.incomplete_details,
             "output_text_hidden": self.output_text,
         }
 
@@ -39,12 +39,19 @@ class FakeClient:
         self.outputs = list(outputs)
         self.calls: list[dict[str, Any]] = []
         self.responses = SimpleNamespace(create=self._create)
+        self.max_retries = 2
+        self.timeout = 60
 
     def _create(self, **kwargs: Any) -> FakeResponse:
         self.calls.append(kwargs)
         out = self.outputs.pop(0)
         if isinstance(out, Exception):
             raise out
+        if isinstance(out, dict):  # {"text", "status", "details"}
+            resp = FakeResponse(out["text"])
+            resp.status = out["status"]
+            resp.incomplete_details = out.get("details")
+            return resp
         return FakeResponse(out)
 
 
@@ -107,16 +114,19 @@ def test_recoverable_continues_fatal_aborts(tmp_path: Path) -> None:
 
 
 def test_show_blind_and_stable(tmp_path: Path) -> None:
+    # Changed: an empty reply is no longer shown as an option, and a second
+    # render says the sheet was preserved instead of returning an identical text.
     run_dir, manifest = make(tmp_path, cases=1)
-    run_slots(FakeClient(["first", ""]), run_dir, manifest)
+    run_slots(FakeClient(["first", "second"]), run_dir, manifest)
     one = render_blind(run_dir)
     two = render_blind(run_dir)
-    assert one == two
+    assert one.text.replace("Created blind_sheet.md.", "") == two.text.replace(
+        "Existing blind_sheet.md preserved; not rewritten.", ""
+    )
     for forbidden in ("gpt-x", "gpt-returned", "RID", "resp_1", "sample", "|"):
-        assert forbidden not in one
-    assert "REPLY A" in one and "REPLY B" in one
-    assert "(empty reply)" in one and "first" in one
-    assert "Hello" in one
+        assert forbidden not in one.text
+    assert "REPLY A" in one.text and "REPLY B" in one.text
+    assert "first" in one.text and "Hello" in one.text
     assert "Accept A? (y/n):" in (run_dir / "blind_sheet.md").read_text(encoding="utf-8")
     assert json.loads((run_dir / "blind_key.json").read_text())["c0"]
 
@@ -124,4 +134,5 @@ def test_show_blind_and_stable(tmp_path: Path) -> None:
 def test_show_reports_failures(tmp_path: Path) -> None:
     run_dir, manifest = make(tmp_path, cases=1)
     run_slots(FakeClient([http_error(openai.RateLimitError, 429), "x"]), run_dir, manifest)
-    assert "1 of 2 samples failed to generate" in render_blind(run_dir)
+    # Changed wording: "replies", not "samples".
+    assert "1 of 2 replies failed to generate" in render_blind(run_dir).text
