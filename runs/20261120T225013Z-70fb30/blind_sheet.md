@@ -10,11 +10,11 @@ What did you do next to help calm the situation and make sure the family got a c
 What did you do after you brought the charge nurse in, and how did the situation end?
 <<<<<<<< END REPLY B >>>>>>>>
 
-Preference (A / B / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
+Preference (A / B / tie): B
+Words that tipped it: “after you brought the charge nurse in” and “how did the situation end?”
+One-sentence reason: B picks up where the applicant stopped and asks how the meeting ended, leaving the applicant room to describe the outcome in their own words.
+Accept A? (y/n): y
+Accept B? (y/n): y
 
 === CASE D4 ===
 Applicant's last utterance:
@@ -28,8 +28,8 @@ That makes sense, especially with the mixed updates. When you brought the charge
 That sounds like you helped reduce the mixed messages by involving the charge nurse and setting one clear plan. My next question is, describe a time you advocated for a patient whose needs weren't immediately recognized.
 <<<<<<<< END REPLY B >>>>>>>>
 
-Preference (A / B / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
+Preference (A / B / tie): B
+Words that tipped it: “setting one clear plan”
+One-sentence reason: The brother already said he knew what to expect, so B acknowledges the resolution and moves to the advocacy question while A spends another turn on the same incident.
+Accept A? (y/n): n
+Accept B? (y/n): y
