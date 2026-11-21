@@ -148,7 +148,7 @@ The command:
 | 9 | `judge-v3` (`prompts/judge-v3.md`: judge-v1 plus a present/absent verdict for each critical type and a no-speaker-label quote rule) scored under `scorer-2` (only present entries count; a present entry needs evidence). judge-v1, v2a and v2b stay on `scorer-1` and keep being reused. D3 recorded as a known limitation (diagnostic doc, section 6) | lead (prompt, docs) + complex-coder (code, tests) | Verified (verifier on Opus: PASS, no blocking findings, 12 of 13 mutants caught; 267 tests; judge-v1 and judge-v2a plan 0 calls against the committed scores) |
 | 10 | Pre-registration of the judge-v3 development draws (diagnostic doc, section 7) | lead | Verified (reviewed by Nishanth; his clarifications are in section 8) |
 | 11 | Live judge-v3 draws on the 20 development replies | lead | Verified, complete. 41 calls (1 preflight + 40 first attempts); no retry made a call; estimated $0.18506. Criteria 1, 2 and 4 met; criterion 3 not met on D1-C, so judge-v3 is not adopted (Nishanth). Diagnostic doc, section 9 |
-| 12 | Freeze judge-v1 for the model comparison and document its known limits and reporting rules (`docs/judge-v1-known-limits.md`) before holdout work | lead | Verified (lead). The comparison's retry allowance is still open |
+| 12 | Freeze judge-v1 for the model comparison and document its known limits and reporting rules (`docs/judge-v1-known-limits.md`) before holdout work | lead | Verified (lead). The freeze, the retry rule (one retry) and the reporting rules were clarified by Nishanth on 2026-11-21, before the `gpt-5.4` development run |
 
 **Acceptance criteria**
 - `score` on a saved run writes only `scores/<run_id>.jsonl`. Every file in the run folder hashes the same before and after.
@@ -165,3 +165,38 @@ The command:
 - A reply that starts with its own label and later has an inline single-word label after a sentence end fails R3, for example `"Riley: Great. Question: are both current?"`. That false positive is accepted.
 - The single-turn rule misses these labels: one after a sentence end when the reply doesn't start with a label (`"Are they current? Sam: Yes, both."`), two-word names (`"Sam Lee:"`), parenthesised labels (`"Applicant (Sam):"`), single-asterisk wrapping (`"*Sam*:"`), bullet or quote prefixes (`"- Sam:"`, `"> Sam:"`), a label with no space after the punctuation or after a `…` ellipsis character (three dots `...` are caught), a name written with a combining accent mark rather than a precomposed letter, and a name in a script without letter case (`"李:"`). The judge's delivery score ("exposes tool or role markup") is the backstop for these.
 - Evidence matching normalises only quotes, dashes and whitespace. A quote that differs in any other way goes to review.
+
+## Model comparison, development run: `gpt-5.4` on v2
+
+**Objective.** Generate 8 `gpt-5.4` replies on the same inputs as run `20261121T023359Z-455c41`: `prompts/v2.md`, D1–D4, 2 samples, reasoning effort `none`. They can then be compared on v2 with the Mini and Gemini replies already in that run.
+
+**Decisions (Nishanth, 2026-11-21).**
+- **Scope.**
+  - The run generates `gpt-5.4` only.
+  - The Mini and Gemini results from `455c41` are reused, not regenerated.
+- **Labels.**
+  - Nishanth labels the 8 new replies before seeing any judge score.
+  - The labels are not model-blind: he knew all eight came from `gpt-5.4`, and this is disclosed with the results.
+- **Preflight.**
+  - One `gpt-5.4` call checks that the API accepts reasoning effort `none`. Its reply is excluded from the eight samples.
+  - If the API rejects the setting, the work stops and the error goes to Nishanth, before any switch to `low` or any other run.
+- **Scoring.**
+  - Scoring happens only after Nishanth commits his labels, with the frozen judge-v1.
+  - Each `needs_review` or `judge_failed` judgment gets one retry. Every scored verdict is preserved, and anything still unscored after its retry is reported.
+  - The reporting rules are in `docs/judge-v1-known-limits.md`.
+- **Branch.** The run is made from the local `judge-v3` branch, with a clean tree, so the manifest records the commit actually used. `main` and the remote are left alone.
+- **Holdouts.** H1–H4 stay sealed.
+- **Prompt comparison.**
+  - The final comparison covers v1 and v2 for all three models, with matched cases and sample counts, reusing existing runs where they match.
+  - This v2-only run shows how the models compare on v2. Whether the prompt change narrowed the gaps between models can't be concluded until the matched v1 results exist.
+
+**Checklist**
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | Freeze clarification and these decisions (`docs/judge-v1-known-limits.md`, this section) | lead | Verified (lead) |
+| 2 | Preflight: one `gpt-5.4` call with reasoning effort `none`, kept outside `runs/` | lead | Pending |
+| 3 | Run: v2 × D1–D4 × `gpt-5.4` × 2, then commit the run with its blind key and sheet | lead | Pending |
+| 4 | Labels for the 8 replies, committed before any scoring | Nishanth | Pending |
+| 5 | Score with judge-v1 (one retry), then report next to `455c41` | lead | Pending |
+| 6 | Final comparison: v1 and v2 × three models, with matched cases and sample counts | lead + Nishanth | Pending |

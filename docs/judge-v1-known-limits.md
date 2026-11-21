@@ -11,13 +11,18 @@ Written on 2026-11-21, after the judge-v3 development draws and before any holdo
   - next action is 2 and grounding is 2;
   - listening and delivery are at least 1;
   - no critical violation is listed.
-- **Case criteria.** `cases/notes.toml` as committed.
+- **Criteria and scoring rules.** The existing development criteria (D1–D4 in `cases/notes.toml`) and the scoring rules above are frozen.
+  - Holdout entries may be added to `cases/notes.toml` later. Each holdout's criteria are committed before any of its replies is generated or viewed.
+  - H1–H4 stay sealed for the `gpt-5.4` development run.
+  - Nishanth clarified this on 2026-11-21, before that run.
 
 judge-v1 is the default for the model comparison. Changing any of the above means a new judge or scorer version and rescoring every stored reply, so none of it changes during the comparison. judge-v2a, judge-v2b and judge-v3 were evaluated and not adopted (`docs/measurements/2026-11-21-judge-diagnostic.md`).
 
 ## Known limits
 
 The evidence is in `docs/measurements/2026-11-21-judge-diagnostic.md`. Its human labels are AI-informed development labels, not independent agreement data.
+
+### Observed limits
 
 1. **Critical-violation entries can deny themselves.**
    - judge-v1 can list a critical violation whose own rationale denies it, such as "No job fact is invented here." The code counts every listed entry as a violation, so one entry alone fails a reply.
@@ -29,8 +34,10 @@ The evidence is in `docs/measurements/2026-11-21-judge-diagnostic.md`. Its human
 3. **Quotes with speaker labels.**
    - The judge sometimes quotes a transcript turn together with its "Applicant:" label. The quote then fails to match, and the judgment is marked `needs_review`.
    - In the development set this happened in 4 of 40 first attempts. One reply (D1-A, draw 2) stayed unscored after its retry. See section 5, finding 4.
+### Caveats
+
 4. **Sampling noise.** At temperature 1.0 each judgment is one random draw. Base D3-A's total moved from 7 to 5 between two draws. See section 5, finding 5.
-5. **Judge family.** Mini judges Mini's replies as well as the other models', so self-preference is possible.
+5. **Judge family.** Mini judges Mini's replies as well as the other models'. Self-preference is a possibility; it has not been measured.
 6. **Reasoning effort.** It is `none`, for cost. Whether deeper reasoning changes the D3 behaviour is untested (option B in section 5).
 7. **Single-turn code check.** It has known false negatives and false positives, listed under the milestone 3 risks in `plan.md`. The judge's delivery score is the backstop.
 
@@ -38,7 +45,7 @@ The evidence is in `docs/measurements/2026-11-21-judge-diagnostic.md`. Its human
 
 1. **Preserve raw verdicts.**
    - The automated results use judge-v1's decisions exactly as recorded in `scores/<run_id>.jsonl`: no manual override, no rescoring with another judge version, and no dropped replies.
-   - `needs_review` and `judge_failed` judgments are counted separately, as operational failures, never as passes or fails.
+   - Invalid (`needs_review`) and failed (`judge_failed`) judgments stay visible. They are counted as operational failures, reported apart from replies the judge actually rejected, and never counted as passes or fails.
 2. **Flag critical-violation findings for human review.**
    - Every judge-v1 judgment that lists a critical violation is flagged.
    - A human checks the reply against the definition in `prompts/judge.md` and records, with a reason, whether the violation is present.
@@ -46,8 +53,10 @@ The evidence is in `docs/measurements/2026-11-21-judge-diagnostic.md`. Its human
 3. **Report human disagreement separately.**
    - Human reviews of critical flags, and blind human labels, go in their own tables beside the automated results. They are kept in their own files, never in a score file.
    - The automated numbers must be reproducible from the run and score files alone.
-4. **D3-type cases.** Also report the counting rule (whether the reply asked for the missing outcome) and the human labels, because the judge's decision there is a known limit.
+4. **D3-type cases.** For each reply, show three things side by side: the counting-rule result (did it ask for the missing outcome?), the raw judge verdict, and the human label. The judge's decision there is a known limit.
 
-## Open before the comparison run
+## Retries (Nishanth, 2026-11-21)
 
-How many times a `needs_review` or `judge_failed` judgment may be retried in the comparison is not yet fixed. It should be fixed before the run.
+- Each `needs_review` or `judge_failed` judgment gets one retry, made by running the same `score` command once more.
+- Every scored verdict is preserved.
+- Anything still unscored after its retry is reported as unscored.
