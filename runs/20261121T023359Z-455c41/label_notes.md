@@ -43,13 +43,27 @@ Given in reply to three questions asked after the results were reported (`c21fc8
 
 Whether D1, D3 and D4 changed after the reviews therefore remains unknown.
 
-**Why D3 C was rejected.** The message introduced this reason with "If this matches your reason, use:":
+~~**Why D3 C was rejected.** The message introduced this reason with "If this matches your reason, use:":~~
+
+**AI-suggested explanation for the D3 C rejection** (see the correction below). It was forwarded in Nishanth's message with the qualifier "If this matches your reason, use:":
 
 > "I rejected C because 'How did that conversation end up resolving his frustration?' assumes the conversation worked. Sam had only said he brought the charge nurse in. I wanted Riley to ask what happened and leave Sam free to say the brother was still frustrated."
 
-This reason was given after unblinding. An earlier version of the measurement report (`ef40780`) had already suggested a similar explanation as Claude's inference. That inference was removed in `c21fc81`, before the question was asked.
+~~This reason was given after unblinding.~~ This explanation was discussed after unblinding. An earlier version of the measurement report (`ef40780`) had already suggested a similar explanation as Claude's inference. That inference was removed in `c21fc81`, before the question was asked.
+
+**Correction, 2026-11-21 00:21 ET.** The quoted explanation is not a reason Nishanth has confirmed. In his words: "The D3-C explanation I forwarded came from ChatGPT with the qualifier 'if this matches your reason.' I have not separately confirmed it as my personal reason."
+
+What stands for the record:
+
+- The quote above is an explanation suggested by ChatGPT and discussed after unblinding.
+- Nishanth's recorded rejection of C (`Accept C? (y/n): n` in `blind_sheet.md`) stands.
+- The sheet records no reason specific to C.
+- The sheet, the counts and the commit history are unchanged.
 
 What this adds to the record:
 
-- ChatGPT reviewed this run with earlier Mini-only replies in the same chat. It could therefore have recognised Mini's wording, for example D2 C, which repeats an earlier Mini reply word for word.
+- ~~ChatGPT reviewed this run with earlier Mini-only replies in the same chat. It could therefore have recognised Mini's wording, for example D2 C, which repeats an earlier Mini reply word for word.~~
+  Corrected 2026-11-21 00:21 ET:
+  - Observed: ChatGPT reviewed this run with earlier Mini-only replies in the same chat, one of them identical to D2 C.
+  - Unknown: whether anyone (Nishanth, ChatGPT or the Claude reviewer) recognised the model, or changed a preference because of it.
 - The Claude reviewer saw the expected behaviours in `cases/notes.toml`, and later saw ChatGPT's review.

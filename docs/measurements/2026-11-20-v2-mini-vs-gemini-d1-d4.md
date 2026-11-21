@@ -56,7 +56,13 @@ None of the four moved on early: each asks a follow-up about the family story.
 
 The rule and Nishanth's label disagree on C: the rule counts it as asking for the outcome, and Nishanth rejected it. Both are shown; this report does not reconcile them.
 
-Nishanth's reason for rejecting C, given on 2026-11-21 after unblinding, is quoted in full in the run's `label_notes.md`. In short: C assumes the conversation worked, and Riley should leave Sam free to say the brother was still frustrated. This is a candidate rule for the evaluator: an outcome question should not presuppose that the situation was resolved. It has not been applied; `cases/notes.toml` and the counts are unchanged.
+~~Nishanth's reason for rejecting C, given on 2026-11-21 after unblinding, is quoted in full in the run's `label_notes.md`. In short: C assumes the conversation worked, and Riley should leave Sam free to say the brother was still frustrated. This is a candidate rule for the evaluator: an outcome question should not presuppose that the situation was resolved. It has not been applied; `cases/notes.toml` and the counts are unchanged.~~
+
+**Corrected 2026-11-21 00:21 ET.** Nishanth's recorded rejection of C stands.
+
+The explanation that was attributed to him above came from ChatGPT, with the qualifier "if this matches your reason", and was discussed after unblinding. It says C assumes the conversation worked, and that Riley should leave Sam free to say the brother was still frustrated. Nishanth has not confirmed it as his reason (see the run's `label_notes.md`).
+
+The rule that explanation implies is not applied: that an outcome question should not presuppose the situation was resolved. `cases/notes.toml` and the counts are unchanged.
 
 ### D4: asked again about the resolved incident?
 
@@ -120,5 +126,5 @@ Requested `gemini-3.5-flash` with thinking level `MINIMAL`. The API reported `ge
   - D3 D opens with the same sentence as a v2 D3 reply in `20261121T013153Z-398359`.
   - D1 A and C reuse "continue with a few screening questions" from `20261121T013228Z-5e2c4b`.
 
-  The letters hid the model, but the style may not have. ChatGPT reviewed this run with earlier Mini replies and label discussions in the same chat. Which earlier runs the Claude reviewer saw is not yet known. The same applies to the letter-level classification above: it was written before the key was opened, but the D3 D call was made by comparing D with an earlier Mini-only reply, so it was not style-blind.
+  The letters hid the model, but the style may not have. ChatGPT reviewed this run with earlier Mini replies and label discussions in the same chat. Observed: ChatGPT had already seen an earlier Mini reply identical to D2 C. Unknown: whether anyone recognised the model, or changed a preference because of it (added 2026-11-21 00:21 ET). Which earlier runs the Claude reviewer saw is not yet known. The same applies to the letter-level classification above: it was written before the key was opened, but the D3 D call was made by comparing D with an earlier Mini-only reply, so it was not style-blind.
 - **Not pooled.** These counts are not pooled with the Mini-only runs. Separately, Mini's five-sample v2 D3 count was 2 of 5.
