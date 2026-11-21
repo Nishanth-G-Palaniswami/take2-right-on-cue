@@ -206,3 +206,49 @@ The command:
 | 10 | Score the new run, `0dbed1` and `6c1135` with frozen judge-v1 (one retry rule) | lead | Verified. 30 judge calls: 24 first attempts, of which 6 were `needs_review` and 0 `judge_failed`, plus 6 retries. About $0.10161. After the retry, 3 are still unscored, all because of a speaker-label quote, and are reported as operational failures: `96f2fa` D1 Gemini sample 1, `96f2fa` D2 `gpt-5.4` sample 2, and `0dbed1` D2 Mini sample 1 |
 
 judge-v4 is deferred until the assessment comparison is complete (Nishanth, 2026-11-21).
+
+## Holdout evaluation (H1–H4)
+
+**Objective.** Evaluate the frozen setup on four fresh holdout cases. Nishanth's labels are recorded before he sees model identities, judge verdicts or AI suggestions.
+
+**Decisions (Nishanth, 2026-11-21).**
+1. **The frozen setup.**
+   - Interviewer prompt v2 is frozen as final, and v1 is the baseline.
+   - judge-v1 stays frozen (`scorer-1`, effort `none`); Gemini runs at `MINIMAL`.
+   - judge-v4 is deferred.
+2. **Authorship.** Nishanth writes the four transcripts (`cases/holdout/H1–H4.jsonl`) and their criteria (`cases/notes.toml`, `split = "holdout"`). The lead checks only that the transcripts parse, the scorer loads the notes, and the offline tests pass.
+3. **Scope.**
+   - Two samples per model, per prompt, per case: all three models on H1–H4 under v1 and v2, giving 48 replies.
+   - From the v2 run, 12 pairs selected in advance: one per model pairing per case.
+4. **Labelling order.**
+   1. **The combined review sheet.** It shows all 12 replies per case, shuffled under neutral IDs, with prompt, model, sample number and run ID hidden. Nishanth commits all 48 accept/reject labels first.
+   2. **The pair sheet.** Only then is it shown. It hides the models, but Nishanth knows its prompt is v2. He commits his 12 A/B/tie choices and reasons before any score, identity or AI suggestion.
+5. **The pairs.** In every case:
+   - **Sample assignment:**
+     - `gpt-5.4` s1 vs Mini s1;
+     - `gpt-5.4` s2 vs Gemini s1;
+     - Mini s2 vs Gemini s2.
+   - **Placement:** balanced left/right, with each model on the left in 2 of the 4 cases per pairing, drawn from fresh OS randomness.
+   - **Commitment:** a salted SHA-256 of the mapping is committed before generation and verified when the mapping is revealed.
+   - **Automated A/B/tie:** from the raw judge-v1 verdicts. Exact matches are reported as a fraction of evaluable pairs, with the number of the 12 that were evaluable.
+6. **Counting observations.**
+   - Separate yes/no fields wherever a case asks two things, kept apart from the overall accept/reject label.
+   - The one-focused-question rule applies wherever a case calls for a follow-up.
+   - The fields are fixed in the pre-registration, after the cases are written.
+
+**Checklist**
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | Blank case template for Nishanth | lead | In progress |
+| 2 | Offline holdout tooling: pair plan with salted commitment, combined review sheet, pair sheet, commitment verification, automated A/B/tie and agreement, all tested with fixtures | complex-coder | In progress |
+| 3 | Independent verification of item 2 | verifier | Pending |
+| 4 | H1–H4 transcripts and criteria | Nishanth | Pending |
+| 5 | Format checks (parse, notes load, offline suite), pre-registration and pair-plan commitment, committed before generation | lead | Pending |
+| 6 | Generation, v2 and v1 runs (only on Nishanth's go-ahead) | lead | Pending |
+| 7 | Labels: 48 individual, then 12 pairs | Nishanth | Pending |
+| 8 | Scoring, reveal and verification, report | lead | Pending |
+
+**Risks.**
+- **Blinding depends on discipline.** The committed run folders (`slots.jsonl`) and the private mapping files hold the identities, so they must not be opened before the labels are committed.
+- **The cost cap holds only between commands.** Generation sends no output cap, so a single generation call has no hard ceiling.
