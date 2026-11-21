@@ -48,7 +48,9 @@ The scorer and Nishanth's recorded accept labels agree on 13 of 16 replies. All 
 
 ## D3-B and D3-C: development examples
 
-Nishanth described the two replies like this (milestone 3 instructions, 2026-11-21): "D3-B refers specifically to the charge nurse but asks what Sam did, leaving the outcome open. D3-C asks about the outcome but phrases the question as though the conversation resolved the brother's frustration."
+The milestone 3 instructions (2026-11-21) framed the demonstration like this: "D3-B refers specifically to the charge nurse but asks what Sam did, leaving the outcome open. D3-C asks about the outcome but phrases the question as though the conversation resolved the brother's frustration."
+
+That is the framing for this demonstration, not a recorded reason for the labels. The sheet records the rejections of B and C, with no reason specific to either.
 
 **D3-B** (`gpt-5.4-mini`, sample 1): "What did you do to help resolve it once you brought the charge nurse in?"
 - **Counting rule** (v2 report): No. The reply asks about actions, not the result.
@@ -65,9 +67,9 @@ Nishanth described the two replies like this (milestone 3 instructions, 2026-11-
   - Listening: "It correctly references the applicant's specific detail about involving the charge nurse, showing it heard and used the example rather than replying generically. It also focuses on the brother's frustration, which matches the applicant's story."
 
 **What this shows.**
-- **The judge did not split the dimensions.** On B, it read "what did you do to help resolve it" as asking for "the missing resolution". The counting rule and Nishanth both treat that as a question about actions. On C, it did not mention that the question assumes the conversation resolved the frustration.
+- **The judge did not split the dimensions.** On B, it read "what did you do to help resolve it" as asking for "the missing resolution". The counting rule classes it as a question about actions. Nishanth rejected it, with no recorded reason specific to B. On C, it did not mention the presupposition named in the milestone 3 framing, that the conversation resolved the frustration.
 - **The D3-D wording disagreement repeats.** For D3-D (Mini, "How did you resolve it for the brother and the patient?"), the judge also said the reply asks "for the outcome of the situation". The counting rule classes this wording as actions.
-- **Separate dimensions only help if the judge scores the gap.** In Nishanth's description, B's weakness is next action and its strength is listening. Next action 1 with listening, grounding and delivery at 2 totals 7 out of 8, and the decision rule fails it. `tests/test_scoring.py` pins that case with synthetic data. The live judge never produced that pattern here.
+- **Separate dimensions only help if the judge scores the gap.** In the milestone 3 framing, B's weakness is next action and its strength is listening. Next action 1 with listening, grounding and delivery at 2 totals 7 out of 8, and the decision rule fails it. `tests/test_scoring.py` pins that case with synthetic data. The live judge never produced that pattern here.
 - **What C would need to fail is a judgment call.** If the judge had marked C's presupposition as listening 1, C would still pass, because listening needs only 1. It would fail only if the presupposition counted against next action. Which dimension that weakness belongs to is a rubric decision, not a finding.
 - **No visible self-preference.** The Mini judge gave its own family's replies (B, D) and Gemini's (A, C) the same 8 out of 8. This run can't show self-preference, and it can't rule it out.
 
