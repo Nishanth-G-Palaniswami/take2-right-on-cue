@@ -9,3 +9,7 @@
   - That commit changed only the answer fields (28 lines), and all 16 accept fields are `y` or `n`.
   - Its message says a coding session committed the labels after Nishanth reported filling in the sheet. The session that wrote this note did not make that commit.
 - **What this session said.** It gave no labels, preferences or comments on these replies before `c10c6e5`, and it did not open the key before scoring.
+
+## D4 rejections of the `gpt-5.4` replies (Nishanth, 2026-11-21, after scoring)
+
+Nishanth keeps his rejection of both replies, which are D4-A and D4-B. The applicant had already explained what they did and how the situation ended, so Riley should have moved on to the advocacy question. Both replies asked for more detail about the same incident. The review of their critical flags is in `critical_review.md`.
