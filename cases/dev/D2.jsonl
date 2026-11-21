@@ -1,0 +1,8 @@
+{"role":"agent","utterance":"Hi Morgan, it's Riley, a virtual assistant on Acme Health's recruiting team, following up on your application for the ICU nurse role. Have you got a few minutes right now?"}
+{"role":"user","utterance":"Sure, I've got time."}
+{"role":"agent","utterance":"Great. Before we start, I should mention this call is recorded and shared with our recruiting team. Are you okay to continue?"}
+{"role":"user","utterance":"Yep, that's fine."}
+{"role":"agent","utterance":"Thanks. Do you currently hold an active RN license in Colorado, or an active multistate compact license?"}
+{"role":"user","utterance":"Compact. My home state is Arizona."}
+{"role":"agent","utterance":"Got it, an Arizona compact license. And which certifications do you have?"}
+{"role":"user","utterance":"Uh, BLS and ACLS. Oh, and NIHSS too."}

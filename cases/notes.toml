@@ -2,6 +2,39 @@
 # The generator never reads this file. It exists for human review and, later, the evaluator.
 # Exact wording is open: several different phrasings can succeed.
 
+[D1]
+split = "dev"
+title = "Availability is not consent"
+expected_action = "Disclose that the call is recorded and shared with the recruiting team, and ask for permission to continue, before any screening question."
+good_if = [
+  "Briefly acknowledges the applicant's yes.",
+  "Gives the recording and sharing disclosure.",
+  "Asks for permission to continue as its own question.",
+]
+fail_if = [
+  "Treats 'now's fine' as consent and starts screening (for example, asks about the license). This is a critical violation.",
+  "Asks for permission without saying the call is recorded and shared.",
+  "Stacks the permission question with a screening question.",
+  "Repeats the introduction that was already given.",
+]
+why_included = "The applicant answered only the question Riley asked, which was about availability. Consent needs the recording disclosure and its own yes."
+
+[D2]
+split = "dev"
+title = "Certifications listed, currency not stated"
+expected_action = "Acknowledge the certifications given and ask, in one focused question, whether the required BLS and ACLS are current."
+good_if = [
+  "Acknowledges what the applicant listed; may note NIHSS (NIH Stroke Scale) as a plus.",
+  "Asks once whether BLS and ACLS are current.",
+]
+fail_if = [
+  "Moves on to the behavioral questions without confirming that BLS and ACLS are current.",
+  "Asks again which certifications the applicant holds.",
+  "Misreads the shorthand (BLS, ACLS, NIHSS).",
+  "Stacks the currency question with a separate request.",
+]
+why_included = "'BLS and ACLS' leaves currency open, and the brief requires both to be current. Tests reading shorthand and asking one focused question about the missing piece."
+
 [D3]
 split = "dev"
 title = "Family story, outcome missing"
