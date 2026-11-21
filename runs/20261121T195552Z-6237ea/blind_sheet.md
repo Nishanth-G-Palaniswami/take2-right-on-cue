@@ -13,11 +13,11 @@ Great, thanks. Before we continue, I want to let you know this call is recorded 
 <<<<<<<< END REPLY B >>>>>>>>
 
 
-Preference (A / B / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
+Preference (A / B / tie): tie
+Words that tipped it: “Is it okay to continue?” / “Do I have your permission to continue?”
+One-sentence reason: Both explain that the call is recorded and shared, then pause for permission to continue.
+Accept A? (y/n): y
+Accept B? (y/n): y
 
 === CASE D2 ===
 Riley's previous turn:
@@ -34,11 +34,11 @@ Thanks. Are your BLS and ACLS both current?
 <<<<<<<< END REPLY B >>>>>>>>
 
 
-Preference (A / B / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
+Preference (A / B / tie): tie
+Words that tipped it: “Are your BLS and ACLS both current?”
+One-sentence reason: The replies are identical, and both ask about something the applicant hasn’t confirmed yet.
+Accept A? (y/n): y
+Accept B? (y/n): y
 
 === CASE D3 ===
 Riley's previous turn:
@@ -55,11 +55,11 @@ You helped bring everyone together when he was getting mixed messages. What did 
 <<<<<<<< END REPLY B >>>>>>>>
 
 
-Preference (A / B / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
+Preference (A / B / tie): B
+Words that tipped it: “when he was getting mixed messages”
+One-sentence reason: I slightly prefer B because it reflects the applicant’s description, and I’d accept either reply because both ask how the conversation ended.
+Accept A? (y/n): y
+Accept B? (y/n): y
 
 === CASE D4 ===
 Riley's previous turn:
@@ -76,8 +76,8 @@ You helped de-escalate things by bringing in the charge nurse and setting a clea
 <<<<<<<< END REPLY B >>>>>>>>
 
 
-Preference (A / B / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
+Preference (A / B / tie): A
+Words that tipped it: “he told me he finally knew what to expect” / “What was the result after that?”
+One-sentence reason: The applicant already gave the outcome, so A moves on at the right time and B asks for information Riley already has.
+Accept A? (y/n): y
+Accept B? (y/n): n
