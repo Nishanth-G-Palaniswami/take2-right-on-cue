@@ -200,3 +200,9 @@ The command:
 | 4 | Labels for the 8 replies, committed before any scoring | Nishanth | Verified. Entered by Nishanth and committed in `f13316a` by the coding session, after he reported finishing and before any scoring. Only the answer fields changed. Not model-blind (disclosed) |
 | 5 | Score with judge-v1 (one retry), then report next to `455c41` | lead | Verified. 8 judge calls, all valid on the first attempt, so no retry was needed and none is unscored. 5 acceptable, 3 not acceptable. D4-B's 4 critical entries all deny a violation in their own rationale (known limit 1). Nishanth reviewed them and found all four absent (`runs/20261121T195552Z-6237ea/critical_review.md`); the raw verdict is kept. Report: `docs/measurements/2026-11-21-gpt54-v2-dev.md` |
 | 6 | Final comparison: v1 and v2 × three models, with matched cases and sample counts | lead + Nishanth | Pending |
+| 7 | v1 matched set (Nishanth, 2026-11-21). Mini v1 reuses `0dbed1` for D1/D2 and `6c1135` for D3/D4: their original labels were recorded before any scoring. The report notes `6c1135`'s later D4 tie correction. `70fb30` is not used, because it was the material for the judge investigation | Nishanth | Verified (decision) |
+| 8 | Run: v1 × D1–D4 × `gpt-5.4` + `gemini-3.5-flash` × 2 = 16 replies, one combined run, no preflight. Blind sheet with the model-to-letter mapping hidden | lead | Pending |
+| 9 | Labels for the 16 replies, committed before any scoring | Nishanth | Pending |
+| 10 | Score the new run, `0dbed1` and `6c1135` with frozen judge-v1 (one retry rule) | lead | Pending |
+
+judge-v4 is deferred until the assessment comparison is complete (Nishanth, 2026-11-21).
