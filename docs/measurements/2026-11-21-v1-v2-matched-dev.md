@@ -1,11 +1,15 @@
 # Measurement: matched v1 vs v2, three models, D1–D4 (development)
 
-**Did v2 narrow the gap?**
-- On Nishanth's labels, the spread between the highest- and lowest-scoring model went from **4/8 under v1 to 1/8 under v2**. Total acceptance stayed **20/24 under both prompts**.
-- That is an observation on these four development cases, not an attributed prompt effect:
-  - most of the change sits on D3, where similar questions were labelled differently across runs;
-  - there are two samples per model per case.
-- Model ranking stays open.
+**Outside D3.**
+- Excluding D3, Nishanth accepted **16/18 replies under v1 and 17/18 under v2**.
+- The only change in any per-case acceptance count was `gpt-5.4` on D4: it moved on in 0/2 samples under v1 and 1/2 under v2.
+- The v1 and v2 replies were generated separately, so this is one additional acceptable reply, not a measured prompt effect.
+
+**Overall, with D3.**
+- Total acceptance on Nishanth's labels was **20/24 under both prompts**.
+- The spread between the highest- and lowest-scoring model went from **4/8 under v1 to 1/8 under v2**.
+- Beside those numbers is the D3 labelling inconsistency: similar questions were labelled differently across runs, and D3 holds every label change other than `gpt-5.4`'s D4.
+- These are observations on four development cases with two samples per model per case. They don't attribute an effect to the prompt, and model ranking stays open.
 
 ## Matched set
 
@@ -13,7 +17,7 @@ There are 2 samples per model, prompt and case on D1–D4. Prompt and case files
 
 | Prompt | Model (reported as) | Run(s) | Labels committed | Labelling conditions |
 |---|---|---|---|---|
-| v1 | `gpt-5.4` (`gpt-5.4-2026-03-05`) | `20261121T202643Z-96f2fa` | `c10c6e5` | Model hidden (mixed with Gemini); Nishanth saw ChatGPT's suggestions before finalizing |
+| v1 | `gpt-5.4` (`gpt-5.4-2026-03-05`) | `20261121T202643Z-96f2fa` | `c10c6e5` | Model hidden (mixed with Gemini). Before finalizing, Nishanth saw suggested labels from ChatGPT and from a separate Claude review session |
 | v1 | `gpt-5.4-mini` (`gpt-5.4-mini-2026-03-17`) | `20261121T005440Z-0dbed1` (D1/D2), `20261121T000156Z-6c1135` (D3/D4) | `187a304`, `8191552` | Single-model runs. The `0dbed1` labels were committed "before any unblinding or feedback" (`187a304`), and the `6c1135` labels "before any scorer" (`8191552`). `6c1135` D4: a later tie correction (below) |
 | v1 | `gemini-3.5-flash` (`gemini-3.6-flash`) | `20261121T202643Z-96f2fa` | `c10c6e5` | As for v1 `gpt-5.4` |
 | v2 | `gpt-5.4` (`gpt-5.4-2026-03-05`) | `20261121T195552Z-6237ea` | `f13316a` | Not model-blind; Nishanth discussed his judgments with an AI assistant before committing |
@@ -68,6 +72,12 @@ There are 2 samples per model, prompt and case on D1–D4. Prompt and case files
 
 Each model asked for the missing outcome equally often under v1 and v2: `gpt-5.4` 2/2 and 2/2, Mini 0/2 and 0/2, Gemini 2/2 and 2/2. The rule is from `docs/measurements/2026-11-20-v1-d3-d4-x5.md`: "yes" if the reply asks how the situation ended, whether as the whole question or part of one request.
 
+**Asking for the outcome is not the same as being acceptable.**
+- The counting rule records whether Riley asked for the outcome. Whether the whole reply is acceptable is a separate judgment.
+- The frozen D3 criteria in `cases/notes.toml` ask for "one focused question about the outcome or resolution". They fail a reply that "stacks the outcome question with a second, separate request".
+- A two-part reply such as "What did you say, and how did it end?" counts as asking for the outcome, but its separate request about what was said fails that criterion. "How did it end after you brought in the charge nurse?" meets both.
+- The development labels below stay as recorded.
+
 Nishanth's original labels are preserved. Each reply below lists its run, letter and sample:
 
 | Question type | Prompt, model, run, letter (sample) | Reply | Outcome asked | Label | judge-v1 |
@@ -87,7 +97,7 @@ Nishanth's original labels are preserved. Each reply below lists its run, letter
 
 **Similar questions judged differently.**
 1. **Two-part questions, rejected under v1 and accepted under v2.**
-   - The v1 sheet's reason: "B and C each add a second request about what the applicant said". These were labelled with the model hidden, after seeing ChatGPT's suggestions.
+   - The v1 sheet's reason: "B and C each add a second request about what the applicant said". These were labelled with the model hidden, after seeing suggested labels from ChatGPT and a separate Claude review session.
    - The v2 sheet's reason: "I'd accept either reply because both ask how the conversation ended". These were labelled with the model known, after an AI discussion.
    - The visible wording difference is that the v2 replies open with an acknowledgment. Neither the wording nor the labelling conditions is established as the reason.
    - For context, outside the matched set, base `70fb30` D3-B ("What did you do after you brought the charge nurse in, and how did the situation end?") was also accepted.
@@ -113,7 +123,9 @@ judge-v1 treats each pattern the same way in both runs: it fails the two-part qu
 - **The critical flags.** Every critical flag on them is a false positive by Nishanth's review: `runs/20261121T202643Z-96f2fa/critical_review.md` and `runs/20261121T195552Z-6237ea/critical_review.md`. Each judge rationale also denies the violation (known limit 1).
 - **Raw verdicts** are unchanged.
 
-## Judge agreement
+## Judge agreement (development result)
+
+These figures are a development result, from cases that were also used to build and diagnose the judge. The independent agreement check is H1–H4.
 
 - **v1:** 21/21 scored replies agree with Nishanth's labels. Three replies are unscored after their retry, all because the judge quoted a transcript turn with its "Applicant:" label (known limit 3). They are operational failures, not rejections:
   - `96f2fa` D1 Gemini sample 1;
@@ -122,6 +134,7 @@ judge-v1 treats each pattern the same way in both runs: it fails the two-part qu
 - **v2:** 19/24. All five disagreements are on D3:
   - the judge rejected both `gpt-5.4` replies Nishanth accepted;
   - it passed both Mini replies and one Gemini reply that he rejected.
+- **Consistency.** The judge treated the two-part questions alike in both runs, and the action-only questions alike too. Nishanth's labels varied (D3 section).
 - **The `6c1135` D4 correction.** After unblinding, Nishanth changed his preference from B to a tie (`runs/20261121T000156Z-6c1135/label_corrections.md`). Both acceptance labels (y, y) stayed intact, so the counts above are unaffected.
 
 ## Limits
