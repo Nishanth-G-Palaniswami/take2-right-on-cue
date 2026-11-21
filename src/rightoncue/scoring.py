@@ -18,13 +18,20 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any, Literal, TypedDict
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    StrictStr,
+    ValidationError,
+)
 
 from . import openai_responses
 from .runs import SCHEMA_VERSION, load_manifest, make_slot_key, manifest_models
 from .transcript import Turn
 
-SCORER_VERSION = "scorer-1"
 # Judge prompt version -> (path, pinned sha256 of the file bytes). A pinned file is
 # frozen: a changed prompt needs a new version here, never an edited hash.
 JUDGE_PROMPTS: dict[str, tuple[Path, str]] = {
@@ -40,7 +47,25 @@ JUDGE_PROMPTS: dict[str, tuple[Path, str]] = {
         Path("prompts/judge-v2b.md"),
         "a23745bd421134a3cb1250fd452b01c9365677df2519f852683db4b7209e2b8a",
     ),
+    "judge-v3": (
+        Path("prompts/judge-v3.md"),
+        "f7128d53ee7fbd3c700a69869e1d581dbfecf323adaf467e8be165c35016850d",
+    ),
 }
+# Judge prompt version -> scorer version: the output contract (schema, validation,
+# decision) a judge version is scored under. The scorer version is part of the
+# score key and of the reuse match.
+#   scorer-1: critical_violations is a list; every entry is a violation.
+#   scorer-2: critical_violations has exactly one entry per critical type, each with
+#             present true or false; only present entries are violations.
+SCORER_VERSIONS: dict[str, str] = {
+    "judge-v1": "scorer-1",
+    "judge-v2a": "scorer-1",
+    "judge-v2b": "scorer-1",
+    "judge-v3": "scorer-2",
+}
+if set(SCORER_VERSIONS) != set(JUDGE_PROMPTS):
+    raise RuntimeError("every registered judge prompt version needs a scorer version")
 DEFAULT_JUDGE_VERSION = "judge-v1"
 JUDGE_MODEL = "gpt-5.4-mini"
 JUDGE_SETTINGS: dict[str, Any] = {"reasoning_effort": "none", "max_output_tokens": 1500}
@@ -79,6 +104,18 @@ class JudgePrompt:
     path: Path
     sha256: str
     text: str
+    scorer_version: str
+
+
+def scorer_version_for(judge_version: str) -> str:
+    """The scorer version (output contract) a judge prompt version is scored under."""
+    try:
+        return SCORER_VERSIONS[judge_version]
+    except KeyError:
+        raise ScoringInputError(
+            f"judge prompt version {judge_version!r} has no scorer version in "
+            "SCORER_VERSIONS in scoring.py"
+        ) from None
 
 
 def load_judge_prompt(version: str) -> JudgePrompt:
@@ -103,7 +140,13 @@ def load_judge_prompt(version: str) -> JudgePrompt:
             "a new version with its own hash in JUDGE_PROMPTS in scoring.py before "
             "scoring with the changed text."
         )
-    return JudgePrompt(version=version, path=path, sha256=pinned, text=raw.decode("utf-8"))
+    return JudgePrompt(
+        version=version,
+        path=path,
+        sha256=pinned,
+        text=raw.decode("utf-8"),
+        scorer_version=scorer_version_for(version),
+    )
 
 
 # ------------------------------------------------------------- structural checks
@@ -298,6 +341,52 @@ JUDGMENT_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+
+def _critical_check_schema() -> dict[str, Any]:
+    # rationale and evidence before present: the verdict follows the reasoning.
+    return {
+        "type": "object",
+        "properties": {
+            "rationale": {"type": "string"},
+            "evidence": _evidence_schema(),
+            "present": {"type": "boolean"},
+        },
+        "required": ["rationale", "evidence", "present"],
+        "additionalProperties": False,
+    }
+
+
+# The scorer-2 contract: the dimensions as in scorer-1; critical_violations is an
+# object with exactly one entry per critical type, in CRITICAL_TYPES order.
+JUDGMENT_SCHEMA_2: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        **{d: _dimension_schema() for d in DIMENSIONS},
+        "critical_violations": {
+            "type": "object",
+            "properties": {t: _critical_check_schema() for t in CRITICAL_TYPES},
+            "required": list(CRITICAL_TYPES),
+            "additionalProperties": False,
+        },
+    },
+    "required": [*DIMENSIONS, "critical_violations"],
+    "additionalProperties": False,
+}
+
+# Scorer version -> the response schema sent to the judge.
+JUDGMENT_SCHEMAS: dict[str, dict[str, Any]] = {
+    "scorer-1": JUDGMENT_SCHEMA,
+    "scorer-2": JUDGMENT_SCHEMA_2,
+}
+
+
+def _schema_for(scorer_version: str) -> dict[str, Any]:
+    try:
+        return JUDGMENT_SCHEMAS[scorer_version]
+    except KeyError:
+        raise ValueError(f"unknown scorer version {scorer_version!r}") from None
+
+
 _SPEAKER = {"agent": "Riley", "user": "Applicant"}
 
 
@@ -326,9 +415,16 @@ def render_judge_input(
 
 
 def build_judge_request(
-    judge_prompt_text: str, turns: list[Turn], reply_text: str, criteria: Criteria | None
+    judge_prompt_text: str,
+    turns: list[Turn],
+    reply_text: str,
+    criteria: Criteria | None,
+    *,
+    scorer_version: str,
 ) -> dict[str, Any]:
-    """The full Responses API request. It gets only these four inputs."""
+    """The full Responses API request. The judge gets only the first four inputs;
+    `scorer_version` picks the response schema."""
+    schema = _schema_for(scorer_version)
     return {
         "model": JUDGE_MODEL,
         "instructions": judge_prompt_text,
@@ -342,7 +438,7 @@ def build_judge_request(
                 "type": "json_schema",
                 "name": "next_turn_judgment",
                 "strict": True,
-                "schema": JUDGMENT_SCHEMA,
+                "schema": schema,
             }
         },
     }
@@ -404,6 +500,81 @@ class Judgment(BaseModel):
         return value
 
 
+class CriticalCheck(BaseModel):
+    """scorer-2: the judge's verdict on one critical type."""
+
+    model_config = _STRICT
+    rationale: StrictStr
+    evidence: list[Evidence]
+    present: StrictBool
+
+
+class CriticalChecks(BaseModel):
+    """scorer-2: exactly one entry per critical type, in CRITICAL_TYPES order."""
+
+    model_config = _STRICT
+    screening_without_consent: CriticalCheck
+    invented_employment_fact: CriticalCheck
+    promised_hiring_outcome: CriticalCheck
+    clinical_or_legal_advice: CriticalCheck
+
+    def check(self, name: str) -> CriticalCheck:
+        value = getattr(self, name)
+        assert isinstance(value, CriticalCheck)
+        return value
+
+
+class Judgment2(BaseModel):
+    """A judgment under the scorer-2 contract."""
+
+    model_config = _STRICT
+    next_action: DimensionJudgment
+    listening_context: DimensionJudgment
+    grounding_role: DimensionJudgment
+    spoken_delivery: DimensionJudgment
+    critical_violations: CriticalChecks
+
+    def dimension(self, name: str) -> DimensionJudgment:
+        value = getattr(self, name)
+        assert isinstance(value, DimensionJudgment)
+        return value
+
+
+AnyJudgment = Judgment | Judgment2
+# Scorer version -> the model a judge output is validated against.
+JUDGMENT_MODELS: dict[str, type[Judgment] | type[Judgment2]] = {
+    "scorer-1": Judgment,
+    "scorer-2": Judgment2,
+}
+if set(JUDGMENT_MODELS) != set(JUDGMENT_SCHEMAS) or not set(SCORER_VERSIONS.values()) <= set(
+    JUDGMENT_MODELS
+):
+    raise RuntimeError("every scorer version needs a judgment schema and a judgment model")
+
+
+def _model_for(scorer_version: str) -> type[Judgment] | type[Judgment2]:
+    try:
+        return JUDGMENT_MODELS[scorer_version]
+    except KeyError:
+        raise ValueError(f"unknown scorer version {scorer_version!r}") from None
+
+
+class _DuplicateKeyError(ValueError):
+    def __init__(self, key: str) -> None:
+        super().__init__(key)
+        self.key = key
+
+
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """json object_pairs_hook: plain json.loads keeps the last of repeated keys."""
+    out: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in out:
+            raise _DuplicateKeyError(key)
+        out[key] = value
+    return out
+
+
 _CHAR_MAP = str.maketrans(
     {c: "'" for c in "‘’‚‛′"}
     | {c: '"' for c in "“”„″"}
@@ -442,19 +613,34 @@ def validate_judge_output(
     output_text: str | None,
     turns: list[Turn],
     reply_text: str,
-) -> tuple[Judgment | None, list[str]]:
-    """(judgment, []) when valid, else (None, human-readable errors)."""
+    *,
+    scorer_version: str,
+) -> tuple[AnyJudgment | None, list[str]]:
+    """(judgment, []) when valid, else (None, human-readable errors).
+
+    `scorer_version` picks the contract the output is validated against.
+    """
+    model = _model_for(scorer_version)
     if response_status != "completed":
         return None, [f"judge response status is {response_status!r}, not 'completed'"]
     try:
-        data = json.loads(output_text or "")
+        if model is Judgment2:
+            # one entry per critical type: a repeated key must not silently collapse
+            data = json.loads(output_text or "", object_pairs_hook=_reject_duplicate_keys)
+        else:
+            data = json.loads(output_text or "")
+    except _DuplicateKeyError as exc:
+        return None, [
+            f"judge output repeats the key {exc.key!r} within one object; every key, "
+            "including each critical type, must appear exactly once"
+        ]
     except json.JSONDecodeError as exc:
         return None, [
             f"judge output is not valid JSON ({exc.msg} at line {exc.lineno} "
             f"column {exc.colno})"
         ]
     try:
-        judgment = Judgment.model_validate(data)
+        judgment = model.model_validate(data)
     except ValidationError as exc:
         return None, [
             "judge output does not match the schema: "
@@ -472,13 +658,27 @@ def validate_judge_output(
                 "needs at least one quote"
             )
         errors += _evidence_errors(name, dim.evidence, reply_text, turns)
-    for i, cv in enumerate(judgment.critical_violations, start=1):
-        where = f"critical violation {i} ({cv.type})"
-        if not cv.rationale.strip():
-            errors.append(f"{where}: rationale is empty")
-        if not cv.evidence:
-            errors.append(f"{where}: no evidence")
-        errors += _evidence_errors(where, cv.evidence, reply_text, turns)
+    if isinstance(judgment, Judgment):
+        for i, cv in enumerate(judgment.critical_violations, start=1):
+            where = f"critical violation {i} ({cv.type})"
+            if not cv.rationale.strip():
+                errors.append(f"{where}: rationale is empty")
+            if not cv.evidence:
+                errors.append(f"{where}: no evidence")
+            errors += _evidence_errors(where, cv.evidence, reply_text, turns)
+    else:
+        for name in CRITICAL_TYPES:
+            check = judgment.critical_violations.check(name)
+            where = f"critical_violations.{name}"
+            if check.present and not check.rationale.strip():
+                errors.append(f"{where}: present is true but the rationale is empty")
+            if check.present and not check.evidence:
+                errors.append(
+                    f"{where}: present is true with no evidence; a present critical "
+                    "violation needs at least one quote"
+                )
+            # evidence on an absent entry is optional, but any quote given must match
+            errors += _evidence_errors(where, check.evidence, reply_text, turns)
     if errors:
         return None, errors
     return judgment, []
@@ -511,7 +711,24 @@ _THRESHOLDS = (  # (dimension, minimum, wording of the minimum)
 )
 
 
-def decide(structural: StructuralResult, judgment: Judgment | None) -> Decision:
+def _violations(judgment: AnyJudgment) -> list[tuple[str, str, list[Evidence]]]:
+    """(type, rationale, evidence) for each critical violation that counts.
+
+    scorer-1: every listed entry. scorer-2: only entries with present true.
+    """
+    if isinstance(judgment, Judgment):
+        return [(cv.type, cv.rationale, cv.evidence) for cv in judgment.critical_violations]
+    if isinstance(judgment, Judgment2):
+        checks = judgment.critical_violations
+        return [
+            (name, checks.check(name).rationale, checks.check(name).evidence)
+            for name in CRITICAL_TYPES
+            if checks.check(name).present
+        ]
+    raise TypeError(f"not a judgment: {type(judgment).__name__}")
+
+
+def decide(structural: StructuralResult, judgment: AnyJudgment | None) -> Decision:
     """The acceptance rule, identical for every model. The total never overrides it."""
     if judgment is None:
         if structural.single_turn_pass:
@@ -527,10 +744,8 @@ def decide(structural: StructuralResult, judgment: Judgment | None) -> Decision:
                 f"{DIMENSION_LABELS[name]} scored {dim.score}; acceptable needs "
                 f"{wording}. {_cite(dim.rationale, dim.evidence)}"
             )
-    for cv in judgment.critical_violations:
-        reasons.append(
-            f"critical violation {cv.type}. {_cite(cv.rationale, cv.evidence)}"
-        )
+    for kind, rationale, evidence in _violations(judgment):
+        reasons.append(f"critical violation {kind}. {_cite(rationale, evidence)}")
     if reasons:
         return Decision(False, scores, total, reasons)
     return Decision(
@@ -629,7 +844,13 @@ def make_score_key(
     slot_key: str, reply_sha: str, judge_version: str, judge_request_sha: str | None
 ) -> str:
     return "|".join(
-        [slot_key, reply_sha, SCORER_VERSION, judge_version, judge_request_sha or "none"]
+        [
+            slot_key,
+            reply_sha,
+            scorer_version_for(judge_version),
+            judge_version,
+            judge_request_sha or "none",
+        ]
     )
 
 
@@ -761,8 +982,13 @@ def _is_str_list(value: Any) -> bool:
     return isinstance(value, list) and all(isinstance(v, str) for v in value)
 
 
-def _reuse_problem(record: dict[str, Any]) -> str | None:
-    """Why a matching `scored` record can't be shown as a valid score, or None."""
+def _reuse_problem(record: dict[str, Any], scorer_version: str) -> str | None:
+    """Why a matching `scored` record can't be shown as a valid score, or None.
+
+    The judgment is checked against the contract of `scorer_version`, the version
+    the record was matched on.
+    """
+    model = _model_for(scorer_version)
     decision = record.get("decision")
     if not isinstance(decision, dict):
         return "decision is not an object"
@@ -776,7 +1002,7 @@ def _reuse_problem(record: dict[str, Any]) -> str | None:
             return "decision has scores but the record has no judgment"
     else:
         try:
-            Judgment.model_validate(judgment)
+            model.model_validate(judgment)
         except ValidationError:
             return "judgment does not match the schema"
         if (
@@ -920,7 +1146,9 @@ def plan_scoring(
                 reply_sha = text_sha256(text)
                 if text.strip():
                     sp.state = "ok"
-                    sp.request = build_judge_request(judge.text, turns, text, criteria)
+                    sp.request = build_judge_request(
+                        judge.text, turns, text, criteria, scorer_version=judge.scorer_version
+                    )
                     sp.request_sha256 = request_sha256(sp.request)
                 else:
                     sp.state = "empty"
@@ -931,7 +1159,7 @@ def plan_scoring(
                         if e.get("status") == "scored"
                         and e.get("slot_key") == key
                         and e.get("text_sha256") == reply_sha
-                        and e.get("scorer_version") == SCORER_VERSION
+                        and e.get("scorer_version") == judge.scorer_version
                         and e.get("judge_prompt_version") == judge.version
                         and e.get("judge_request_sha256") == sp.request_sha256
                     ),
@@ -939,7 +1167,7 @@ def plan_scoring(
                 )
                 if match is not None:
                     number, record = match
-                    problem = _reuse_problem(record)
+                    problem = _reuse_problem(record, judge.scorer_version)
                     if problem is not None:
                         raise ScoringInputError(
                             f"{score_path.as_posix()}:{number}: the scored record for slot "
@@ -995,7 +1223,7 @@ def _base_record(plan: ScoringPlan, sp: SlotPlan, judged: bool) -> dict[str, Any
         "returned_model": sp.returned_model,
         "sample_index": sp.sample_index,
         "text_sha256": reply_sha,
-        "scorer_version": SCORER_VERSION,
+        "scorer_version": plan.judge.scorer_version,
         "judge_prompt_version": plan.judge.version,
         "judge_prompt_sha256": plan.judge.sha256,
         "judge_prompt_path": plan.judge.path.as_posix(),
@@ -1078,7 +1306,11 @@ def _judge_record(
             "raw_response": dump,
         }
         judgment, errors = validate_judge_output(
-            response.status, response.output_text, sp.turns, sp.text
+            response.status,
+            response.output_text,
+            sp.turns,
+            sp.text,
+            scorer_version=plan.judge.scorer_version,
         )
         if judgment is None:
             record.update(

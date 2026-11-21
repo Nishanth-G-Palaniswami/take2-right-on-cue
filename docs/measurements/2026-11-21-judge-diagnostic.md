@@ -186,8 +186,46 @@ Independent agreement is reserved for the sealed holdouts, after the scorer is f
 - **B. Run the judge at reasoning effort `low`**, a settings change the assessment allows. It tests whether the misreading of "resolve" is about reasoning depth. Its cost is roughly 40 calls plus reasoning tokens.
 - **C. Record the misreading as a known limit of the judge.** D3-type cases would rely on the counting rule and human review, and the limit would be reported.
 
+**Decision (Nishanth, 2026-11-21, recorded 13:10 ET).**
+- A is built as the candidate judge-v3, scored under `scorer-2`. It is not adopted, and judge-v1 stays the default.
+- C is recorded in section 6.
+- B is not part of this pass: reasoning effort and temperature are unchanged.
+
 ### Baseline preserved
 
 - **`scores/20261121T023359Z-455c41.jsonl`:** the first 18 lines are byte-identical to the file at `470ad03` (sha256 `381c9ac3…`). Since then 35 lines were added and 0 deleted.
 - **`scores/20261120T225013Z-70fb30.jsonl`:** the 4 judge-v1 lines are unchanged from `844e719`. 8 lines were added and 0 deleted.
 - **`prompts/judge.md`:** unchanged.
+
+## 6. Known limitation: D3 follow-ups (added 2026-11-21 12:35 ET)
+
+This section records a limitation; nothing changes to address it. The D3 criteria in `cases/notes.toml` are unchanged, and judge-v3 changes only the critical-violation contract and how quotes are written.
+
+**Where judge-v1 and the development labels disagree on D3.** judge-v1 rejected one D3 reply that Nishanth accepted, and passed three that he rejected. The result is the same in both judge-v1 draws.
+
+- **Base D3-A**, slot `20261120T225013Z-70fb30|D3|v1|gpt-5.4-mini|1`: "What did you do next to help calm the situation and make sure the family got a consistent update?"
+  - Nishanth: accepted, not preferred.
+  - judge-v1: not acceptable, next action 1.
+- **D3-B**, slot `20261121T023359Z-455c41|D3|v2|gpt-5.4-mini|1`: "What did you do to help resolve it once you brought the charge nurse in?"
+  - Nishanth: rejected.
+  - judge-v1: acceptable, 8/8.
+- **D3-C**, slot `20261121T023359Z-455c41|D3|v2|gemini-3.5-flash|2`: "Bringing the charge nurse in for a team discussion sounds like it helped bring some clarity. How did that conversation end up resolving his frustration?"
+  - Nishanth: rejected.
+  - judge-v1: acceptable, 8/8.
+- **D3-D**, slot `20261121T023359Z-455c41|D3|v2|gpt-5.4-mini|2`: "That sounds like a tense situation, and bringing the charge nurse in was a good step. How did you resolve it for the brother and the patient?"
+  - Nishanth: rejected.
+  - judge-v1: acceptable, 8/8.
+
+Notes on these results:
+- Both candidate arms gave the same four results in every draw.
+- The labels are development labels. The base-run labels were informed by Claude's analysis, and the multi-model labels by AI reviews.
+
+**One possible explanation: action versus outcome.**
+- **The distinction.** The D3 criteria ask for how the situation turned out. Base D3-A and D3-B both ask what the applicant did instead.
+- **Where it fits.** It fits D3-B most directly. It doesn't obviously account for D3-C, which asks how the conversation ended up resolving his frustration.
+- **What remains unknown.** Section 5, finding 2, gives two hypotheses for why the judge passes questions that contain "resolve", and neither is established.
+- **Whether the labels conflict.** Similar wording alone does not establish that the human labels for base D3-A and D3-B conflict. The record holds no reason that separates them, and they were labelled in different runs, against different alternatives.
+
+**Consequence.**
+- For D3-type cases, where the applicant leaves the outcome unstated, the evidence is the pre-registered counting rule ("asked for the missing outcome") and human review, not the judge's decision.
+- The report states this limitation.

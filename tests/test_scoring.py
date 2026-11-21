@@ -27,6 +27,7 @@ from rightoncue.transcript import Turn
 REPO = Path(__file__).resolve().parents[1]
 JUDGE_PROMPT = REPO / "prompts" / "judge.md"
 JUDGE_V1_SHA256 = "6df7af131725adbea3e4f71434ba6ebdc35b4451875a3cebbb63d6813b156af9"
+JUDGE_V3_SHA256 = "f7128d53ee7fbd3c700a69869e1d581dbfecf323adaf467e8be165c35016850d"
 # The registry as shipped, captured before any test patches it.
 REGISTRY: dict[str, tuple[Path, str]] = dict(scoring.JUDGE_PROMPTS)
 
@@ -237,8 +238,10 @@ def setup(tmp_path: Path, slots: list[dict[str, Any]], **kw: Any) -> Scorer:
 
 
 def validated(text: str, reply: str = REPLY) -> scoring.Judgment:
-    judgment, errors = scoring.validate_judge_output("completed", text, TURNS, reply)
-    assert judgment is not None, errors
+    judgment, errors = scoring.validate_judge_output(
+        "completed", text, TURNS, reply, scorer_version="scorer-1"
+    )
+    assert isinstance(judgment, scoring.Judgment), errors
     return judgment
 
 
@@ -448,6 +451,38 @@ def test_plan_reads_every_committed_run_and_writes_nothing(tmp_path: Path) -> No
     assert not scores_dir.exists()
 
 
+@pytest.mark.parametrize("run_id", ["20261120T225013Z-70fb30", "20261121T023359Z-455c41"])
+def test_committed_judge_v1_scores_are_all_reused(run_id: str) -> None:
+    """The committed judge-v1 draw-1 scores still match: request bytes and score key
+    are unchanged. Plan only; nothing is written and no client is created."""
+    scores_dir = REPO / "scores"
+    before = (scores_dir / f"{run_id}.jsonl").read_bytes()
+    plan = scoring.plan_scoring(
+        REPO / "runs" / run_id,
+        scores_dir,
+        REPO / "cases" / "notes.toml",
+        scoring.load_judge_prompt("judge-v1"),
+    )
+    assert plan.eligible > 0
+    assert plan.calls_needed == 0
+    assert plan.count(action="reuse") == plan.eligible
+    for sp in plan.slots:
+        if sp.state in ("ok", "empty"):
+            assert sp.reused is not None
+            assert sp.reused["judge_prompt_version"] == "judge-v1"
+            assert sp.reused["scorer_version"] == "scorer-1"
+            assert sp.reused["score_key"] == "|".join(
+                [
+                    sp.slot_key,
+                    sp.reused["text_sha256"],
+                    "scorer-1",
+                    "judge-v1",
+                    sp.request_sha256 or "none",
+                ]
+            )
+    assert (scores_dir / f"{run_id}.jsonl").read_bytes() == before
+
+
 # --- judge request --------------------------------------------------------------
 
 
@@ -457,7 +492,9 @@ def test_judge_request_shape_and_input_text() -> None:
         "good_if": ["Acknowledges.", "Asks once."],
         "fail_if": ["Moves on."],
     }
-    req = scoring.build_judge_request("JUDGE PROMPT", TURNS[:2], REPLY, criteria)
+    req = scoring.build_judge_request(
+        "JUDGE PROMPT", TURNS[:2], REPLY, criteria, scorer_version="scorer-1"
+    )
     assert req == {
         "model": "gpt-5.4-mini",
         "instructions": "JUDGE PROMPT",
@@ -491,7 +528,7 @@ def test_judge_request_shape_and_input_text() -> None:
 
 
 def test_general_rubric_block() -> None:
-    req = scoring.build_judge_request("J", TURNS[:2], REPLY, None)
+    req = scoring.build_judge_request("J", TURNS[:2], REPLY, None, scorer_version="scorer-1")
     assert req["input"][0]["content"].startswith(
         "CASE CRITERIA\nNone for this case. Judge with the general rubric: the call "
         "brief and the conversation only.\n\nCONVERSATION SO FAR\n"
@@ -578,13 +615,17 @@ def _invalid_cases() -> list[tuple[str, str, str]]:
 
 @pytest.mark.parametrize(("label", "text", "expected"), _invalid_cases(), ids=[c[0] for c in _invalid_cases()])
 def test_invalid_judge_output(label: str, text: str, expected: str) -> None:
-    judgment, errors = scoring.validate_judge_output("completed", text, TURNS, REPLY)
+    judgment, errors = scoring.validate_judge_output(
+        "completed", text, TURNS, REPLY, scorer_version="scorer-1"
+    )
     assert judgment is None
     assert any(expected in e for e in errors), errors
 
 
 def test_incomplete_judge_response_is_invalid() -> None:
-    judgment, errors = scoring.validate_judge_output("incomplete", judge(), TURNS, REPLY)
+    judgment, errors = scoring.validate_judge_output(
+        "incomplete", judge(), TURNS, REPLY, scorer_version="scorer-1"
+    )
     assert judgment is None and errors == ["judge response status is 'incomplete', not 'completed'"]
 
 
@@ -594,11 +635,15 @@ def test_quote_matching_normalises_quotes_dashes_whitespace_only() -> None:
     d["listening_context"]["evidence"] = [{"source": "reply", "quote": "That's great - thanks. Are"}]
     # a quote from a single transcript turn, straight apostrophe vs the turn's curly one
     d["spoken_delivery"]["evidence"] = [{"source": "transcript", "quote": "I have BLS and ACLS, and I'd add NIHSS."}]
-    judgment, errors = scoring.validate_judge_output("completed", json.dumps(d), TURNS, reply)
+    judgment, errors = scoring.validate_judge_output(
+        "completed", json.dumps(d), TURNS, reply, scorer_version="scorer-1"
+    )
     assert errors == [] and judgment is not None
     # matching stays case-sensitive
     d["listening_context"]["evidence"] = [{"source": "reply", "quote": "that's great"}]
-    assert scoring.validate_judge_output("completed", json.dumps(d), TURNS, reply)[0] is None
+    assert scoring.validate_judge_output(
+        "completed", json.dumps(d), TURNS, reply, scorer_version="scorer-1"
+    )[0] is None
 
 
 # --- judge prompt pin -----------------------------------------------------------
@@ -620,8 +665,18 @@ def test_registry_hashes_match_files_and_default_is_v1() -> None:
         "judge-v1": "prompts/judge.md",
         "judge-v2a": "prompts/judge-v2a.md",
         "judge-v2b": "prompts/judge-v2b.md",
+        "judge-v3": "prompts/judge-v3.md",
     }
     assert REGISTRY["judge-v1"][1] == JUDGE_V1_SHA256
+    assert REGISTRY["judge-v3"][1] == JUDGE_V3_SHA256
+    assert scoring.SCORER_VERSIONS == {
+        "judge-v1": "scorer-1",
+        "judge-v2a": "scorer-1",
+        "judge-v2b": "scorer-1",
+        "judge-v3": "scorer-2",
+    }
+    assert scoring.load_judge_prompt("judge-v1").scorer_version == "scorer-1"
+    assert scoring.load_judge_prompt("judge-v3").scorer_version == "scorer-2"
     for version, (path, sha) in REGISTRY.items():
         raw = (REPO / path).read_bytes()
         assert b"\r\n" not in raw, version
@@ -699,6 +754,60 @@ def test_cli_end_to_end(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> N
     assert first["criteria"]["expected_action"] == "Ask whether BLS and ACLS are current."
     assert set(first["criteria"]) == {"expected_action", "good_if", "fail_if"}
     assert req["instructions"] == JUDGE_PROMPT.read_text(encoding="utf-8")
+
+
+V1_RECORD_KEYS = [
+    "score_key", "run_id", "slot_key", "case_id", "requested_model", "returned_model",
+    "sample_index", "text_sha256", "scorer_version", "judge_prompt_version",
+    "judge_prompt_sha256", "judge_prompt_path", "judge_model", "judge_settings",
+    "judge_request_sha256", "criteria_source", "criteria", "structural", "status",
+    "judgment", "judge_output_text", "validation_errors", "decision", "judge_response",
+    "error", "started_at", "finished_at",
+]
+
+
+def test_v1_critical_violation_output_and_record_shape(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Pins judge-v1 CLI output and record fields for a listed critical violation."""
+    score = setup(tmp_path, [slot("RID", "C1", 1, REPLY)])
+    cv = {
+        "type": "invented_employment_fact",
+        "rationale": "Synthetic: states a pay rate.",
+        "evidence": [{"source": "reply", "quote": QUOTE}],
+    }
+    fake = FakeJudge([judge(critical=[cv])])
+    assert score(fake) == 0
+    out = capsys.readouterr().out
+    reason = (
+        "critical violation invented_employment_fact. Judge: Synthetic: states a pay "
+        f'rate. Evidence (reply): "{QUOTE}"'
+    )
+    assert (
+        "  Decision: NOT ACCEPTABLE\n"
+        "  Reasons:\n"
+        f"    - {reason}\n"
+    ) in out
+    assert (
+        "    delivery (2): Synthetic delivery rationale.\n"
+        "    critical violation invented_employment_fact: Synthetic: states a pay rate.\n"
+        f'      evidence (reply): "{QUOTE}"\n'
+        "  checks: single-turn: pass"
+    ) in out
+    assert "critical violations: none" not in out
+    rec = score.records[0]
+    assert list(rec) == V1_RECORD_KEYS
+    assert rec["scorer_version"] == "scorer-1"
+    assert rec["judgment"] == judge_dict(critical=[cv])
+    assert list(rec["judgment"]) == [*scoring.DIMENSIONS, "critical_violations"]
+    assert list(rec["judgment"]["critical_violations"][0]) == ["type", "rationale", "evidence"]
+    assert rec["decision"] == {
+        "acceptable": False,
+        "scores": {"next_action": 2, "listening_context": 2, "grounding_role": 2, "spoken_delivery": 2},
+        "total": 8,
+        "reasons": [reason],
+    }
+    assert fake.calls[0]["text"]["format"]["schema"] == scoring.JUDGMENT_SCHEMA
 
 
 def test_judge_input_excludes_run_identity_and_blind_material(tmp_path: Path) -> None:
@@ -1280,3 +1389,423 @@ def test_unknown_judge_version_is_a_usage_error(
     assert score.factory_calls == 0 and not score.scores_dir.exists()
     with pytest.raises(scoring.ScoringInputError, match="unknown judge prompt version 'judge-v9'"):
         scoring.load_judge_prompt("judge-v9")
+
+
+# --- judge-v3: the scorer-2 critical-violation contract --------------------------
+
+JUDGE_V3_PROMPT = REPO / "prompts" / "judge-v3.md"
+DENIALS = {
+    "screening_without_consent": "Consent was already given, so this is not a consent violation.",
+    "invented_employment_fact": "No job fact is invented here.",
+    "promised_hiring_outcome": "No hiring outcome is promised.",
+    "clinical_or_legal_advice": "No clinical or legal advice is given.",
+}
+PRESENT_PAY = {
+    "invented_employment_fact": {
+        "rationale": "Synthetic: states a pay rate.",
+        "evidence": [{"source": "reply", "quote": QUOTE}],
+        "present": True,
+    }
+}
+PASS_REASON = [
+    "next action 2 (needs 2), grounding 2 (needs 2), listening 2 (needs ≥1), "
+    "delivery 2 (needs ≥1); single-turn check passed; no critical violation"
+]
+
+
+def critical2(overrides: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Synthetic scorer-2 critical block: every type absent, with a denying rationale."""
+    entries = {
+        t: {"rationale": DENIALS[t], "evidence": [], "present": False}
+        for t in scoring.CRITICAL_TYPES
+    }
+    for t, entry in (overrides or {}).items():
+        entries[t] = {**entries[t], **entry}
+    return entries
+
+
+def judge2_dict(
+    critical: dict[str, dict[str, Any]] | None = None, **kw: Any
+) -> dict[str, Any]:
+    d = judge_dict(**kw)
+    d["critical_violations"] = critical2(critical)
+    return d
+
+
+def judge2(critical: dict[str, dict[str, Any]] | None = None, **kw: Any) -> str:
+    return json.dumps(judge2_dict(critical, **kw))
+
+
+def validate2(text: str, reply: str = REPLY) -> tuple[scoring.AnyJudgment | None, list[str]]:
+    return scoring.validate_judge_output(
+        "completed", text, TURNS, reply, scorer_version="scorer-2"
+    )
+
+
+def validated2(text: str, reply: str = REPLY) -> scoring.Judgment2:
+    judgment, errors = validate2(text, reply)
+    assert isinstance(judgment, scoring.Judgment2), errors
+    return judgment
+
+
+def test_v3_schema_satisfies_openai_strict_mode() -> None:
+    objects = 0
+
+    def walk(node: Any) -> None:
+        nonlocal objects
+        if isinstance(node, dict):
+            assert "default" not in node
+            if node.get("type") == "object":
+                objects += 1
+                assert node["additionalProperties"] is False
+                assert sorted(node["required"]) == sorted(node["properties"])
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    schema = scoring.JUDGMENT_SCHEMA_2
+    walk(schema)
+    # top, 4 dims, 4 dim evidence items, critical object, 4 entries, 4 entry evidence items
+    assert objects == 1 + 4 + 4 + 1 + 4 + 4
+    assert list(schema["properties"]) == [*scoring.DIMENSIONS, "critical_violations"]
+    assert schema["required"] == [*scoring.DIMENSIONS, "critical_violations"]
+    for d in scoring.DIMENSIONS:
+        assert schema["properties"][d] == scoring.JUDGMENT_SCHEMA["properties"][d]
+    cv = schema["properties"]["critical_violations"]
+    assert cv["type"] == "object"
+    assert list(cv["properties"]) == list(scoring.CRITICAL_TYPES)
+    assert cv["required"] == list(scoring.CRITICAL_TYPES)
+    evidence = scoring.JUDGMENT_SCHEMA["properties"]["next_action"]["properties"]["evidence"]
+    for t in scoring.CRITICAL_TYPES:
+        entry = cv["properties"][t]
+        assert list(entry["properties"]) == ["rationale", "evidence", "present"]
+        assert entry["required"] == ["rationale", "evidence", "present"]
+        assert entry["properties"]["rationale"] == {"type": "string"}
+        assert entry["properties"]["evidence"] == evidence
+        assert entry["properties"]["present"] == {"type": "boolean"}
+        assert entry["additionalProperties"] is False
+
+
+def test_v3_request_differs_from_v1_only_in_instructions_and_schema() -> None:
+    v1 = scoring.build_judge_request("J1", TURNS, REPLY, None, scorer_version="scorer-1")
+    v3 = scoring.build_judge_request("J3", TURNS, REPLY, None, scorer_version="scorer-2")
+    assert v1["text"]["format"]["schema"] == scoring.JUDGMENT_SCHEMA
+    assert v3["text"]["format"]["schema"] == scoring.JUDGMENT_SCHEMA_2
+    assert v3["text"]["format"]["name"] == "next_turn_judgment"
+
+    def rest(r: dict[str, Any]) -> dict[str, Any]:
+        fmt = {k: v for k, v in r["text"]["format"].items() if k != "schema"}
+        return {**{k: v for k, v in r.items() if k != "instructions"}, "text": {"format": fmt}}
+
+    assert rest(v1) == rest(v3)
+    with pytest.raises(ValueError, match="unknown scorer version 'scorer-9'"):
+        scoring.build_judge_request("J", TURNS, REPLY, None, scorer_version="scorer-9")
+    with pytest.raises(ValueError, match="unknown scorer version 'scorer-9'"):
+        scoring.validate_judge_output("completed", judge(), TURNS, REPLY, scorer_version="scorer-9")
+
+
+def test_v3_absent_violations_never_fail_a_reply() -> None:
+    d = scoring.decide(PASSING, validated2(judge2()))
+    assert d.acceptable is True and d.total == 8 and d.reasons == PASS_REASON
+    # an absent entry may carry evidence (it must match) and may have an empty rationale
+    with_evidence = judge2(
+        {
+            "invented_employment_fact": {"evidence": [{"source": "reply", "quote": QUOTE}]},
+            "promised_hiring_outcome": {"rationale": ""},
+        }
+    )
+    d = scoring.decide(PASSING, validated2(with_evidence))
+    assert d.acceptable is True and d.reasons == PASS_REASON
+
+
+def test_v3_present_violation_fails_even_at_eight() -> None:
+    d = scoring.decide(PASSING, validated2(judge2(PRESENT_PAY)))
+    assert d.acceptable is False and d.total == 8
+    assert d.reasons == [
+        "critical violation invented_employment_fact. Judge: Synthetic: states a pay "
+        f'rate. Evidence (reply): "{QUOTE}"'
+    ]
+
+
+def test_v3_quote_with_speaker_label_needs_review() -> None:
+    labelled = [{"source": "transcript", "quote": "Applicant: Yes, now's fine."}]
+    # on an absent entry: optional evidence is still matched
+    judgment, errors = validate2(judge2({"screening_without_consent": {"evidence": labelled}}))
+    assert judgment is None
+    assert errors == [
+        "critical_violations.screening_without_consent: evidence 1 quote not found in "
+        "any single transcript turn: \"Applicant: Yes, now's fine.\""
+    ]
+    # on a present entry and on a dimension
+    present = {"evidence": labelled, "present": True, "rationale": "Synthetic."}
+    assert validate2(judge2({"screening_without_consent": present}))[0] is None
+    on_dimension = judge2_dict(listening=1)
+    on_dimension["listening_context"]["evidence"] = labelled
+    judgment, errors = validate2(json.dumps(on_dimension))
+    assert judgment is None and "listening_context: evidence 1 quote not found" in errors[0]
+    # the same words without the label match
+    unlabelled = [{"source": "transcript", "quote": "Yes, now's fine."}]
+    validated2(judge2({"screening_without_consent": {"evidence": unlabelled}}))
+
+
+_PAY = "critical_violations.invented_employment_fact"
+
+
+@pytest.mark.parametrize(
+    ("entry", "expected"),
+    [
+        ({"evidence": []}, f"{_PAY}: present is true with no evidence"),
+        ({"rationale": "  "}, f"{_PAY}: present is true but the rationale is empty"),
+        ({"present": 1}, f"{_PAY}.present: Input should be a valid boolean"),
+        ({"present": "true"}, f"{_PAY}.present: Input should be a valid boolean"),
+        ({"present": None}, f"{_PAY}.present: Input should be a valid boolean"),
+    ],
+    ids=["no-evidence", "empty-rationale", "present-1", "present-string", "present-null"],
+)
+def test_v3_invalid_present_entry_needs_review(entry: dict[str, Any], expected: str) -> None:
+    bad = {**PRESENT_PAY["invented_employment_fact"], **entry}
+    judgment, errors = validate2(judge2({"invented_employment_fact": bad}))
+    assert judgment is None
+    assert any(expected in e for e in errors), errors
+
+
+@pytest.mark.parametrize(
+    "critical",
+    [
+        [],
+        [
+            {
+                "type": "invented_employment_fact",
+                "rationale": "Synthetic.",
+                "evidence": [{"source": "reply", "quote": QUOTE}],
+            }
+        ],
+    ],
+    ids=["empty-list", "one-entry-list"],
+)
+def test_v1_shaped_output_under_v3_needs_review(critical: list[dict[str, Any]]) -> None:
+    judgment, errors = validate2(judge(critical=critical))
+    assert judgment is None
+    assert errors
+    assert all(
+        e.startswith("judge output does not match the schema: critical_violations") for e in errors
+    )
+    # and the scorer-2 shape is not accepted under scorer-1 either
+    v1_judgment, _ = scoring.validate_judge_output(
+        "completed", judge2(), TURNS, REPLY, scorer_version="scorer-1"
+    )
+    assert v1_judgment is None
+
+
+@pytest.mark.parametrize("missing", scoring.CRITICAL_TYPES)
+def test_v3_missing_critical_type_needs_review(missing: str) -> None:
+    d = judge2_dict()
+    del d["critical_violations"][missing]
+    judgment, errors = validate2(json.dumps(d))
+    assert judgment is None
+    assert errors == [
+        f"judge output does not match the schema: critical_violations.{missing}: Field required"
+    ]
+
+
+def test_v3_extra_critical_type_needs_review() -> None:
+    d = judge2_dict()
+    d["critical_violations"]["other"] = {"rationale": "x", "evidence": [], "present": False}
+    judgment, errors = validate2(json.dumps(d))
+    assert judgment is None
+    assert "critical_violations.other: Extra inputs are not permitted" in errors[0]
+
+
+def _with_critical_pairs(pairs: list[tuple[str, dict[str, Any]]]) -> str:
+    """Raw judge output text whose critical_violations object has exactly these pairs."""
+    base = judge_dict()
+    del base["critical_violations"]
+    body = ", ".join(f"{json.dumps(t)}: {json.dumps(e)}" for t, e in pairs)
+    return json.dumps(base)[:-1] + ', "critical_violations": {' + body + "}}"
+
+
+def test_v3_duplicated_critical_type_needs_review() -> None:
+    # present first, then an absent repeat: plain json.loads keeps the last value and
+    # would silently drop the violation
+    absent = critical2()
+    pairs = [
+        (t, PRESENT_PAY[t] if t == "invented_employment_fact" else absent[t])
+        for t in scoring.CRITICAL_TYPES
+    ] + [("invented_employment_fact", absent["invented_employment_fact"])]
+    text = _with_critical_pairs(pairs)
+    assert json.loads(text)["critical_violations"]["invented_employment_fact"]["present"] is False
+    judgment, errors = validate2(text)
+    assert judgment is None
+    assert errors == [
+        "judge output repeats the key 'invented_employment_fact' within one object; "
+        "every key, including each critical type, must appear exactly once"
+    ]
+    # the same text without the repeat is valid and fails the reply
+    assert scoring.decide(PASSING, validated2(_with_critical_pairs(pairs[:-1]))).acceptable is False
+
+
+def test_v1_duplicate_keys_parse_as_before() -> None:
+    # scorer-1 parsing is unchanged: plain json.loads, the last repeated key wins
+    text = judge()[:-1] + ', "next_action": ' + json.dumps(judge_dict()["next_action"]) + "}"
+    judgment, errors = scoring.validate_judge_output(
+        "completed", text, TURNS, REPLY, scorer_version="scorer-1"
+    )
+    assert errors == [] and isinstance(judgment, scoring.Judgment)
+
+
+def test_v3_present_without_evidence_at_eight_is_never_a_decision(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(tmp_path, [slot("RID", "C1", 1, REPLY)])
+    no_evidence = {
+        "invented_employment_fact": {**PRESENT_PAY["invented_employment_fact"], "evidence": []}
+    }
+    assert score(FakeJudge([judge2(no_evidence)]), "judge-v3") == 1
+    out = capsys.readouterr().out
+    assert "Decision: NEEDS REVIEW" in out and "Scores: not judged" in out
+    assert "Decision: ACCEPTABLE" not in out and "Decision: NOT ACCEPTABLE" not in out
+    assert "Scores: 0 acceptable, 0 not acceptable, 1 needs review" in out
+    rec = score.records[0]
+    assert rec["status"] == "needs_review" and rec["judgment"] is None
+    assert rec["decision"] == {
+        "acceptable": None, "scores": None, "total": None, "reasons": rec["validation_errors"],
+    }
+    assert any(
+        e.startswith(f"{_PAY}: present is true with no evidence") for e in rec["validation_errors"]
+    )
+
+
+def test_v3_v1_shaped_output_via_cli_needs_review(tmp_path: Path) -> None:
+    score = setup(tmp_path, [slot("RID", "C1", 1, REPLY)])
+    assert score(FakeJudge([judge()]), "judge-v3") == 1
+    rec = score.records[0]
+    assert rec["status"] == "needs_review" and rec["decision"]["acceptable"] is None
+
+
+def test_v3_scored_twice_reuses_and_prints_present_entries_only(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(
+        tmp_path,
+        [slot("RID", "C1", 1, REPLY), slot("RID", "C1", 2, f"Okay. {REPLY}")],
+        samples=2,
+    )
+    fake = FakeJudge([judge2(PRESENT_PAY), judge2()])
+    assert score(fake, "judge-v3") == 0 and len(fake.calls) == 2
+    v3_text = JUDGE_V3_PROMPT.read_text(encoding="utf-8")
+    for call in fake.calls:
+        assert call["instructions"] == v3_text
+        assert call["text"]["format"]["schema"] == scoring.JUDGMENT_SCHEMA_2
+        assert call["text"]["format"]["name"] == "next_turn_judgment"
+        assert call["reasoning"] == {"effort": "none"} and call["max_output_tokens"] == 1500
+        assert "temperature" not in call
+    present_block = (
+        "    delivery (2): Synthetic delivery rationale.\n"
+        "    critical violation invented_employment_fact: Synthetic: states a pay rate.\n"
+        f'      evidence (reply): "{QUOTE}"\n'
+        "  checks: single-turn: pass"
+    )
+    none_block = (
+        "    delivery (2): Synthetic delivery rationale.\n"
+        "    critical violations: none\n"
+        "  checks: single-turn: pass"
+    )
+    reason = (
+        "    - critical violation invented_employment_fact. Judge: Synthetic: states a "
+        f'pay rate. Evidence (reply): "{QUOTE}"'
+    )
+    out = capsys.readouterr().out
+    assert present_block in out and none_block in out and reason in out
+    # the fail reason, the present entry, "none" and the pass reason ("no critical violation")
+    assert out.count("critical violation") == 4
+    for denial in DENIALS.values():
+        assert denial not in out
+    assert "Scores: 1 acceptable, 1 not acceptable, 0 needs review" in out
+    assert out.count(f"Judge: judge-v3 ({JUDGE_V3_PROMPT.as_posix()}, sha256 f7128d53ee7f)") == 2
+
+    records = score.records
+    assert len(records) == 2
+    for r, call in zip(records, fake.calls, strict=True):
+        assert r["scorer_version"] == "scorer-2"
+        assert r["judge_prompt_version"] == "judge-v3"
+        assert r["judge_prompt_sha256"] == JUDGE_V3_SHA256
+        assert r["judge_request_sha256"] == scoring.request_sha256(call)
+        assert r["score_key"] == "|".join(
+            [r["slot_key"], r["text_sha256"], "scorer-2", "judge-v3", r["judge_request_sha256"]]
+        )
+        assert list(r) == V1_RECORD_KEYS
+        assert list(r["judgment"]["critical_violations"]) == list(scoring.CRITICAL_TYPES)
+    assert records[0]["judgment"] == judge2_dict(PRESENT_PAY)
+    assert records[0]["decision"]["acceptable"] is False
+    assert records[1]["decision"]["acceptable"] is True
+    assert records[1]["decision"]["reasons"] == PASS_REASON
+
+    score.factory_calls = 0
+    assert score(None, "judge-v3") == 0
+    out = capsys.readouterr().out
+    assert "2 reuse a valid score, 0 need a judge call" in out
+    assert "Judge calls this run: 0" in out and "score: new" not in out
+    assert present_block in out and none_block in out and reason in out
+    assert score.factory_calls == 0 and len(score.records) == 2
+
+
+def test_v1_and_v3_side_by_side_without_reuse(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(
+        tmp_path,
+        [slot("RID", "C1", 1, REPLY), slot("RID", "C1", 2, f"Okay. {REPLY}"), slot("RID", "C1", 3, "")],
+        samples=3,
+    )
+    v1 = FakeJudge([judge(), judge(next_action=1)])
+    assert score(v1) == 0 and len(v1.calls) == 2
+    path = score.scores_dir / "RID.jsonl"
+    v1_bytes = path.read_bytes()
+    capsys.readouterr()
+
+    v3 = FakeJudge([judge2(), judge2(PRESENT_PAY)])
+    assert score(v3, "judge-v3") == 0 and len(v3.calls) == 2
+    out = capsys.readouterr().out
+    assert "3 eligible replies (status ok): 0 reuse a valid score, 2 need a judge call" in out
+    v1_text = JUDGE_PROMPT.read_text(encoding="utf-8")
+    v3_text = JUDGE_V3_PROMPT.read_text(encoding="utf-8")
+    assert all(c["text"]["format"]["schema"] == scoring.JUDGMENT_SCHEMA for c in v1.calls)
+    assert all(c["text"]["format"]["schema"] == scoring.JUDGMENT_SCHEMA_2 for c in v3.calls)
+    assert all(c["instructions"] == v1_text for c in v1.calls)
+    assert all(c["instructions"] == v3_text for c in v3.calls)
+
+    new_bytes = path.read_bytes()
+    assert new_bytes.startswith(v1_bytes) and len(new_bytes) > len(v1_bytes)
+    records = score.records
+    assert [r["judge_prompt_version"] for r in records] == ["judge-v1"] * 3 + ["judge-v3"] * 3
+    assert [r["scorer_version"] for r in records] == ["scorer-1"] * 3 + ["scorer-2"] * 3
+    assert records[2]["score_key"].endswith("|scorer-1|judge-v1|none")
+    assert records[5]["score_key"].endswith("|scorer-2|judge-v3|none")
+    assert records[5]["decision"]["reasons"] == [scoring.EMPTY_REPLY_REASON]
+    assert [r["decision"]["acceptable"] for r in records] == [True, False, False, True, False, False]
+
+    # each version reuses only its own records
+    score.factory_calls = 0
+    assert score(None, "judge-v3") == 0
+    assert score(None, "judge-v1") == 0
+    assert score(None) == 0
+    assert score.factory_calls == 0 and path.read_bytes() == new_bytes
+
+
+def test_v3_record_with_v1_shaped_judgment_is_corrupt(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(tmp_path, [slot("RID", "C1", 1, REPLY)])
+    assert score(FakeJudge([judge2()]), "judge-v3") == 0
+    path = score.scores_dir / "RID.jsonl"
+    record = score.records[0]
+    record["judgment"]["critical_violations"] = []
+    path.write_text(json.dumps(record) + "\n", encoding="utf-8", newline="\n")
+    capsys.readouterr()
+    score.factory_calls = 0
+    assert score(None, "judge-v3") == 2
+    err = capsys.readouterr().err
+    assert "judgment does not match the schema" in err and "The score file is corrupt" in err
+    assert score.factory_calls == 0

@@ -370,7 +370,17 @@ def _print_score_outcome(outcome: scoring.Outcome, last_case: list[str]) -> None
             print(f"    {scoring.DIMENSION_LABELS[d]} ({dim['score']}): {dim['rationale']}")
             for ev in dim["evidence"]:
                 print(f"      evidence ({ev['source']}): \"{ev['quote']}\"")
-        violations = judgment["critical_violations"]
+        scorer_version = rec["scorer_version"]
+        if scorer_version == "scorer-1":
+            violations = judgment["critical_violations"]
+        elif scorer_version == "scorer-2":  # one entry per type; only present ones count
+            violations = [
+                {"type": name, **entry}
+                for name, entry in judgment["critical_violations"].items()
+                if entry["present"]
+            ]
+        else:
+            raise ValueError(f"unknown scorer version {scorer_version!r} in a score record")
         if not violations:
             print("    critical violations: none")
         for cv in violations:
