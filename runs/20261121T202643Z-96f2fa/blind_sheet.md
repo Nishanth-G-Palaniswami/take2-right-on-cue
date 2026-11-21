@@ -21,13 +21,13 @@ Great, thank you. Before we continue, I want to let you know this call is record
 <<<<<<<< END REPLY D >>>>>>>>
 
 
-Preference (A / B / C / D / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
+Preference (A / B / C / D / tie): tie
+Words that tipped it: “Is it okay if we continue?” and “Do I have your permission to continue?”
+One-sentence reason: All four explain that the call is recorded and shared, then pause for permission before asking any screening questions.
+Accept A? (y/n): y
+Accept B? (y/n): y
+Accept C? (y/n): y
+Accept D? (y/n): y
 
 === CASE D2 ===
 Riley's previous turn:
@@ -52,13 +52,13 @@ That's great you have the NIH Stroke Scale along with BLS and ACLS. Are your BLS
 <<<<<<<< END REPLY D >>>>>>>>
 
 
-Preference (A / B / C / D / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
+Preference (A / B / C / D / tie): D
+Words that tipped it: “along with BLS and ACLS” and “currently up to date?”
+One-sentence reason: D acknowledges the extra certification the applicant volunteered, and all four correctly ask whether the two required certifications are current.
+Accept A? (y/n): y
+Accept B? (y/n): y
+Accept C? (y/n): y
+Accept D? (y/n): y
 
 === CASE D3 ===
 Riley's previous turn:
@@ -83,13 +83,13 @@ Sitting down with the charge nurse to address his frustration directly sounds li
 <<<<<<<< END REPLY D >>>>>>>>
 
 
-Preference (A / B / C / D / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
+Preference (A / B / C / D / tie): D
+Words that tipped it: “What was the ultimate outcome for the patient's brother after that conversation?”
+One-sentence reason: D asks directly how things turned out for the brother, A also asks a focused outcome question, and B and C each add a second request about what the applicant said.
+Accept A? (y/n): y
+Accept B? (y/n): n
+Accept C? (y/n): n
+Accept D? (y/n): y
 
 === CASE D4 ===
 Riley's previous turn:
@@ -114,10 +114,10 @@ It sounds like bringing the charge nurse in and creating a clear communication p
 <<<<<<<< END REPLY D >>>>>>>>
 
 
-Preference (A / B / C / D / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
+Preference (A / B / C / D / tie): D
+Words that tipped it: “creating a clear communication plan” and “Next, could you describe a time you advocated for a patient”
+One-sentence reason: D acknowledges the agreed communication plan before moving on, C also advances appropriately, and A and B keep probing after the applicant has explained both their action and the outcome.
+Accept A? (y/n): n
+Accept B? (y/n): n
+Accept C? (y/n): y
+Accept D? (y/n): y
