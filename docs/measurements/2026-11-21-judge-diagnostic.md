@@ -312,3 +312,54 @@ This section was committed before any judge-v3 call.
 **Integrity.**
 - Every file under `runs/` keeps its sha256.
 - Every existing line in the four score files stays byte-identical. judge-v3 lines are only appended.
+
+## 8. Clarifications to section 7 (Nishanth, added 2026-11-21 13:30 ET, before any judge-v3 call)
+
+Nishanth answered the four readings left open in section 7. Section 7 is unchanged. Where this section is more specific, it governs.
+
+**Criterion 2, the D4 re-probe** (`20261120T225013Z-70fb30|D4|v1|gpt-5.4-mini|2`).
+- **Not met:** a scored acceptance in either draw, even if the other draw is unscored.
+- **Met:** a scored rejection in both draws.
+- **Unresolved:** every other combination.
+
+**Criterion 3, no new failures.**
+- **Covered replies.** The 14 replies listed in section 7.
+- **Unresolved cases.** For a covered reply, the criterion is unresolved if:
+  - it is scored not acceptable in one draw and unscored in the other; or
+  - it is unscored in both draws.
+
+  In either case, the criterion is not met instead if another covered reply already fails it.
+- **D1-A.** Whether D1-A is covered is uncertain, because judge-v1 left its second draw unscored.
+  - If judge-v3 accepts D1-A in either draw, D1-A cannot be a two-draw failure.
+  - If neither draw accepts it (two rejections, a rejection and an unscored draw, or two unscored draws), the criterion is unresolved, unless another covered reply already fails it.
+
+**Criterion 4, invalid first attempts.**
+- Three first-attempt counts are reported separately: `needs_review` (*N*), `judge_failed` (*F*) and never made (*M*).
+- The criterion is:
+  - **not met** if *N* > 2;
+  - **met** if *N* + *F* + *M* ≤ 2;
+  - **unresolved** otherwise, because the missing judgments could change whether the limit was exceeded.
+
+**Preflight.**
+- **The call.** One call on the designated D2-B slot. It verifies that the API accepts the judge-v3 schema.
+- **Passes if** the API returns no error, the response status is `completed`, and the output matches the scorer-2 schema. Evidence matching doesn't count toward this.
+- **Its verdict** is excluded from the results.
+- **Its cost** counts toward the $0.30 cap.
+- **If it fails,** the draws stop and the error is reported.
+
+**Cost cap.**
+- **The rule.** Total judge-v3 spend, preflight included, stays at or below $0.30.
+- **How cost is computed.** At the PRD's standard Mini rates, $0.75 per million input tokens and $4.50 per million output tokens. All input is billed at the full rate, with no cached-input discount.
+- **How the cap is enforced.**
+  - Before each `score` command, the projected cost is the number of calls the command will make, times the highest per-call cost seen so far, plus 25%.
+  - If the spend so far plus that projection would exceed $0.30, the command is not run and the draws stop.
+
+**Registered settings stay.** The quote checks, the limit of two first-attempt judgments needing review, and the 1,500-token output cap all stay as registered.
+
+**Reported as findings.**
+- How many judgments were invalid because a quote carried a speaker label.
+- How many were invalid because the response was truncated (status `incomplete`).
+
+**Not changed by this section.**
+- judge-v1 stays the default, and Nishanth makes the adoption decision.
+- H1–H4 stay sealed.
