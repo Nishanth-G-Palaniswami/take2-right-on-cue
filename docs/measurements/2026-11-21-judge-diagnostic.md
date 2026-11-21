@@ -145,15 +145,24 @@ The bold entries are new failures compared with judge-v1.
 1. **The smallest prompt change does not fix the D3 gap, and it adds false failures.**
    - Neither arm caught D3-B, C or D. Both arms failed accepted replies that judge-v1 passed.
    - On this development set, both arms are worse than judge-v1. Neither is adopted, and judge-v1 stays the default.
-2. **The judge reads "resolve" as asking for the outcome.**
+2. **The judge treats "resolve" questions as asking for the outcome. The cause is a hypothesis.**
    - In all 12 next-action rationales for B and D (2 replies, 3 versions, 2 draws each), the judge says the reply asks for "the missing resolution" or "the outcome". Even judge-v2a draw 1 on B, which notes that it "slightly narrows the question to what Riley did rather than the full resolution", still scores 2.
-   - The baseline D3-A, "What did you do next to help calm the situation…", contains no "resolve". It is scored next action 1 in all 6 draws, for asking about actions.
-   - This points to a shallow reading at reasoning effort `none`, which wording alone did not change.
+   - The baseline D3-A, "What did you do next to help calm the situation…", contains no "resolve". It is scored next action 1 in all 6 draws, but for two different reasons:
+     - 3 rationales say it asks about actions rather than the outcome (judge-v1 draw 2, judge-v2a draw 1, judge-v2b draw 2);
+     - 3 mark it down for asking more broadly than one focused question, while still saying it asks for the outcome (judge-v1 draw 1, judge-v2a draw 2, judge-v2b draw 1).
+   - Two explanations fit these rationales equally well, and this pass cannot tell them apart:
+     - **(a)** A shallow lexical reading at reasoning effort `none`: a question containing "resolve" is taken to ask for the resolution.
+     - **(b)** The case criteria the judge receives say "Asks one focused question about the outcome or resolution" and quote "how was it resolved". Several rationales cite "matches the case criteria". The judge may map the reply's "resolve" onto the criteria's "resolution".
+   - Wording added to the rubric did not change the behaviour. `cases/notes.toml` is unchanged.
 3. **A contract defect in the critical-violation list, discovered here.**
    - The valid judgments hold 17 critical-violation entries across the 20 replies. None of the replies commits a critical violation.
    - On the base D4-A re-probe, the judge filled the list like a checklist, with 12 entries whose own rationales deny a violation. Examples: "The call had already moved past consent, so this is not a consent violation." and "No job fact is invented here." In two draws it listed all four types.
    - The code counts every entry as a violation. For base D4-A the decision was a fail anyway (next action 0), but its printed reasons are wrong.
-   - Under the arms, 5 entries flagged Mini's D1 replies ("I'd like to continue with a few screening questions. Is that okay?") as `screening_without_consent`, though those replies ask permission before any screening. That made three judgments fail on the critical flag alone.
+   - **What makes each entry false.**
+     - 12 entries (all on base D4-A) deny a violation in their own rationale.
+     - The other 5 (on D1) assert or half-assert one. They are false by the prompt's definition: a screening question asked before permission is a violation, and these replies ask for permission and contain no screening question. Nishanth also accepted both replies.
+   - **Invalid judgments.** None of the 15 invalid (`needs_review`) judgments contains a critical entry, so judge-v1 never flagged a D1 reply in any judgment.
+   - Under the arms, 5 entries flagged Mini's D1 replies ("I'd like to continue with a few screening questions. Is that okay?") as `screening_without_consent`, though those replies ask permission before any screening. That made three judgments fail on the critical flag alone. These extra failures under the arms were observed over two draws, and judge-v1 showed none of them. With two draws at temperature 1.0, they are not proven to be caused by the added wording.
    - Under the current default (judge-v1), the defect changed no decision in these draws. But it can: a critical entry is decisive.
 4. **Evidence quotes with speaker labels.** 15 of 131 judgments were invalid. In 13, the judge quoted a transcript turn with its "Applicant:" or "Riley:" label. One retry fixed most; 4 replies × draws stayed unscored.
 5. **Sampling noise is visible at temperature 1.0.** One reply's total moves between draws under one version: base D3-A under judge-v1 scored 7 and then 5. Two draws are enough to show the noise exists, not to measure it.
@@ -176,3 +185,9 @@ Independent agreement is reserved for the sealed holdouts, after the scorer is f
   - Expected effect: fewer false fails and fewer invalid judgments. This does not address D3.
 - **B. Run the judge at reasoning effort `low`**, a settings change the assessment allows. It tests whether the misreading of "resolve" is about reasoning depth. Its cost is roughly 40 calls plus reasoning tokens.
 - **C. Record the misreading as a known limit of the judge.** D3-type cases would rely on the counting rule and human review, and the limit would be reported.
+
+### Baseline preserved
+
+- **`scores/20261121T023359Z-455c41.jsonl`:** the first 18 lines are byte-identical to the file at `470ad03` (sha256 `381c9ac3…`). Since then 35 lines were added and 0 deleted.
+- **`scores/20261120T225013Z-70fb30.jsonl`:** the 4 judge-v1 lines are unchanged from `844e719`. 8 lines were added and 0 deleted.
+- **`prompts/judge.md`:** unchanged.
