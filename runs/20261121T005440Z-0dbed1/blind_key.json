@@ -1,0 +1,22 @@
+{
+  "D1": {
+    "A": {
+      "slot_key": "20261121T005440Z-0dbed1|D1|v1|gpt-5.4-mini|2",
+      "text_sha256": "82ac0ce4a3f6470fc4a0720839e4e69983944c5ccb6e86cb71706c77b93e1ad2"
+    },
+    "B": {
+      "slot_key": "20261121T005440Z-0dbed1|D1|v1|gpt-5.4-mini|1",
+      "text_sha256": "218ac558cdb08edf89c4eae9203703b5fe2e4c4fd8cc367c3b86af331d0aa52f"
+    }
+  },
+  "D2": {
+    "A": {
+      "slot_key": "20261121T005440Z-0dbed1|D2|v1|gpt-5.4-mini|2",
+      "text_sha256": "31e4ecd1dc90f1decee5e89e4ee31836fc585f6681ea46c1cdbd9fb5410e45c4"
+    },
+    "B": {
+      "slot_key": "20261121T005440Z-0dbed1|D2|v1|gpt-5.4-mini|1",
+      "text_sha256": "353e0593c3db997651c557156e1a9c48714f3441c809896cae504338b46f02ad"
+    }
+  }
+}
