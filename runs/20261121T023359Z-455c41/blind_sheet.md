@@ -21,13 +21,13 @@ Great! Just so you know, this call is recorded and shared with our recruiting te
 <<<<<<<< END REPLY D >>>>>>>>
 
 
-Preference (A / B / C / D / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
+Preference (A / B / C / D / tie): D
+Words that tipped it: "Just so you know" … "Do I have your permission to continue?"
+One-sentence reason: D gives the recording-and-sharing disclosure in a few words, then asks for consent as its own yes-or-no question before any screening.
+Accept A? (y/n): y
+Accept B? (y/n): y
+Accept C? (y/n): y
+Accept D? (y/n): y
 
 === CASE D2 ===
 Riley's previous turn:
@@ -52,13 +52,14 @@ Thanks, BLS, ACLS, and NIHSS. Are your BLS and ACLS certifications both current 
 <<<<<<<< END REPLY D >>>>>>>>
 
 
-Preference (A / B / C / D / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
+Preference (A / B / C / D / tie): B
+Words that tipped it: "including the NIH Stroke Scale" … "Are your BLS and ACLS certifications currently up to date?"
+One-sentence reason: Under the conditional-acknowledgment rule, NIHSS is a listed plus in the brief, so B naming it briefly before asking only about the required BLS and ACLS beats C, which asks the right question but skips the listed plus.
+Accept A? (y/n): y
+Accept B? (y/n): y
+Accept C? (y/n): y
+Accept D? (y/n): y
+Note: Revised after reviewing ChatGPT's and Claude's labels. First instinct was C; changed to B after adopting the conditional-acknowledgment rule. A changed from n to y after discussion.
 
 === CASE D3 ===
 Riley's previous turn:
@@ -83,13 +84,13 @@ That sounds like a tense situation, and bringing the charge nurse in was a good 
 <<<<<<<< END REPLY D >>>>>>>>
 
 
-Preference (A / B / C / D / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
+Preference (A / B / C / D / tie): A
+Words that tipped it: "How did the situation end up getting resolved with the patient's brother?"
+One-sentence reason: A acknowledges the charge-nurse step and asks for the missing outcome; "getting resolved" still assumes some resolution, and "What happened after the charge nurse joined?" would be better.
+Accept A? (y/n): y
+Accept B? (y/n): n
+Accept C? (y/n): n
+Accept D? (y/n): n
 
 === CASE D4 ===
 Riley's previous turn:
@@ -114,10 +115,10 @@ That sounds like a good example of bringing everyone together and setting a clea
 <<<<<<<< END REPLY D >>>>>>>>
 
 
-Preference (A / B / C / D / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
+Preference (A / B / C / D / tie): A
+Words that tipped it: "setting up a reliable daily check-in" … "Next, can you describe a time"
+One-sentence reason: A names the actual resolution and moves to the advocacy question with the most natural spoken transition; "was a great way" is mild evaluative praise.
+Accept A? (y/n): y
+Accept B? (y/n): y
+Accept C? (y/n): y
+Accept D? (y/n): y
