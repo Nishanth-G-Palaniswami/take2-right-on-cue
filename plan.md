@@ -146,7 +146,7 @@ The command:
 | 7 | Diagnostic pass (Nishanth, 2026-11-21): trace D3-A and D3-C end to end; test the smallest justified judge-prompt change on the 20 development replies with two draws | lead | Verified. No pipeline bug: all 22 judge-v1 records match their raw responses. Arms `judge-v2a` and `judge-v2b` (`844e719`) caught 0 of 3 D3 rejections and added false failures, so neither is adopted and judge-v1 stays the default. A defect was found in the critical-violation list: the judge lists types with rationales that deny them. It is reported with options, not fixed. 113 calls. See `docs/measurements/2026-11-21-judge-diagnostic.md` |
 | 8 | Judge version registry and `--judge-version` (judge-v1 default) | complex-coder | Verified (`16e2f2a`, verifier PASS; 240 tests) |
 | 9 | `judge-v3` (`prompts/judge-v3.md`: judge-v1 plus a present/absent verdict for each critical type and a no-speaker-label quote rule) scored under `scorer-2` (only present entries count; a present entry needs evidence). judge-v1, v2a and v2b stay on `scorer-1` and keep being reused. D3 recorded as a known limitation (diagnostic doc, section 6) | lead (prompt, docs) + complex-coder (code, tests) | Verified (verifier on Opus: PASS, no blocking findings, 12 of 13 mutants caught; 267 tests; judge-v1 and judge-v2a plan 0 calls against the committed scores) |
-| 10 | Pre-registration of the judge-v3 development draws (diagnostic doc, section 7) | lead | Pending |
+| 10 | Pre-registration of the judge-v3 development draws (diagnostic doc, section 7) | lead | Implemented, awaiting verification (Nishanth reviews it before any judge-v3 call) |
 | 11 | Live judge-v3 draws on the 20 development replies | lead | Blocked (needs Nishanth's go after reviewing item 10) |
 
 **Acceptance criteria**

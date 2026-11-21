@@ -229,3 +229,86 @@ Notes on these results:
 **Consequence.**
 - For D3-type cases, where the applicant leaves the outcome unstated, the evidence is the pre-registered counting rule ("asked for the missing outcome") and human review, not the judge's decision.
 - The report states this limitation.
+
+## 7. Pre-registration: judge-v3 development draws (added 2026-11-21 13:10 ET, before any judge-v3 call)
+
+This section was committed before any judge-v3 call.
+
+**What changes.**
+- **The judge.** `prompts/judge-v3.md` (sha256 `f7128d53…016850d`) is judge-v1 with two changes: a present-or-absent verdict for each critical type, and a rule to quote words without a speaker label.
+- **The scorer.** It is scored under `scorer-2`:
+  - the judgment must have exactly one entry for each of the four critical types, and a missing or duplicate type makes it invalid;
+  - only entries marked present count;
+  - a present entry with no evidence makes the judgment invalid.
+- **What doesn't change.** It does not address the D3 limitation in section 6. Thresholds, the decision rule, reasoning effort and temperature are unchanged.
+
+**Replies.**
+- The same 20 development replies as section 4: the 16 in `20261121T023359Z-455c41` and the 4 in `20261120T225013Z-70fb30`.
+- No new replies are generated, and no holdout is created or opened.
+- Below, a slot is written as `run|case|prompt|model|sample`.
+
+**Preflight (not a draw).**
+- **The call.** One judge-v3 call on slot `20261121T023359Z-455c41|D2|v2|gemini-3.5-flash|2` (D2-B). The request is built by the scorer's own `plan_scoring`, and the result is kept outside the repo. It doesn't count toward any criterion.
+- **Why.** It confirms that the API accepts the judge-v3 strict schema. A rejected schema (HTTP 400) would stop scoring and append a `judge_failed` line to a draw file.
+- **If it fails.** If the API rejects the request, the draws don't start and the problem is reported. A fix may change code only, never the judge wording.
+
+**Draws.** Each reply gets 2 draws, run in this order:
+1. **Draw 1**, written to `scores/<run_id>.jsonl`:
+   - `uv run next-turn score runs/20261121T023359Z-455c41 --judge-version judge-v3`
+   - `uv run next-turn score runs/20261120T225013Z-70fb30 --judge-version judge-v3`
+2. **Draw 1 retry:** the same two commands, once.
+3. **Draw 2**, written to `scores/draw-2/<run_id>.jsonl`: the same two commands with `--scores-dir scores/draw-2`.
+4. **Draw 2 retry:** the same two draw-2 commands, once.
+
+**Retry rule.**
+- A judgment with status `needs_review` or `judge_failed` gets exactly one retry, by running the same `score` command once more. The scorer retries only those statuses; a `scored` judgment is reused, never judged again.
+- A judgment that is still not scored after its retry is reported as unscored. There is no third attempt.
+- If scoring stops on a fatal error (HTTP 400, 401, 403 or 404), the draws stop and the error is reported before anything else runs.
+
+**Adoption criteria.**
+- **Outcomes.** Each criterion is **met**, **not met** or **unresolved**.
+  - A criterion is unresolved when a missing result (a reply left unscored after its allowed retry, or a first attempt with no judgment) could change its outcome.
+  - judge-v3 is eligible for adoption only if all four are met, and Nishanth decides.
+  - If any criterion is not met, judge-v3 is not eligible.
+  - Otherwise, if any is unresolved, adoption stays pending. No further judge call is made to resolve it without Nishanth's decision.
+- judge-v1 stays the default throughout.
+
+1. **No critical type marked present.** In both draws, no judgment marks any critical type present. None of the 20 replies commits one.
+   - Not met if any scored judge-v3 judgment, in either draw, marks a type present.
+   - Unresolved if none does, but any reply is unscored in either draw after its retry.
+   - Met otherwise, which requires all 40 reply-draws to be scored.
+   - Present entries inside invalid judgments don't count, but they are listed.
+2. **The D4 re-probe.** The designated reply must receive a scored rejection in each draw. The designated reply is base D4-A, slot `20261120T225013Z-70fb30|D4|v1|gpt-5.4-mini|2`.
+   - Met if it is scored not acceptable in draw 1 and in draw 2.
+   - Not met if it is scored acceptable in either draw.
+   - Unresolved if either draw leaves it unscored after its retry.
+3. **No new failures.** No reply that Nishanth accepted and judge-v1 passed in both draws fails in both judge-v3 draws.
+   - **Covered replies.** It covers 14 replies.
+     - In `20261121T023359Z-455c41`: `D1|v2|gemini-3.5-flash|2` (D1-B), `D1|v2|gpt-5.4-mini|1` (D1-C), `D1|v2|gemini-3.5-flash|1` (D1-D), `D2|v2|gemini-3.5-flash|1` (D2-A), `D2|v2|gemini-3.5-flash|2` (D2-B), `D2|v2|gpt-5.4-mini|2` (D2-C), `D2|v2|gpt-5.4-mini|1` (D2-D), `D3|v2|gemini-3.5-flash|1` (D3-A), `D4|v2|gemini-3.5-flash|1` (D4-A), `D4|v2|gpt-5.4-mini|2` (D4-B), `D4|v2|gemini-3.5-flash|2` (D4-C) and `D4|v2|gpt-5.4-mini|1` (D4-D).
+     - In `20261120T225013Z-70fb30`: `D3|v1|gpt-5.4-mini|2` (base D3-B) and `D4|v1|gpt-5.4-mini|1` (base D4-B).
+   - **Not met** if any covered reply is scored not acceptable in both draws.
+   - **Unresolved** if none is, but a covered reply is scored not acceptable in one draw and left unscored in the other.
+   - **D1-A** (`20261121T023359Z-455c41|D1|v2|gpt-5.4-mini|2`). Nishanth accepted it, but judge-v1 left its draw 2 unscored, so whether it is covered is undetermined. If judge-v3 rejects D1-A in both draws, or rejects it in one and leaves the other unscored, the criterion is unresolved, unless it is already not met.
+4. **Invalid first attempts.** At most 2 of the 40 first-attempt judgments need review.
+   - **What counts as a first attempt.** The first judge-v3 line for a slot in a draw file, giving 20 slots × 2 draws. Let *N* be the first attempts with status `needs_review`, and *F* those with status `judge_failed` or never made (a fatal stop).
+   - **Not met** if *N* > 2.
+   - **Unresolved** if *N* ≤ 2 < *N* + *F*, because a failed attempt has no judgment to check.
+   - **Met** if *N* + *F* ≤ 2.
+
+**Reported, not criteria.**
+- **First attempts.** `needs_review` and `judge_failed` counts are reported separately for each draw, before retries, along with how each retry turned out. Retries never hide either count.
+- **D3.** D3-B, C and D, and base D3-A, are reported. Nothing is tuned toward them.
+- **Per reply and draw.** The decision, the four scores and the total, in the notation of section 5, next to judge-v1.
+- **Critical entries.** Every critical entry marked present, with its rationale.
+- **Invalid judgments.** Every invalid judgment with its reason, including how many quotes still carried a speaker label and any missing or duplicate critical type.
+- **Usage.** Calls, tokens and cost.
+
+**Fixed after results.** No wording, schema or criteria change after results are seen. Any change needs a new judge version and a new pre-registration.
+
+**Budget.**
+- **Calls.** 1 preflight, 40 first attempts and at most 40 retries. About 45 calls are expected.
+- **Cost.** At judge-v1's rate on this set (113 calls for about $0.40), that comes to about $0.16. judge-v3 always writes four critical entries, so its output is longer; the cap is $0.30.
+
+**Integrity.**
+- Every file under `runs/` keeps its sha256.
+- Every existing line in the four score files stays byte-identical. judge-v3 lines are only appended.
