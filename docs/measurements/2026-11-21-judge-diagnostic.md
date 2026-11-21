@@ -1,0 +1,94 @@
+# Judge diagnostic: tracing judge-v1, then two candidate arms
+
+This is a development diagnostic. Riley's call prompt stays `prompts/v2.md`. The pass thresholds are unchanged. `prompts/judge.md` (judge-v1) and every judge-v1 score are kept as the baseline. No holdout cases exist in the repo, and none were created or opened. The human labels used here are AI-informed or analysis-informed development labels, not independent agreement data.
+
+Sections 1–4 were written on 2026-11-21 at 08:58 ET. They were committed together with `prompts/judge-v2a.md` and `prompts/judge-v2b.md`, before any judge-v2a or judge-v2b call. Results are added below them afterwards.
+
+## 1. Trace: the pipeline is not the cause
+
+D3-A (`gemini-3.5-flash`, sample 1, accepted) and D3-C (`gemini-3.5-flash`, sample 2, rejected) were traced end to end from `runs/20261121T023359Z-455c41` and `scores/20261121T023359Z-455c41.jsonl`.
+
+- **Reply.** The slot's `output_text` hashes to the record's `text_sha256`. The reply appears verbatim between `<reply>` tags in the judge input.
+- **Input.** The judge request was rebuilt from the run manifest's transcript turns, the `cases/notes.toml` D3 criteria and `prompts/judge.md`. It hashes to the recorded `judge_request_sha256`. The input contains:
+  - the D3 criteria ("Ask how the situation with the brother turned out…");
+  - the full transcript, labelled Riley and Applicant;
+  - the reply.
+
+  It contains no model, sample, letter or label.
+- **API echo.** The response echoes instructions that hash to `prompts/judge.md`, along with reasoning effort `none`, `max_output_tokens` 1500 and a strict `json_schema` named `next_turn_judgment`. It also reports **temperature 1.0**. The scorer never sets temperature, so this is the API default, and each judgment is one random draw.
+- **Scores.** The raw `output_text` in the API response equals the recorded `judge_output_text`. Its JSON holds next action 2, listening 2, grounding 2 and delivery 2 for both replies, with no critical violation. The recorded judgment, the decision and a fresh re-validation all match.
+- **Distinct calls.** The two replies came from distinct response IDs (`resp_039ea6d…`, `resp_0d4cf47…`), so there was no cache collision.
+
+**Widened check.** The same checks ran on all 22 judge-v1 records: the 18 lines for `20261121T023359Z-455c41` and the 4 lines for `20261120T225013Z-70fb30` (scored on 2026-11-21 for this diagnostic). For every record:
+- the reply hash, the rebuilt request hash, the judge prompt hash and the echoed instructions match;
+- the raw text equals the recorded text;
+- the raw scores equal the recorded judgment and decision.
+
+**Conclusion.** judge-v1 itself returned four 2s for each of the 16 replies. There is no code or input bug.
+
+## 2. judge-v1 does discriminate elsewhere
+
+judge-v1 was run on the earlier baseline run `20261120T225013Z-70fb30` (v1 prompt, `gpt-5.4-mini`, 4 calls). There it failed two replies:
+
+| Letter (sample) | Reply | judge-v1 | Nishanth (informed labels) |
+|---|---|---|---|
+| D3 A (1) | "What did you do next to help calm the situation and make sure the family got a consistent update?" | next action 1, listening 2, grounding 2, delivery 2. Total 7/8, **not acceptable** | accepted |
+| D3 B (2) | "What did you do after you brought the charge nurse in, and how did the situation end?" | 2/2/2/2, 8/8, acceptable | accepted, preferred |
+| D4 A (2) | "That makes sense, especially with the mixed updates. When you brought the charge nurse in, was there anything you did specifically to help calm the brother down while you worked out that plan?" | next action 0, listening 1, grounding 2, delivery 1. Total 4/8, **not acceptable** | rejected |
+| D4 B (1) | "That sounds like you helped reduce the mixed messages by involving the charge nurse and setting one clear plan. My next question is, describe a time you advocated…" | 2/2/2/2, 8/8, acceptable | accepted |
+
+The D4 re-probe fails clearly, so the leniency is not general. It is specific to how a D3 follow-up targets the missing part. The 70fb30 D3 A result is also a live instance of the 7/8-but-fails case: next action 1, every other dimension 2. That fail disagrees with Nishanth's accept. In its rationale, the judge said the reply "asks about the outcome", then marked it down for asking two things.
+
+## 3. Candidate arms (wording frozen at commit)
+
+Each arm is judge-v1 plus wording added after the three **next_action** level descriptors. Nothing else changes.
+
+- **judge-v2a** (`prompts/judge-v2a.md`, sha256 `a40a14e7…6a8e8e`):
+  > When the applicant has left part of Riley's question unanswered, a 2 asks for that missing part itself. Score 1 when the follow-up asks about something next to the missing part instead, for example what the applicant did when what is missing is how things turned out.
+
+  **Basis.**
+  - PRD §3 says to seek the situation *and resolution*.
+  - The PRD §7 next-action level 1 is "leaves ambiguity".
+  - The D3 notes ask how the situation "turned out".
+  - The pre-registered counting rule says "what did you do to resolve it" asks about actions, not the result.
+
+  Its example mirrors D3. If it catches D3 B and D, that is largely by construction, not evidence that it generalises.
+- **judge-v2b** (`prompts/judge-v2b.md`, sha256 `a23745bd…b7209e2b8a`): judge-v2a plus:
+  > Also score 1 when the question itself takes the missing answer for granted, for example by assuming that a step the applicant took worked.
+
+  **Basis.**
+  - It rests on Nishanth's question in the 2026-11-21 diagnostic request: can the judge recognise a question that asks for an outcome while assuming it?
+  - Its justification in the PRD is weaker. A presupposing question leaves the real outcome ambiguous, which maps to next-action level 1.
+  - No recorded label reason separates D3-A from D3-C. The AI-suggested D3-C explanation is not Nishanth's confirmed reason.
+  - The sentence is limited to the question, so an acknowledgment is not judged by it.
+
+Thresholds, the decision rule, the schema and the reasoning effort are unchanged. So is temperature (left at the API default). No model identity, human label or case-specific verdict enters the judge input.
+
+## 4. Plan and counting rules (fixed before any arm call)
+
+**Replies.** 20 development replies:
+- **The 16 in `20261121T023359Z-455c41`.** Nishanth accepted 13 and rejected 3: D3 B, C and D. These labels are AI-informed.
+- **The 4 in `20261120T225013Z-70fb30`.** He accepted 3 and rejected 1, the D4 A re-probe. These labels were informed by Claude's earlier analysis.
+
+**Draws.** Each judge version gets 2 draws per reply:
+- **Draw 1** goes in `scores/<run_id>.jsonl`. judge-v1 draw 1 already exists.
+- **Draw 2** goes in `scores/draw-2/<run_id>.jsonl`.
+- **Calls.** Planned new calls: judge-v1 draw 2 (20), judge-v2a (40) and judge-v2b (40), so 100 calls plus retries.
+- **Invalid judgments.** A judgment marked needs review is retried once within its draw. If it is still invalid, it is reported as unscored.
+
+**Counting.**
+- **Per reply and version:** "not acceptable in k of 2 draws".
+- **Catches:** how many of the 4 rejected replies are not acceptable in both draws, and how many in 1 of 2.
+- **New failures:** how many of the 16 accepted replies are not acceptable in at least one draw. Each is listed next to its judge-v1 result.
+- **Scores:** the before and after subscores and totals are reported per reply and draw.
+
+**Expected reading (hypotheses, not targets).**
+- **judge-v2a:** catches D3 B and D, the action-focused questions. Whether it catches C is unclear.
+- **judge-v2b:** may also catch C. It risks failing D3-A in the multi-model run, whose question "end up getting resolved" assumes a resolution. Nishanth noted that on his sheet and still accepted A.
+- **The D4 re-probe:** stays not acceptable under every version.
+- **Other risk:** both arms could fail more of the accepted D3 replies in the baseline run.
+
+**After the results.**
+- No arm wording changes once results are seen.
+- Neither arm becomes the default without Nishanth's decision; judge-v1 stays the default.
+- Only the sealed holdouts, after the scorer is frozen, can measure independent agreement.
