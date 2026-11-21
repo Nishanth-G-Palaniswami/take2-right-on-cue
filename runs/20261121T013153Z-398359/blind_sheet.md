@@ -25,14 +25,14 @@ What did you do next to help clear up the confusion and resolve it?
 <<<<<<<< END REPLY E >>>>>>>>
 
 
-Preference (A / B / C / D / E / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
-Accept E? (y/n):
+Preference (A / B / C / D / E / tie): B
+Words that tipped it: “mixed updates from different shifts” and “how did the situation end?”
+One-sentence reason: B picks up on what frustrated the brother and gives Sam room to explain what happened after the charge nurse came in.
+Accept A? (y/n): y
+Accept B? (y/n): y
+Accept C? (y/n): y
+Accept D? (y/n): y
+Accept E? (y/n): y
 
 === CASE D4 ===
 Riley's previous turn:
@@ -61,11 +61,11 @@ That sounds like a good example of getting everyone on the same page and calming
 <<<<<<<< END REPLY E >>>>>>>>
 
 
-Preference (A / B / C / D / E / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
-Accept E? (y/n):
+Preference (A / B / C / D / E / tie): B
+Words that tipped it: “setting one clear plan for updates”
+One-sentence reason: B names the change that helped the brother know what to expect, then moves on to the patient advocacy question.
+Accept A? (y/n): y
+Accept B? (y/n): y
+Accept C? (y/n): y
+Accept D? (y/n): y
+Accept E? (y/n): y

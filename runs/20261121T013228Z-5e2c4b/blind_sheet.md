@@ -13,11 +13,11 @@ Thank you. Just so you know, this call is recorded and shared with our recruitin
 <<<<<<<< END REPLY B >>>>>>>>
 
 
-Preference (A / B / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
+Preference (A / B / tie): B
+Words that tipped it: “May I continue?”
+One-sentence reason: After explaining that the call is recorded and shared, B gives Alex a clear opportunity to say yes or no.
+Accept A? (y/n): y
+Accept B? (y/n): y
 
 === CASE D2 ===
 Riley's previous turn:
@@ -34,8 +34,8 @@ Thanks. Are your BLS and ACLS certifications both current right now?
 <<<<<<<< END REPLY B >>>>>>>>
 
 
-Preference (A / B / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
+Preference (A / B / tie): B
+Words that tipped it: “Are your BLS and ACLS certifications both current right now?”
+One-sentence reason: B goes straight to the one detail Morgan still needs to confirm, whether both certifications are current.
+Accept A? (y/n): y
+Accept B? (y/n): y
