@@ -1,0 +1,46 @@
+{
+  "D3": {
+    "A": {
+      "slot_key": "20261121T013153Z-398359|D3|v2|gpt-5.4-mini|5",
+      "text_sha256": "b56647958558a4a64466ecf40db12a9850998994c8b5d2419b1ed09b646c1ffd"
+    },
+    "B": {
+      "slot_key": "20261121T013153Z-398359|D3|v2|gpt-5.4-mini|2",
+      "text_sha256": "3802ccca62c0da950da8d90dade95ee56f6905c000a8b25eb021a7dc1576b171"
+    },
+    "C": {
+      "slot_key": "20261121T013153Z-398359|D3|v2|gpt-5.4-mini|1",
+      "text_sha256": "daace5a347e1927d0f024f010ed8dea31baf8f38e57c180acd43559aa410b185"
+    },
+    "D": {
+      "slot_key": "20261121T013153Z-398359|D3|v2|gpt-5.4-mini|3",
+      "text_sha256": "618fecf9d65499a894093ec74fc350f83ee5dbdf7e0903636796802d023d11f6"
+    },
+    "E": {
+      "slot_key": "20261121T013153Z-398359|D3|v2|gpt-5.4-mini|4",
+      "text_sha256": "7416292ca2eefc487c6d3987752dfe100696ffa706a1aab06af3cd59a1d860ab"
+    }
+  },
+  "D4": {
+    "A": {
+      "slot_key": "20261121T013153Z-398359|D4|v2|gpt-5.4-mini|5",
+      "text_sha256": "15114070cbafdf1277ee008be1488285ec901d020e5c5d87269781f9df5cd0e2"
+    },
+    "B": {
+      "slot_key": "20261121T013153Z-398359|D4|v2|gpt-5.4-mini|1",
+      "text_sha256": "b09e2d964e7ce7ccc48fd285db677ff0b59c354c3fc22475adaaae0eb48b5230"
+    },
+    "C": {
+      "slot_key": "20261121T013153Z-398359|D4|v2|gpt-5.4-mini|4",
+      "text_sha256": "5aa98e9e65df7941cf23905d5751ca05fad5a445cd4c4b6bbe9f58e05a90b5d5"
+    },
+    "D": {
+      "slot_key": "20261121T013153Z-398359|D4|v2|gpt-5.4-mini|2",
+      "text_sha256": "83f6171145dfa2202dc509f3381c7f3c71106dba3e6e71008dc8a65ced467092"
+    },
+    "E": {
+      "slot_key": "20261121T013153Z-398359|D4|v2|gpt-5.4-mini|3",
+      "text_sha256": "25fabfd845f806360200e29d882217f7f477fe18438492dc82d59e0fc0c69aa2"
+    }
+  }
+}
