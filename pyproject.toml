@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Next-turn evaluation runner"
 requires-python = ">=3.12"
 dependencies = [
+    "google-genai>=3.6.1",
+    "httpx2>=2.16.2",
     "openai>=3.57.0",
     "pydantic>=2.14.4",
     "python-dotenv>=1.2.4",

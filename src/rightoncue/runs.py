@@ -6,36 +6,78 @@ import hashlib
 import json
 import os
 import platform
+import re
 import secrets
 import subprocess
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Literal, Mapping
 
+import google.genai
 import openai
 
-from .openai_responses import build_request, generate
-from .transcript import parse_transcript
+from . import gemini, openai_responses
+from .transcript import Turn, parse_transcript
 
-FATAL_ERRORS = (
-    openai.AuthenticationError,
-    openai.PermissionDeniedError,
-    openai.BadRequestError,
-    openai.NotFoundError,
-)
-RECOVERABLE_ERRORS = (
-    openai.RateLimitError,
-    openai.APIConnectionError,  # parent of APITimeoutError
-    openai.InternalServerError,
-)
+SCHEMA_VERSION = 2
+PROVIDERS: dict[str, Any] = {
+    openai_responses.PROVIDER: openai_responses,
+    gemini.PROVIDER: gemini,
+}
 
-PARAMS_NOTE = (
-    "Only model, instructions, input and reasoning.effort are sent. Every other "
-    "generation parameter (temperature, max_output_tokens, store, ...) is left to "
-    "the API defaults."
-)
+
+MAX_REPLIES_PER_CASE = 26  # blind letters A-Z
+_MODEL_ID_REST = re.compile(r"[A-Za-z0-9._-]+")
+
+
+def provider_for(model: str) -> str:
+    """Provider from the model ID prefix; anything else is an input error.
+
+    After the prefix the ID must be non-empty and use only letters, digits,
+    '.', '-' and '_' (no whitespace).
+    """
+    for prefix, provider in (
+        ("gpt-", openai_responses.PROVIDER),
+        ("gemini-", gemini.PROVIDER),
+    ):
+        if model.startswith(prefix):
+            if not _MODEL_ID_REST.fullmatch(model[len(prefix):]):
+                raise ValueError(
+                    f"invalid model ID {model!r}: after {prefix!r} it needs at least "
+                    "one character, and only letters, digits, '.', '-' and '_' "
+                    "are allowed (no spaces)"
+                )
+            return provider
+    raise ValueError(
+        f"unknown model {model!r}: model IDs must start with 'gpt-' (OpenAI) or "
+        "'gemini-' (Gemini)"
+    )
+
+
+class ManifestError(ValueError):
+    """manifest.json can't be read as a valid run (unsupported schema, duplicate model)."""
+
+
+@dataclass
+class ModelSpec:
+    model: str
+    provider: str
+    settings: dict[str, Any]  # openai: reasoning_effort; gemini: thinking_level
+    client: dict[str, Any]  # client configuration recorded in the manifest
+
+
+def _build_request(spec: ModelSpec, prompt_text: str, turns: list[Turn]) -> dict[str, Any]:
+    if spec.provider == openai_responses.PROVIDER:
+        return openai_responses.build_request(
+            prompt_text, turns, spec.model, spec.settings["reasoning_effort"]
+        )
+    if spec.provider == gemini.PROVIDER:
+        return gemini.build_request(
+            prompt_text, turns, spec.model, spec.settings["thinking_level"]
+        )
+    raise ValueError(f"unknown provider {spec.provider!r}")
 
 
 @dataclass
@@ -91,13 +133,24 @@ def create_run(
     run_id: str,
     prompt: InputFile,
     cases: list[InputFile],
-    model: str,
-    reasoning_effort: str,
+    models: list[ModelSpec],
     samples: int,
-    client_max_retries: int,
-    client_timeout: str,
 ) -> tuple[Path, dict[str, Any]]:
-    """Write manifest.json (before any API call) and return (run_dir, manifest)."""
+    """Write manifest.json (schema 2, before any API call); return (run_dir, manifest)."""
+    if not models:
+        raise ValueError("at least one model is required")
+    names = [m.model for m in models]
+    if len(set(names)) != len(names):
+        raise ValueError(f"duplicate model in {names}")
+    for m in models:
+        if provider_for(m.model) != m.provider:
+            raise ValueError(f"model {m.model!r} is not a {m.provider!r} model")
+    if len(models) * samples > MAX_REPLIES_PER_CASE:
+        raise ValueError(
+            f"{len(models)} models x {samples} samples = {len(models) * samples} "
+            f"replies per case; the blind review has letters for at most "
+            f"{MAX_REPLIES_PER_CASE}"
+        )
     run_dir = runs_dir / run_id
     run_dir.mkdir(parents=True, exist_ok=False)
     case_entries: list[dict[str, Any]] = []
@@ -110,16 +163,20 @@ def create_run(
                 "sha256": case.sha256,
                 "raw_text": case.text,
                 "turns": [t.model_dump() for t in turns],
-                "request": build_request(prompt.text, turns, model, reasoning_effort),
+                "requests": {
+                    m.model: _build_request(m, prompt.text, turns) for m in models
+                },
             }
         )
+    providers = list(dict.fromkeys(m.provider for m in models))
     manifest: dict[str, Any] = {
+        "schema_version": SCHEMA_VERSION,
         "run_id": run_id,
         "created_at": datetime.now(UTC).isoformat(),
         "git": _git_state(),
         "openai_sdk_version": openai.__version__,
+        "google_genai_sdk_version": google.genai.__version__,
         "python_version": platform.python_version(),
-        "client": {"max_retries": client_max_retries, "timeout": client_timeout},
         "prompt": {
             "path": prompt.path,
             "version": prompt.stem,
@@ -127,13 +184,54 @@ def create_run(
             "text": prompt.text,
         },
         "cases": case_entries,
-        "model": model,
-        "reasoning_effort": reasoning_effort,
+        "models": [
+            {
+                "model": m.model,
+                "provider": m.provider,
+                "settings": m.settings,
+                "client": m.client,
+            }
+            for m in models
+        ],
         "samples_per_case": samples,
-        "generation_params_note": PARAMS_NOTE,
+        "generation_params_note": {p: PROVIDERS[p].PARAMS_NOTE for p in providers},
     }
     _write_json(run_dir / "manifest.json", manifest)
     return run_dir, manifest
+
+
+def manifest_models(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    """The run's models in generation order, for both manifest schemas.
+
+    A legacy manifest (no schema_version) is one OpenAI model with a string
+    `model`, a top-level `reasoning_effort` and one `request` per case.
+    """
+    version = manifest.get("schema_version")
+    if version is None:
+        return [
+            {
+                "model": manifest["model"],
+                "provider": openai_responses.PROVIDER,
+                "settings": {"reasoning_effort": manifest["reasoning_effort"]},
+                "client": manifest["client"],
+            }
+        ]
+    if version == SCHEMA_VERSION:
+        models = list(manifest["models"])
+        names = [m["model"] for m in models]
+        if len(set(names)) != len(names):
+            # No model name in the message: it can surface before blind review.
+            raise ManifestError("manifest.json lists the same model more than once")
+        return models
+    raise ManifestError(f"manifest.json: unsupported schema_version {version!r}")
+
+
+def case_request(
+    manifest: dict[str, Any], case: dict[str, Any], model: str
+) -> dict[str, Any]:
+    if manifest.get("schema_version") is None:
+        return case["request"]
+    return case["requests"][model]
 
 
 def load_manifest(run_dir: Path) -> dict[str, Any]:
@@ -177,99 +275,99 @@ class RunResult:
 
 
 def run_slots(
-    client: Any,
+    clients: Mapping[str, Any],
     run_dir: Path,
     manifest: dict[str, Any],
     on_slot: Callable[[dict[str, Any]], None] | None = None,
 ) -> RunResult:
+    """Generate every missing slot: case, then model (manifest order), then sample.
+
+    `clients` maps a provider name ("openai", "gemini") to its SDK client.
+    """
     run_id = manifest["run_id"]
     version = manifest["prompt"]["version"]
-    model = manifest["model"]
+    models = manifest_models(manifest)
+    missing = sorted({m["provider"] for m in models} - set(clients))
+    if missing:
+        raise ValueError(f"no client for provider(s): {', '.join(missing)}")
     done = {s["slot_key"] for s in read_slots(run_dir)}
     result = RunResult()
     for case in manifest["cases"]:
-        for idx in range(1, manifest["samples_per_case"] + 1):
-            key = make_slot_key(run_id, case["case_id"], version, model, idx)
-            if key in done:
-                result.skipped += 1
-                continue
-            record: dict[str, Any] = {
-                "slot_key": key,
-                "case_id": case["case_id"],
-                "prompt_version": version,
-                "requested_model": model,
-                "sample_index": idx,
-            }
-            started = datetime.now(UTC)
-            t0 = time.monotonic()
-            fatal = False
-            try:
-                response, dump = generate(client, case["request"])
-            except (*FATAL_ERRORS, *RECOVERABLE_ERRORS) as exc:
-                fatal = isinstance(exc, FATAL_ERRORS)
-                record.update(
-                    status="generation_failed",
-                    output_text=None,
-                    returned_model=None,
-                    response_id=None,
-                    response_status=None,
-                    incomplete_details=None,
-                    usage=None,
-                    raw_response=None,
-                    error={
-                        "type": type(exc).__name__,
-                        "message": str(exc),
-                        "status_code": getattr(exc, "status_code", None),
-                    },
-                )
-            else:
-                if response.status == "completed":
-                    status = "ok"
-                elif response.status == "incomplete":
-                    status = "incomplete"
+        for spec in models:
+            model = spec["model"]
+            provider = spec["provider"]
+            adapter = PROVIDERS[provider]
+            client = clients[provider]
+            request = case_request(manifest, case, model)
+            for idx in range(1, manifest["samples_per_case"] + 1):
+                key = make_slot_key(run_id, case["case_id"], version, model, idx)
+                if key in done:
+                    result.skipped += 1
+                    continue
+                record: dict[str, Any] = {
+                    "slot_key": key,
+                    "case_id": case["case_id"],
+                    "prompt_version": version,
+                    "requested_model": model,
+                    "provider": provider,
+                    "settings": spec["settings"],
+                    "sample_index": idx,
+                }
+                started = datetime.now(UTC)
+                t0 = time.monotonic()
+                fatal = False
+                try:
+                    response, dump = adapter.generate(client, request)
+                except Exception as exc:
+                    kind = adapter.classify_error(exc)
+                    if kind is None:
+                        raise
+                    fatal = kind == "fatal"
+                    record.update(
+                        status="generation_failed",
+                        output_text=None,
+                        returned_model=None,
+                        reported_model_note=None,
+                        response_id=None,
+                        response_status=None,
+                        incomplete_details=None,
+                        usage=None,
+                        usage_normalized=None,
+                        raw_response=None,
+                        error={
+                            "type": type(exc).__name__,
+                            "message": str(exc),
+                            "status_code": adapter.error_status_code(exc),
+                        },
+                    )
                 else:
-                    status = "generation_failed"
+                    record.update(adapter.slot_fields(response, dump))
                 record.update(
-                    status=status,
-                    output_text=response.output_text,
-                    returned_model=response.model,
-                    response_id=response.id,
-                    response_status=response.status,
-                    incomplete_details=dump.get("incomplete_details"),
-                    usage=dump.get("usage"),
-                    raw_response=dump,
+                    started_at=started.isoformat(),
+                    finished_at=datetime.now(UTC).isoformat(),
+                    latency_ms=round((time.monotonic() - t0) * 1000),
                 )
-                if status == "generation_failed":
-                    record["error"] = {
-                        "type": "response_status",
-                        "message": f"response status {response.status!r}",
-                        "status_code": None,
-                    }
-            record.update(
-                started_at=started.isoformat(),
-                finished_at=datetime.now(UTC).isoformat(),
-                latency_ms=round((time.monotonic() - t0) * 1000),
-            )
-            _append_slot(run_dir, record)
-            done.add(key)
-            result.attempted += 1
-            result.records.append(record)
-            if record["status"] == "generation_failed":
-                result.failed += 1
-            elif record["status"] == "incomplete":
-                result.incomplete += 1
-            elif not (record["output_text"] or "").strip():
-                result.empty += 1
-            if on_slot is not None:
-                on_slot(record)
-            if fatal:
-                err = record["error"]
-                result.abort_message = (
-                    f"aborting remaining slots: {err['type']} (HTTP "
-                    f"{err['status_code']}): {err['message']}. Check your API key, "
-                    "model name and request settings."
-                )
-                return result
+                _append_slot(run_dir, record)
+                done.add(key)
+                result.attempted += 1
+                result.records.append(record)
+                if record["status"] == "generation_failed":
+                    result.failed += 1
+                elif record["status"] == "incomplete":
+                    result.incomplete += 1
+                elif not (record["output_text"] or "").strip():
+                    result.empty += 1
+                if on_slot is not None:
+                    on_slot(record)
+                if fatal:
+                    err = record["error"]
+                    result.abort_message = (
+                        "aborting all remaining slots of the run after a fatal "
+                        f"error from {model}: {err['type']} (HTTP "
+                        f"{err['status_code']}): {err['message']}. Check your API "
+                        "key, model name and request settings."
+                    )
+                    return result
     return result
 
 
@@ -305,6 +403,8 @@ NO_REPLY_NOTE = "No eligible replies for this case; nothing to judge."
 
 
 def _label(i: int) -> str:
+    if not 0 <= i < MAX_REPLIES_PER_CASE:
+        raise ValueError(f"no blind letter for reply index {i}")
     return chr(ord("A") + i)
 
 
@@ -372,13 +472,21 @@ def render_blind(run_dir: Path) -> BlindReview:
     records = read_slots(run_dir)
     run_id = manifest["run_id"]
     version = manifest["prompt"]["version"]
-    model = manifest["model"]
+    models = [m["model"] for m in manifest_models(manifest)]
+    per_case = len(models) * manifest["samples_per_case"]
+    if per_case > MAX_REPLIES_PER_CASE:
+        raise BlindKeyError(
+            f"This run has {per_case} replies per case, but the blind review has "
+            f"letters for at most {MAX_REPLIES_PER_CASE} (A-Z). Nothing was written."
+        )
     by_key: dict[str, list[dict[str, Any]]] = {}
     for r in records:
         by_key.setdefault(r["slot_key"], []).append(r)
+    # Every model x sample for each case; letters are shuffled across all of them.
     expected: dict[str, list[str]] = {
         c["case_id"]: [
             make_slot_key(run_id, c["case_id"], version, model, i)
+            for model in models
             for i in range(1, manifest["samples_per_case"] + 1)
         ]
         for c in manifest["cases"]

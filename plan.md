@@ -17,12 +17,12 @@
 
 | # | Item | Owner | Status |
 |---|---|---|---|
-| 1 | Gemini adapter: request building, call, status mapping (STOP → ok, MAX_TOKENS → incomplete, other or blocked → failed), reported model from `model_version` ("served version unconfirmed" when absent), normalized usage | complex-coder | Pending |
-| 2 | Multi-model runs: repeatable `--model`, provider from model ID, per-model settings, manifest schema 2 with legacy read support, per-model run summary, missing-key and bad-setting checks before any call | complex-coder | Pending |
-| 3 | Blind review across models: expected slots over every model, letters shuffled across all replies of a case, no model names anywhere in the view, legacy runs unchanged | complex-coder | Pending |
-| 4 | `.env.example` and README updates | complex-coder | Pending |
-| 5 | Independent verification (Opus, high) | verifier | Pending |
-| 6 | Preflight: one tiny live Gemini call with the chosen thinking level, outside `runs/` | lead | Pending |
+| 1 | Gemini adapter: request building, call, status mapping (STOP → ok, MAX_TOKENS → incomplete, other or blocked → failed), reported model from `model_version` ("served version unconfirmed" when absent), normalized usage | complex-coder | Verified |
+| 2 | Multi-model runs: repeatable `--model`, provider from model ID, per-model settings, manifest schema 2 with legacy read support, per-model run summary, missing-key and bad-setting checks before any call | complex-coder | Verified |
+| 3 | Blind review across models: expected slots over every model, letters shuffled across all replies of a case, no model names anywhere in the view, legacy runs unchanged | complex-coder | Verified |
+| 4 | `.env.example` and README updates | complex-coder | Verified |
+| 5 | Independent verification (Opus, high) | verifier | Verified: FAIL (settings missing from slot records), fixed, then PASS. Lead follow-ups after the PASS (clean `show` error for a bad manifest, README limits) are lead-reviewed only; 122 tests pass, committed runs unchanged |
+| 6 | Preflight: live Gemini calls with the chosen thinking level, outside `runs/` | lead | Verified: v2 prompt + D3 transcript; MINIMAL accepted (STOP) and honoured (0 thinking tokens vs 169 with no thinking setting); reported model `gemini-3.6-flash`; no continuation |
 | 7 | First fresh multi-model run on v2; blind labels committed before any other model is consulted | lead + Nishanth | Pending |
 
 **Acceptance criteria**
@@ -33,9 +33,14 @@
 - Every committed run under `runs/` still opens with `show`, exit 0, no diff.
 - All tests offline; no live call in tests.
 
+**Decisions (Nishanth, 2026-11-20)**
+
+- Gemini thinking level: MINIMAL (closest to OpenAI reasoning effort `none`).
+- First fresh run: `prompts/v2.md` × D1–D4 × `gpt-5.4-mini` + `gemini-3.5-flash` × 2 samples (16 replies, both models mixed under letters A–D per case). Blind labels are committed before any other model is consulted.
+
 **Risks and open decisions**
 
-- Gemini thinking level (decision for Nishanth).
+- Whether `gemini-3.5-flash` accepts MINIMAL is confirmed by the preflight call.
 - Free-tier rate limits: 429s are retryable; a run can end short, and `show` refuses short runs until part 2 adds retry/resume.
 - `response.text` can be empty when output is blocked; such replies are recorded and counted, never shown as answers.
 

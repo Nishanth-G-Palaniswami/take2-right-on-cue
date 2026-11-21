@@ -8,7 +8,14 @@ import openai
 import pytest
 
 from rightoncue.openai_responses import build_request
-from rightoncue.runs import InputFile, create_run, read_slots, render_blind, run_slots
+from rightoncue.runs import (
+    InputFile,
+    ModelSpec,
+    create_run,
+    read_slots,
+    render_blind,
+    run_slots,
+)
 from rightoncue.transcript import Turn
 
 CASE = b'{"role":"agent","utterance":"Hi"}\n{"role":"user","utterance":"Hello"}\n'
@@ -55,11 +62,15 @@ class FakeClient:
         return FakeResponse(out)
 
 
+def openai_spec(model: str = "gpt-x") -> ModelSpec:
+    return ModelSpec(model, "openai", {"reasoning_effort": "none"}, {"max_retries": 2, "timeout": "60"})
+
+
 def make(tmp_path: Path, samples: int = 2, cases: int = 2):
     files = [InputFile(f"cases/c{i}.jsonl", CASE) for i in range(cases)]
     return create_run(
         tmp_path, "RID", InputFile("prompts/v1.md", b"prompt"), files,
-        "gpt-x", "none", samples, 2, "60",
+        [openai_spec()], samples,
     )
 
 
@@ -82,7 +93,7 @@ def test_slots_count_identical_outputs_and_whitespace(tmp_path: Path) -> None:
     run_dir, manifest = make(tmp_path)
     assert (run_dir / "manifest.json").exists()
     client = FakeClient([" same \n"] * 4)
-    run_slots(client, run_dir, manifest)
+    run_slots({"openai": client}, run_dir, manifest)
     slots = read_slots(run_dir)
     assert len(slots) == 4 and len(client.calls) == 4
     assert len({s["slot_key"] for s in slots}) == 4
@@ -94,8 +105,8 @@ def test_slots_count_identical_outputs_and_whitespace(tmp_path: Path) -> None:
 def test_resume_does_not_duplicate(tmp_path: Path) -> None:
     run_dir, manifest = make(tmp_path)
     client = FakeClient(["a"] * 4)
-    run_slots(client, run_dir, manifest)
-    again = run_slots(client, run_dir, manifest)
+    run_slots({"openai": client}, run_dir, manifest)
+    again = run_slots({"openai": client}, run_dir, manifest)
     assert again.attempted == 0 and again.skipped == 4
     assert len(read_slots(run_dir)) == 4 and len(client.calls) == 4
 
@@ -103,13 +114,13 @@ def test_resume_does_not_duplicate(tmp_path: Path) -> None:
 def test_recoverable_continues_fatal_aborts(tmp_path: Path) -> None:
     run_dir, manifest = make(tmp_path)
     client = FakeClient([http_error(openai.RateLimitError, 429), "ok", "ok", "ok"])
-    res = run_slots(client, run_dir, manifest)
+    res = run_slots({"openai": client}, run_dir, manifest)
     assert res.failed == 1 and res.abort_message is None
     assert read_slots(run_dir)[0]["error"]["status_code"] == 429
 
     run_dir2, manifest2 = make(tmp_path / "b")
     client2 = FakeClient([http_error(openai.AuthenticationError, 401)])
-    res2 = run_slots(client2, run_dir2, manifest2)
+    res2 = run_slots({"openai": client2}, run_dir2, manifest2)
     assert res2.abort_message and len(read_slots(run_dir2)) == 1
 
 
@@ -117,7 +128,7 @@ def test_show_blind_and_stable(tmp_path: Path) -> None:
     # Changed: an empty reply is no longer shown as an option, and a second
     # render says the sheet was preserved instead of returning an identical text.
     run_dir, manifest = make(tmp_path, cases=1)
-    run_slots(FakeClient(["first", "second"]), run_dir, manifest)
+    run_slots({"openai": FakeClient(["first", "second"])}, run_dir, manifest)
     one = render_blind(run_dir)
     two = render_blind(run_dir)
     assert one.text.replace("Created blind_sheet.md.", "") == two.text.replace(
@@ -133,6 +144,6 @@ def test_show_blind_and_stable(tmp_path: Path) -> None:
 
 def test_show_reports_failures(tmp_path: Path) -> None:
     run_dir, manifest = make(tmp_path, cases=1)
-    run_slots(FakeClient([http_error(openai.RateLimitError, 429), "x"]), run_dir, manifest)
+    run_slots({"openai": FakeClient([http_error(openai.RateLimitError, 429), "x"])}, run_dir, manifest)
     # Changed wording: "replies", not "samples".
     assert "1 of 2 replies failed to generate" in render_blind(run_dir).text

@@ -2,7 +2,7 @@
 
 A next-turn evaluation tool for Take2's Forward Deployed Engineer take-home. Given a call prompt and a partial screening-call transcript, it asks a model for the recruiter's next line several times and saves every reply verbatim, so the replies can be compared and judged.
 
-Status: milestone 1.1. One model (`gpt-5.4-mini` through the OpenAI Responses API), raw generation, and a blind review view for human preferences. There is no scoring yet.
+Status: milestone 2, part 1. One or more models per run (OpenAI models such as `gpt-5.4-mini` through the Responses API, Google Gemini models such as `gemini-3.5-flash` through the `google-genai` SDK), raw generation, and a blind review view for human preferences. There is no scoring yet, and failed replies can't be retried yet.
 
 ## Setup
 
@@ -10,7 +10,7 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12+.
 
 ```powershell
 uv sync
-Copy-Item .env.example .env   # then put your OpenAI key in .env
+Copy-Item .env.example .env   # then put your OpenAI and/or Gemini key in .env
 ```
 
 ## Run one next-turn experiment
@@ -20,12 +20,25 @@ uv run next-turn run --prompt prompts/v1.md --case cases/dev/D3.jsonl --case cas
 uv run next-turn show runs/<run_id>
 ```
 
-`run` validates every input before calling the API. It then makes one independent request per sample and writes `runs/<run_id>/`:
+To compare models in one run, repeat `--model`:
 
-- `manifest.json`: the exact prompt text, transcripts, request payloads, SHA-256 hashes, model, settings, SDK version and git commit.
-- `slots.jsonl`: one line per reply, written as each reply arrives. It holds the verbatim output, the model the API reports, token usage, timings and the full raw response. Failed and incomplete responses are recorded too.
+```powershell
+uv run next-turn run --prompt prompts/v2.md --case cases/dev/D3.jsonl --model gpt-5.4-mini --model gemini-3.5-flash --samples 2 --reasoning-effort none --gemini-thinking-level minimal
+```
 
-`run` ends with a summary of completed, incomplete and failed replies, plus a note if a completed reply had no text. It exits nonzero if any reply failed or came back incomplete.
+- The provider comes from the model ID: `gpt-...` is OpenAI, `gemini-...` is Gemini. Any other ID, or the same model twice, is an input error. After the prefix, an ID may contain only letters, digits, `.`, `-` and `_` (no spaces).
+- Models × samples can be at most 26 per case, so every reply gets a blind letter A–Z.
+- `--reasoning-effort` applies to OpenAI models (default `none`).
+- `--gemini-thinking-level` applies to Gemini models: `minimal`, `low`, `medium`, `high` or `xhigh`. It is required whenever a Gemini model is selected; there is no default.
+- `OPENAI_API_KEY` is needed only for OpenAI models and `GEMINI_API_KEY` only for Gemini models.
+- Replies are generated case by case, then model by model in the order given, then sample by sample.
+
+`run` validates every input and checks the needed keys before calling any API. It then makes one independent request per sample and writes `runs/<run_id>/`:
+
+- `manifest.json`: the exact prompt text, transcripts, the request payload for every model and case, SHA-256 hashes, each model with its provider, settings and client retry settings, SDK versions and git commit.
+- `slots.jsonl`: one line per reply, written as each reply arrives. It holds the provider, the model's settings (reasoning effort or thinking level), the requested model, the model the API reports (or "served version unconfirmed" when the API doesn't say), the verbatim output, token usage (raw and normalized to input, output and reasoning tokens), timings and the full raw response. Failed and incomplete responses are recorded too.
+
+`run` ends with a summary for each model: the requested model, the model(s) the API reported, completed, incomplete and failed replies, a note if a completed reply had no text, and token totals. It exits nonzero if any reply failed or came back incomplete. An invalid key, model name or setting (HTTP 400, 401, 403 or 404) stops the whole run.
 
 ## Review replies blind
 
@@ -34,10 +47,10 @@ uv run next-turn show runs/<run_id>
 For each case the reviewer sees:
 
 - Riley's previous turn (or a note that Riley hasn't spoken yet), then the applicant's last turn.
-- The eligible replies under the letters A, B, ... in random order. A reply is eligible only if the API completed it and it contains text. Incomplete, failed and empty replies are counted on separate lines and are not shown.
+- The eligible replies under the letters A, B, ... in random order, with every model's replies for the case shuffled together. A reply is eligible only if the API completed it and it contains text. Incomplete, failed and empty replies are counted on separate lines and are not shown.
 - A note when only one reply is eligible (no pairwise preference is possible) or when none is.
 
-The view never shows model names, sample numbers, scores or the expected-behaviour notes.
+The view never shows model names, providers, sample numbers, scores or the expected-behaviour notes.
 
 The first `show` freezes the letters in `blind_key.json`, tying each letter to a SHA-256 fingerprint of the exact words shown. It also creates `blind_sheet.md`, where you record a preference, the words that tipped it, a reason, and accept or reject for each reply. Later `show` calls never rewrite either file: the sheet stays byte for byte as you left it.
 
