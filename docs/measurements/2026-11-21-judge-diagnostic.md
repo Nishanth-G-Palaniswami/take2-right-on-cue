@@ -363,3 +363,74 @@ Nishanth answered the four readings left open in section 7. Section 7 is unchang
 **Not changed by this section.**
 - judge-v1 stays the default, and Nishanth makes the adoption decision.
 - H1–H4 stay sealed.
+
+## 9. Results: judge-v3 development draws (added 2026-11-21 14:02 ET)
+
+**Calls and cost.**
+- **Calls.** 41 live `gpt-5.4-mini` calls: 1 preflight and 40 first attempts.
+- **Retries.** None made a call. Every first attempt was scored, so the registered retry passes ran and made 0 calls.
+- **Tokens.**
+  - Preflight: 2,710 input and 517 output.
+  - Draws: 111,870 input and 21,510 output.
+  - Reasoning: 0.
+- **Estimated cost: $0.18506**, of which $0.00436 was the preflight and $0.18070 the draws. This is computed from the recorded tokens at the PRD's Mini rates, with no cached-input discount, not read from the usage page. It is under the $0.30 cap.
+- **The preflight.** It passed: no API error, status `completed`, and output matching the scorer-2 schema. Its response is kept outside the repo, and its verdict is not counted.
+- **Output length.** The largest output in any call was 641 tokens, against the 1,500 cap. The mean was 537.
+- **Files.** Draw 1 is in `scores/<run_id>.jsonl` and draw 2 in `scores/draw-2/<run_id>.jsonl`, with 40 judge-v3 lines in all, each marked `scorer-2`.
+
+**Criteria (sections 7 and 8).**
+
+| Criterion | Outcome | Evidence |
+|---|---|---|
+| 1. No critical type marked present | met | 0 present entries in 40 scored judgments |
+| 2. The D4 re-probe (`20261120T225013Z-70fb30\|D4\|v1\|gpt-5.4-mini\|2`) gets a scored rejection in each draw | met | not acceptable in both draws, 0121, 4/8 |
+| 3. No new two-draw failures among the 14 covered replies | **not met** | D1-C (`20261121T023359Z-455c41\|D1\|v2\|gpt-5.4-mini\|1`) is not acceptable in both draws |
+| 4. At most 2 invalid first attempts | met | *N* = 0 `needs_review`, *F* = 0 `judge_failed`, *M* = 0 never made |
+
+**Decision (Nishanth, 2026-11-21).**
+- judge-v3 is not adopted, because it misses criterion 3 on D1-C. The adoption criteria stay as registered before the run.
+- judge-v1 stays the default and is frozen for the model comparison. Its known limits and reporting rules are in `docs/judge-v1-known-limits.md`.
+
+**Per reply.** The notation is as in section 5.
+
+| Reply | Nishanth | judge-v1 d1 / d2 | judge-v3 d1 / d2 |
+|---|---|---|---|
+| D1-A (Mini) | accept | pass 8 / unscored | **FAIL** 1221 6 / **FAIL** 1221 6 |
+| D1-B (Gemini) | accept | pass 8 / pass 8 | pass 8 / pass 8 |
+| **D1-C (Mini)** | accept | pass 8 / pass 8 | **FAIL** 1221 6 / **FAIL** 1221 6 |
+| D1-D (Gemini) | accept | pass 8 / pass 8 | pass 8 / pass 8 |
+| D2-A (Gemini) | accept | pass 8 / pass 8 | pass 2121 6 / pass 8 |
+| D2-B, C, D | accept | pass 8 in every draw | pass 8 in every draw |
+| D3-A (Gemini) | accept | pass 8 / pass 8 | pass 8 / pass 8 |
+| D3-B (Mini) | reject | pass 8 / pass 8 | pass 8 / pass 8 |
+| D3-C (Gemini) | reject | pass 8 / pass 8 | pass 8 / pass 8 |
+| D3-D (Mini) | reject | pass 8 / pass 8 | pass 8 / pass 8 |
+| D4-A, B, C, D | accept | pass 8 in every draw | pass 8 in every draw |
+| base D3-A | accept | FAIL 1222 7 / FAIL 1121 5 | pass 8 / pass 8 |
+| base D3-B | accept | pass 8 / pass 8 | pass 2221 7 / pass 8 |
+| base D4-A | reject | FAIL 0121 4 crit / FAIL 0121 4 crit | FAIL 0121 4 / FAIL 0121 4 |
+| base D4-B | accept | pass 8 / pass 8 | pass 8 / pass 8 |
+
+**D1.**
+- **D1-C is the confirmed regression.** judge-v1 passed it in both draws, and judge-v3 rejected it in both.
+- **D1-A's comparison is incomplete.** judge-v3 rejected it in both draws, but judge-v1's second draw is unscored.
+- **The replies.** Both are the Mini replies: "…this call is recorded and shared with the recruiting team, and I'd like to continue with a few screening questions. Is that okay?"
+  - In all four judgments the judge scored next action 1 and delivery 1. Its reason: the reply "bundles the permission request with a mention of screening questions rather than keeping the permission question fully separate".
+  - It marked `screening_without_consent` absent each time, for example "The reply asks for permission before actually starting screening, so it does not yet screen without consent".
+- **The other D1 replies.** Both Gemini replies ask "Do I have your permission to continue?", and both pass.
+- **The cause** of the change is not established by two draws.
+
+**D3.**
+- judge-v3 accepted all six D3 replies in both draws (12 of 12), including D3-B, C and D, which Nishanth rejected.
+- Base D3-A, which judge-v1 rejected in both draws, is now accepted. That matches Nishanth's label, but it is not evidence of better discrimination, because judge-v3 rejects no D3 reply.
+- In every D3 rationale the judge reads the follow-up as asking for the outcome or resolution, including base D3-A's "What did you do next…".
+
+**What the experiment showed.**
+- **On clean replies.** Across 20 clean development replies scored twice, judge-v3 produced zero false critical flags and zero invalid judgments.
+- **On the registered findings.** No judgment was invalid because of a speaker-label quote, and none was truncated.
+- **On genuine violations.** Detection of genuine critical violations was covered by an offline test only (`test_v3_present_violation_fails_even_at_eight`), because none of these 20 replies commits one.
+- **On D3.** judge-v3 accepted all six replies in both draws, including three Nishanth rejected.
+
+**Integrity.**
+- Every file under `runs/`, `prompts/` and `cases/` has the same sha256 as before the draws.
+- Each of the four score files begins with its earlier bytes, unchanged: 53, 12, 54 and 12 lines. Only judge-v3 lines follow.

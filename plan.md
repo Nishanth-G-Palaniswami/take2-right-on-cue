@@ -147,7 +147,8 @@ The command:
 | 8 | Judge version registry and `--judge-version` (judge-v1 default) | complex-coder | Verified (`16e2f2a`, verifier PASS; 240 tests) |
 | 9 | `judge-v3` (`prompts/judge-v3.md`: judge-v1 plus a present/absent verdict for each critical type and a no-speaker-label quote rule) scored under `scorer-2` (only present entries count; a present entry needs evidence). judge-v1, v2a and v2b stay on `scorer-1` and keep being reused. D3 recorded as a known limitation (diagnostic doc, section 6) | lead (prompt, docs) + complex-coder (code, tests) | Verified (verifier on Opus: PASS, no blocking findings, 12 of 13 mutants caught; 267 tests; judge-v1 and judge-v2a plan 0 calls against the committed scores) |
 | 10 | Pre-registration of the judge-v3 development draws (diagnostic doc, section 7) | lead | Verified (reviewed by Nishanth; his clarifications are in section 8) |
-| 11 | Live judge-v3 draws on the 20 development replies | lead | In progress (Nishanth's go, 2026-11-21) |
+| 11 | Live judge-v3 draws on the 20 development replies | lead | Verified, complete. 41 calls (1 preflight + 40 first attempts); no retry made a call; estimated $0.18506. Criteria 1, 2 and 4 met; criterion 3 not met on D1-C, so judge-v3 is not adopted (Nishanth). Diagnostic doc, section 9 |
+| 12 | Freeze judge-v1 for the model comparison and document its known limits and reporting rules (`docs/judge-v1-known-limits.md`) before holdout work | lead | Verified (lead). The comparison's retry allowance is still open |
 
 **Acceptance criteria**
 - `score` on a saved run writes only `scores/<run_id>.jsonl`. Every file in the run folder hashes the same before and after.
