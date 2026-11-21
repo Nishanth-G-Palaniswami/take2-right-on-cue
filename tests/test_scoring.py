@@ -26,6 +26,9 @@ from rightoncue.transcript import Turn
 
 REPO = Path(__file__).resolve().parents[1]
 JUDGE_PROMPT = REPO / "prompts" / "judge.md"
+JUDGE_V1_SHA256 = "6df7af131725adbea3e4f71434ba6ebdc35b4451875a3cebbb63d6813b156af9"
+# The registry as shipped, captured before any test patches it.
+REGISTRY: dict[str, tuple[Path, str]] = dict(scoring.JUDGE_PROMPTS)
 
 # --- synthetic test data ------------------------------------------------------
 
@@ -132,7 +135,8 @@ def offline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.setattr(cli, "load_dotenv", boom)
     monkeypatch.setattr(openai, "OpenAI", boom)
-    monkeypatch.setattr(scoring, "JUDGE_PROMPT_PATH", JUDGE_PROMPT)
+    for version, (path, sha) in REGISTRY.items():
+        monkeypatch.setitem(scoring.JUDGE_PROMPTS, version, (REPO / path, sha))
 
 
 def slot(
@@ -204,18 +208,20 @@ class Scorer:
         self.scores_dir = root / "scores"
         self.factory_calls = 0
 
-    def __call__(self, judge: FakeJudge | None) -> int:
+    def __call__(self, judge: FakeJudge | None, judge_version: str | None = None) -> int:
         def factory() -> FakeJudge:
             self.factory_calls += 1
             if judge is None:
                 raise AssertionError("no judge call was expected")
             return judge
 
+        version = [] if judge_version is None else ["--judge-version", judge_version]
         return cli.main(
             [
                 "score", str(self.run_dir),
                 "--scores-dir", str(self.scores_dir),
                 "--notes", str(self.notes),
+                *version,
             ],
             client_factories={"openai": factory},
         )
@@ -429,7 +435,7 @@ def test_committed_ok_replies_pass_single_turn() -> None:
 
 def test_plan_reads_every_committed_run_and_writes_nothing(tmp_path: Path) -> None:
     """Both manifest schemas (legacy and 2) plan without error; nothing is written."""
-    prompt = scoring.load_judge_prompt(JUDGE_PROMPT)
+    prompt = scoring.load_judge_prompt("judge-v1")
     scores_dir = tmp_path / "scores"
     for run_dir in sorted((REPO / "runs").glob("*/")):
         plan = scoring.plan_scoring(run_dir, scores_dir, REPO / "cases" / "notes.toml", prompt)
@@ -601,20 +607,40 @@ def test_quote_matching_normalises_quotes_dashes_whitespace_only() -> None:
 def test_judge_prompt_hash_is_pinned() -> None:
     raw = JUDGE_PROMPT.read_bytes()
     assert b"\r\n" not in raw
-    assert hashlib.sha256(raw).hexdigest() == scoring.JUDGE_PROMPT_SHA256
-    assert scoring.load_judge_prompt(JUDGE_PROMPT) == raw.decode("utf-8")
+    assert hashlib.sha256(raw).hexdigest() == JUDGE_V1_SHA256
+    judge = scoring.load_judge_prompt("judge-v1")
+    assert (judge.version, judge.sha256, judge.text) == (
+        "judge-v1", JUDGE_V1_SHA256, raw.decode("utf-8"),
+    )
+
+
+def test_registry_hashes_match_files_and_default_is_v1() -> None:
+    assert scoring.DEFAULT_JUDGE_VERSION == "judge-v1"
+    assert {v: path.as_posix() for v, (path, _) in REGISTRY.items()} == {
+        "judge-v1": "prompts/judge.md",
+        "judge-v2a": "prompts/judge-v2a.md",
+        "judge-v2b": "prompts/judge-v2b.md",
+    }
+    assert REGISTRY["judge-v1"][1] == JUDGE_V1_SHA256
+    for version, (path, sha) in REGISTRY.items():
+        raw = (REPO / path).read_bytes()
+        assert b"\r\n" not in raw, version
+        assert hashlib.sha256(raw).hexdigest() == sha, version
+        assert scoring.load_judge_prompt(version).text == raw.decode("utf-8")
+    assert len({sha for _, sha in REGISTRY.values()}) == len(REGISTRY)
 
 
 def test_changed_judge_prompt_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     changed = tmp_path / "judge.md"
     changed.write_bytes(JUDGE_PROMPT.read_bytes() + b"\nOne more rule.\n")
-    with pytest.raises(scoring.ScoringInputError, match="judge prompt changed"):
-        scoring.load_judge_prompt(changed)
-    monkeypatch.setattr(scoring, "JUDGE_PROMPT_PATH", changed)
+    monkeypatch.setitem(scoring.JUDGE_PROMPTS, "judge-v1", (changed, JUDGE_V1_SHA256))
+    with pytest.raises(scoring.ScoringInputError, match="the judge-v1 judge prompt changed"):
+        scoring.load_judge_prompt("judge-v1")
     score = setup(tmp_path, [slot("RID", "C1", 1, REPLY)])
     assert score(None) == 2
     err = capsys.readouterr().err
-    assert "judge prompt changed" in err and "Bump JUDGE_PROMPT_VERSION and JUDGE_PROMPT_SHA256" in err
+    assert "the judge-v1 judge prompt changed" in err
+    assert "register a new version with its own hash in JUDGE_PROMPTS" in err
     assert "No judge call was made." in err
     assert score.factory_calls == 0 and not score.scores_dir.exists()
 
@@ -666,7 +692,10 @@ def test_cli_end_to_end(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> N
     )
     assert first["judge_model"] == "gpt-5.4-mini"
     assert first["judge_settings"] == {"reasoning_effort": "none", "max_output_tokens": 1500}
-    assert first["judge_prompt_sha256"] == scoring.JUDGE_PROMPT_SHA256
+    assert first["judge_prompt_sha256"] == JUDGE_V1_SHA256
+    assert first["judge_prompt_version"] == "judge-v1"
+    assert first["judge_prompt_path"] == JUDGE_PROMPT.as_posix()
+    assert out.count(f"Judge: judge-v1 ({JUDGE_PROMPT.as_posix()}, sha256 6df7af131725)") == 2
     assert first["criteria"]["expected_action"] == "Ask whether BLS and ACLS are current."
     assert set(first["criteria"]) == {"expected_action", "good_if", "fail_if"}
     assert req["instructions"] == JUDGE_PROMPT.read_text(encoding="utf-8")
@@ -844,7 +873,7 @@ def test_first_of_several_matching_scored_records_is_used(tmp_path: Path) -> Non
     second = dict(score.records[0], started_at="SECOND")
     with open(path, "a", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps(second) + "\n")
-    plan = scoring.plan_scoring(score.run_dir, score.scores_dir, score.notes, scoring.load_judge_prompt(JUDGE_PROMPT))
+    plan = scoring.plan_scoring(score.run_dir, score.scores_dir, score.notes, scoring.load_judge_prompt("judge-v1"))
     assert plan.calls_needed == 0 and plan.slots[0].reused is not None
     assert plan.slots[0].reused["started_at"] != "SECOND"
 
@@ -1173,3 +1202,81 @@ def test_corrupt_later_record_stops_before_judging_earlier_slots(
     err = capsys.readouterr().err
     assert "RID.jsonl:2: the scored record for slot RID|C1|v1|gpt-x|2 can't be reused" in err
     assert score.factory_calls == 0 and path.read_bytes() == before
+
+
+# --- judge prompt versions ------------------------------------------------------
+
+
+def test_versions_are_scored_side_by_side_without_reuse(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(
+        tmp_path,
+        [slot("RID", "C1", 1, REPLY), slot("RID", "C1", 2, f"Okay. {REPLY}"), slot("RID", "C1", 3, "")],
+        samples=3,
+    )
+    v1 = FakeJudge([judge(), judge(next_action=1)])
+    assert score(v1) == 0 and len(v1.calls) == 2
+    path = score.scores_dir / "RID.jsonl"
+    v1_bytes = path.read_bytes()
+    capsys.readouterr()
+
+    v2a = FakeJudge([judge(), judge()])
+    assert score(v2a, "judge-v2a") == 0
+    out = capsys.readouterr().out
+    # every non-empty eligible reply is judged again; the empty one gets a new
+    # judge-v2a record without a call
+    assert len(v2a.calls) == 2
+    assert "3 eligible replies (status ok): 0 reuse a valid score, 2 need a judge call" in out
+    v2a_path, v2a_sha = REGISTRY["judge-v2a"]
+    assert out.count(f"Judge: judge-v2a ({(REPO / v2a_path).as_posix()}, sha256 {v2a_sha[:12]})") == 2
+    v2a_text = (REPO / v2a_path).read_text(encoding="utf-8")
+    assert all(call["instructions"] == v2a_text for call in v2a.calls)
+    assert all(call["instructions"] != JUDGE_PROMPT.read_text(encoding="utf-8") for call in v2a.calls)
+
+    new_bytes = path.read_bytes()
+    assert new_bytes.startswith(v1_bytes) and len(new_bytes) > len(v1_bytes)
+    records = score.records
+    assert [r["judge_prompt_version"] for r in records] == ["judge-v1"] * 3 + ["judge-v2a"] * 3
+    for r in records[3:]:
+        assert r["judge_prompt_sha256"] == v2a_sha
+        assert r["judge_prompt_path"] == (REPO / v2a_path).as_posix()
+        assert r["score_key"].split("|")[-2] == "judge-v2a"
+    assert records[5]["decision"]["reasons"] == [scoring.EMPTY_REPLY_REASON]
+    assert records[5]["judge_request_sha256"] is None
+
+    # each version reuses only its own records
+    assert score(None, "judge-v2a") == 0
+    assert score(None, "judge-v1") == 0
+    assert score(None) == 0
+    assert score.factory_calls == 2 and path.read_bytes() == new_bytes
+
+
+def test_changed_candidate_prompt_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    v2a_path, v2a_sha = REGISTRY["judge-v2a"]
+    changed = tmp_path / "judge-v2a.md"
+    changed.write_bytes((REPO / v2a_path).read_bytes() + b"\nOne more rule.\n")
+    monkeypatch.setitem(scoring.JUDGE_PROMPTS, "judge-v2a", (changed, v2a_sha))
+    score = setup(tmp_path, [slot("RID", "C1", 1, REPLY)])
+    assert score(None, "judge-v2a") == 2
+    err = capsys.readouterr().err
+    assert "the judge-v2a judge prompt changed" in err and f"judge-v2a is pinned to {v2a_sha}" in err
+    assert "No judge call was made." in err
+    assert score.factory_calls == 0 and not score.scores_dir.exists()
+    # judge-v1 is unaffected
+    assert score(FakeJudge([judge()])) == 0
+
+
+def test_unknown_judge_version_is_a_usage_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(tmp_path, [slot("RID", "C1", 1, REPLY)])
+    with pytest.raises(SystemExit) as exc:
+        score(None, "judge-v9")
+    assert exc.value.code == 2
+    assert "invalid choice: 'judge-v9'" in capsys.readouterr().err
+    assert score.factory_calls == 0 and not score.scores_dir.exists()
+    with pytest.raises(scoring.ScoringInputError, match="unknown judge prompt version 'judge-v9'"):
+        scoring.load_judge_prompt("judge-v9")

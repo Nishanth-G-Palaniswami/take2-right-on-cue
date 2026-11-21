@@ -25,9 +25,23 @@ from .runs import SCHEMA_VERSION, load_manifest, make_slot_key, manifest_models
 from .transcript import Turn
 
 SCORER_VERSION = "scorer-1"
-JUDGE_PROMPT_PATH = Path("prompts/judge.md")
-JUDGE_PROMPT_VERSION = "judge-v1"
-JUDGE_PROMPT_SHA256 = "6df7af131725adbea3e4f71434ba6ebdc35b4451875a3cebbb63d6813b156af9"
+# Judge prompt version -> (path, pinned sha256 of the file bytes). A pinned file is
+# frozen: a changed prompt needs a new version here, never an edited hash.
+JUDGE_PROMPTS: dict[str, tuple[Path, str]] = {
+    "judge-v1": (
+        Path("prompts/judge.md"),
+        "6df7af131725adbea3e4f71434ba6ebdc35b4451875a3cebbb63d6813b156af9",
+    ),
+    "judge-v2a": (
+        Path("prompts/judge-v2a.md"),
+        "a40a14e723261c5f21f849b682b37fb888f414f48a9dca27e46f9d5f858a6e8e",
+    ),
+    "judge-v2b": (
+        Path("prompts/judge-v2b.md"),
+        "a23745bd421134a3cb1250fd452b01c9365677df2519f852683db4b7209e2b8a",
+    ),
+}
+DEFAULT_JUDGE_VERSION = "judge-v1"
 JUDGE_MODEL = "gpt-5.4-mini"
 JUDGE_SETTINGS: dict[str, Any] = {"reasoning_effort": "none", "max_output_tokens": 1500}
 LONG_REPLY_WORDS = 40
@@ -59,23 +73,37 @@ class ScoringInputError(ValueError):
 # ------------------------------------------------------------------ judge prompt
 
 
-def load_judge_prompt(path: Path) -> str:
-    """The judge instructions, refused if the bytes differ from the pinned hash."""
+@dataclass(frozen=True)
+class JudgePrompt:
+    version: str
+    path: Path
+    sha256: str
+    text: str
+
+
+def load_judge_prompt(version: str) -> JudgePrompt:
+    """The registered judge prompt, refused if its bytes differ from the pinned hash."""
+    if version not in JUDGE_PROMPTS:
+        raise ScoringInputError(
+            f"unknown judge prompt version {version!r}; registered: "
+            f"{', '.join(JUDGE_PROMPTS)}"
+        )
+    path, pinned = JUDGE_PROMPTS[version]
     try:
         raw = path.read_bytes()
     except OSError as exc:
         raise ScoringInputError(
-            f"{path.as_posix()}: cannot read the judge prompt ({exc})"
+            f"{path.as_posix()}: cannot read the {version} judge prompt ({exc})"
         ) from exc
     actual = hashlib.sha256(raw).hexdigest()
-    if actual != JUDGE_PROMPT_SHA256:
+    if actual != pinned:
         raise ScoringInputError(
-            f"{path.as_posix()}: the judge prompt changed (sha256 {actual}; "
-            f"{JUDGE_PROMPT_VERSION} is pinned to {JUDGE_PROMPT_SHA256}). Bump "
-            "JUDGE_PROMPT_VERSION and JUDGE_PROMPT_SHA256 in scoring.py before "
-            "scoring with it."
+            f"{path.as_posix()}: the {version} judge prompt changed (sha256 {actual}; "
+            f"{version} is pinned to {pinned}). A pinned prompt is frozen: register "
+            "a new version with its own hash in JUDGE_PROMPTS in scoring.py before "
+            "scoring with the changed text."
         )
-    return raw.decode("utf-8")
+    return JudgePrompt(version=version, path=path, sha256=pinned, text=raw.decode("utf-8"))
 
 
 # ------------------------------------------------------------- structural checks
@@ -598,10 +626,10 @@ def append_score_record(path: Path, record: dict[str, Any]) -> None:
 
 
 def make_score_key(
-    slot_key: str, reply_sha: str, judge_request_sha: str | None
+    slot_key: str, reply_sha: str, judge_version: str, judge_request_sha: str | None
 ) -> str:
     return "|".join(
-        [slot_key, reply_sha, SCORER_VERSION, JUDGE_PROMPT_VERSION, judge_request_sha or "none"]
+        [slot_key, reply_sha, SCORER_VERSION, judge_version, judge_request_sha or "none"]
     )
 
 
@@ -643,6 +671,7 @@ class ScoringPlan:
     score_path: Path
     slots: list[SlotPlan]
     unknown_records: int
+    judge: JudgePrompt
 
     def count(self, *, state: str | None = None, action: str | None = None) -> int:
         return sum(
@@ -821,7 +850,7 @@ def _manifest_fields(
 
 
 def plan_scoring(
-    run_dir: Path, scores_dir: Path, notes_path: Path, judge_prompt_text: str
+    run_dir: Path, scores_dir: Path, notes_path: Path, judge: JudgePrompt
 ) -> ScoringPlan:
     """Read the run and the score file; decide reuse / judge / skip per slot.
 
@@ -891,7 +920,7 @@ def plan_scoring(
                 reply_sha = text_sha256(text)
                 if text.strip():
                     sp.state = "ok"
-                    sp.request = build_judge_request(judge_prompt_text, turns, text, criteria)
+                    sp.request = build_judge_request(judge.text, turns, text, criteria)
                     sp.request_sha256 = request_sha256(sp.request)
                 else:
                     sp.state = "empty"
@@ -903,7 +932,7 @@ def plan_scoring(
                         and e.get("slot_key") == key
                         and e.get("text_sha256") == reply_sha
                         and e.get("scorer_version") == SCORER_VERSION
-                        and e.get("judge_prompt_version") == JUDGE_PROMPT_VERSION
+                        and e.get("judge_prompt_version") == judge.version
                         and e.get("judge_request_sha256") == sp.request_sha256
                     ),
                     None,
@@ -919,7 +948,7 @@ def plan_scoring(
                         )
                     sp.reused = record
     unknown = sum(1 for _, r in records if r["slot_key"] not in expected)
-    return ScoringPlan(run_id, models, score_path, slots, unknown)
+    return ScoringPlan(run_id, models, score_path, slots, unknown, judge)
 
 
 # ----------------------------------------------------------------------- execute
@@ -956,7 +985,9 @@ def _base_record(plan: ScoringPlan, sp: SlotPlan, judged: bool) -> dict[str, Any
     assert sp.text is not None
     reply_sha = text_sha256(sp.text)
     return {
-        "score_key": make_score_key(sp.slot_key, reply_sha, sp.request_sha256),
+        "score_key": make_score_key(
+            sp.slot_key, reply_sha, plan.judge.version, sp.request_sha256
+        ),
         "run_id": plan.run_id,
         "slot_key": sp.slot_key,
         "case_id": sp.case_id,
@@ -965,8 +996,9 @@ def _base_record(plan: ScoringPlan, sp: SlotPlan, judged: bool) -> dict[str, Any
         "sample_index": sp.sample_index,
         "text_sha256": reply_sha,
         "scorer_version": SCORER_VERSION,
-        "judge_prompt_version": JUDGE_PROMPT_VERSION,
-        "judge_prompt_sha256": JUDGE_PROMPT_SHA256,
+        "judge_prompt_version": plan.judge.version,
+        "judge_prompt_sha256": plan.judge.sha256,
+        "judge_prompt_path": plan.judge.path.as_posix(),
         "judge_model": JUDGE_MODEL if judged else None,
         "judge_settings": dict(JUDGE_SETTINGS) if judged else None,
         "judge_request_sha256": sp.request_sha256,

@@ -79,7 +79,7 @@ uv run next-turn score runs/<run_id>
 - Diagnostic flags that never change the decision: `long_reply` (over 40 words), `multiple_question_marks`, `no_question_mark`, and `markup`.
 
 **Scored by the judge.** A fixed `gpt-5.4-mini` judge (reasoning effort `none`, strict JSON output) scores next action, listening, grounding and delivery from 0 to 2, and lists critical violations.
-- Its instructions are `prompts/judge.md` (`judge-v1`). The file's SHA-256 is pinned in code, and a changed file is refused until the version and the hash are bumped.
+- By default its instructions are `prompts/judge.md` (`judge-v1`). Each judge prompt version's file SHA-256 is pinned in code. A changed file is refused; changed text needs a new version.
 - It receives only three things:
   - the case's `expected_action`, `good_if` and `fail_if` from `cases/notes.toml`, or a "general rubric" note for a case with no notes;
   - the transcript, labelled Riley and Applicant;
@@ -87,6 +87,8 @@ uv run next-turn score runs/<run_id>
 - It never sees model names, the run, the sample or the prompt version.
 - Every quote the judge gives must appear in the reply or in a single transcript turn. Only typographic quotes, dashes and whitespace are normalised before matching.
 - Otherwise the reply is marked `needs review` and gets no decision.
+
+**Judge versions.** `--judge-version` picks the judge prompt: `judge-v1` (`prompts/judge.md`, the default and the frozen baseline), or `judge-v2a` or `judge-v2b` (`prompts/judge-v2a.md`, `prompts/judge-v2b.md`), which are candidate versions under evaluation. `score` prints the version it used. Scores for different versions sit side by side in the same `scores/<run_id>.jsonl`, each record marked with its version. A score is never reused across versions, so the first run of a new version makes a judge call for every non-empty reply.
 
 **Decision rule.** Code decides, with the same rule for every model. A reply is acceptable only if all of these hold:
 - the single-turn check passes;

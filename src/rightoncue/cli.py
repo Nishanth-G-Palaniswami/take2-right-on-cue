@@ -73,6 +73,12 @@ def _build_parser() -> argparse.ArgumentParser:
     score.add_argument("run_dir", type=Path)
     score.add_argument("--scores-dir", type=Path, default=Path("scores"))
     score.add_argument("--notes", type=Path, default=Path("cases/notes.toml"))
+    score.add_argument(
+        "--judge-version",
+        choices=list(scoring.JUDGE_PROMPTS),
+        default=scoring.DEFAULT_JUDGE_VERSION,
+        help=f"judge prompt version (default {scoring.DEFAULT_JUDGE_VERSION})",
+    )
     return parser
 
 
@@ -423,8 +429,16 @@ def _print_score_summary(
         if result.calls_with_usage
         else "no usage reported"
     )
+    print(_judge_line(plan.judge))
     print(f"Judge calls this run: {result.calls} ({tokens})")
     print(f"Scores file: {plan.score_path.as_posix()}")
+
+
+def _judge_line(judge: scoring.JudgePrompt) -> str:
+    return (
+        f"Judge: {judge.version} ({judge.path.as_posix()}, sha256 {judge.sha256[:12]}), "
+        f"model {scoring.JUDGE_MODEL}"
+    )
 
 
 def _cmd_score(
@@ -435,10 +449,8 @@ def _cmd_score(
         print(f"{args.run_dir}: no manifest.json; not a run directory", file=sys.stderr)
         return 2
     try:
-        judge_prompt = scoring.load_judge_prompt(scoring.JUDGE_PROMPT_PATH)
-        plan = scoring.plan_scoring(
-            args.run_dir, args.scores_dir, args.notes, judge_prompt
-        )
+        judge = scoring.load_judge_prompt(args.judge_version)
+        plan = scoring.plan_scoring(args.run_dir, args.scores_dir, args.notes, judge)
     except (scoring.ScoringInputError, ManifestError) as exc:
         print(str(exc), file=sys.stderr)
         print("No judge call was made.", file=sys.stderr)
@@ -458,6 +470,7 @@ def _cmd_score(
         + (f", {duplicates} duplicate" if duplicates else "")
         + "."
     )
+    print(_judge_line(plan.judge))
     problems: list[str] = []
     if duplicates:
         problems.append(
