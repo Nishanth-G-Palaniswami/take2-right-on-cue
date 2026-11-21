@@ -14,7 +14,7 @@ There are 2 samples per model, prompt and case on D1–D4. Prompt and case files
 | Prompt | Model (reported as) | Run(s) | Labels committed | Labelling conditions |
 |---|---|---|---|---|
 | v1 | `gpt-5.4` (`gpt-5.4-2026-03-05`) | `20261121T202643Z-96f2fa` | `c10c6e5` | Model hidden (mixed with Gemini); Nishanth saw ChatGPT's suggestions before finalizing |
-| v1 | `gpt-5.4-mini` (`gpt-5.4-mini-2026-03-17`) | `20261121T005440Z-0dbed1` (D1/D2), `20261121T000156Z-6c1135` (D3/D4) | `187a304`, `8191552` | Single-model runs; labels committed before any feedback or scorer. `6c1135` D4: a later tie correction (below) |
+| v1 | `gpt-5.4-mini` (`gpt-5.4-mini-2026-03-17`) | `20261121T005440Z-0dbed1` (D1/D2), `20261121T000156Z-6c1135` (D3/D4) | `187a304`, `8191552` | Single-model runs. The `0dbed1` labels were committed "before any unblinding or feedback" (`187a304`), and the `6c1135` labels "before any scorer" (`8191552`). `6c1135` D4: a later tie correction (below) |
 | v1 | `gemini-3.5-flash` (`gemini-3.6-flash`) | `20261121T202643Z-96f2fa` | `c10c6e5` | As for v1 `gpt-5.4` |
 | v2 | `gpt-5.4` (`gpt-5.4-2026-03-05`) | `20261121T195552Z-6237ea` | `f13316a` | Not model-blind; Nishanth discussed his judgments with an AI assistant before committing |
 | v2 | `gpt-5.4-mini` (`gpt-5.4-mini-2026-03-17`) | `20261121T023359Z-455c41` | `b3c3a5d` | Model hidden (mixed with Gemini); committed after AI reviews by ChatGPT and Claude |
