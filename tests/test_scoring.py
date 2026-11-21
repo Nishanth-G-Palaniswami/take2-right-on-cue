@@ -433,7 +433,7 @@ def test_committed_ok_replies_pass_single_turn() -> None:
             assert result.single_turn_pass, (path, record["output_text"], result.failures)
             assert "markup" not in result.diagnostics.flags, record["output_text"]
             checked += 1
-    assert checked == 60  # every ok reply committed as of run 20261121T195552Z-6237ea
+    assert checked == 76  # every ok reply committed as of run 20261121T202643Z-96f2fa
 
 
 def test_plan_reads_every_committed_run_and_writes_nothing(tmp_path: Path) -> None:

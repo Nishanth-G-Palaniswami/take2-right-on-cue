@@ -1,0 +1,74 @@
+{
+  "D1": {
+    "A": {
+      "slot_key": "20261121T202643Z-96f2fa|D1|v1|gemini-3.5-flash|1",
+      "text_sha256": "60a20c04919a28a504877228d280d32e3055c7d6e3dc5ce68a8cf9529c7d63f7"
+    },
+    "B": {
+      "slot_key": "20261121T202643Z-96f2fa|D1|v1|gpt-5.4|2",
+      "text_sha256": "1f3d1280e8ed744196f036c9b0316321120ea0d4c8e5b537d02947cf389a5350"
+    },
+    "C": {
+      "slot_key": "20261121T202643Z-96f2fa|D1|v1|gemini-3.5-flash|2",
+      "text_sha256": "3940c7f2453e7dbc42fbaf6b9fd47a922764a82cddbc7031f67ce89bd4806b58"
+    },
+    "D": {
+      "slot_key": "20261121T202643Z-96f2fa|D1|v1|gpt-5.4|1",
+      "text_sha256": "b50a0fb30e739a8503911db3733b2ddce0ceda6d29a9c8adec57a2b0bd02d46f"
+    }
+  },
+  "D2": {
+    "A": {
+      "slot_key": "20261121T202643Z-96f2fa|D2|v1|gpt-5.4|2",
+      "text_sha256": "bac07edf774f766ddef12ff137689f35833bd80874feaf8857440894e72d9f4e"
+    },
+    "B": {
+      "slot_key": "20261121T202643Z-96f2fa|D2|v1|gemini-3.5-flash|2",
+      "text_sha256": "66d1462e49c8946e2da3fdea054ebbfad62efefe1be8c46fd394c3bf3f10c236"
+    },
+    "C": {
+      "slot_key": "20261121T202643Z-96f2fa|D2|v1|gpt-5.4|1",
+      "text_sha256": "bac07edf774f766ddef12ff137689f35833bd80874feaf8857440894e72d9f4e"
+    },
+    "D": {
+      "slot_key": "20261121T202643Z-96f2fa|D2|v1|gemini-3.5-flash|1",
+      "text_sha256": "058eeb967e3f061ef43ab58857a67c27b5f6ccf7d70f3bcb5582bae81c22b7e1"
+    }
+  },
+  "D3": {
+    "A": {
+      "slot_key": "20261121T202643Z-96f2fa|D3|v1|gemini-3.5-flash|2",
+      "text_sha256": "dc9de69d4568f0dbede5e8ade5e45b8a9e22b1d385f3fb34729e141fc85d6d86"
+    },
+    "B": {
+      "slot_key": "20261121T202643Z-96f2fa|D3|v1|gpt-5.4|2",
+      "text_sha256": "118868537a7910cd8ff803dbf15cb15ec21da35aad923f762260ca5e88c56768"
+    },
+    "C": {
+      "slot_key": "20261121T202643Z-96f2fa|D3|v1|gpt-5.4|1",
+      "text_sha256": "3af267a67ad051f31871f5d85bb1013ca886721fa470784ed7a2d2802f444e32"
+    },
+    "D": {
+      "slot_key": "20261121T202643Z-96f2fa|D3|v1|gemini-3.5-flash|1",
+      "text_sha256": "e3a34e0258b07a3287d6d2c62e69d20a5cb7651818c5409bd088017afe17c9cf"
+    }
+  },
+  "D4": {
+    "A": {
+      "slot_key": "20261121T202643Z-96f2fa|D4|v1|gpt-5.4|1",
+      "text_sha256": "ada6e67dabde2bf80a8ef5bc8f82f788e4c6cd18d5b8094c64e68ccec7d9e7b0"
+    },
+    "B": {
+      "slot_key": "20261121T202643Z-96f2fa|D4|v1|gpt-5.4|2",
+      "text_sha256": "a2873790bcc45a9a4c85104ad5ac18100cf16cc9657084daa5acc02b26268808"
+    },
+    "C": {
+      "slot_key": "20261121T202643Z-96f2fa|D4|v1|gemini-3.5-flash|2",
+      "text_sha256": "a0e1631449e3bd41b12ec50109067ec80bc90986d7b87cd5160abecc76191665"
+    },
+    "D": {
+      "slot_key": "20261121T202643Z-96f2fa|D4|v1|gemini-3.5-flash|1",
+      "text_sha256": "a822b4443abb403f3e044dfea64a8cc01bfd8ff8f82bbbaffedf6a23a8076f4c"
+    }
+  }
+}
