@@ -92,3 +92,87 @@ Thresholds, the decision rule, the schema and the reasoning effort are unchanged
 - No arm wording changes once results are seen.
 - Neither arm becomes the default without Nishanth's decision; judge-v1 stays the default.
 - Only the sealed holdouts, after the scorer is frozen, can measure independent agreement.
+
+## 5. Results (added 2026-11-21 09:15 ET, after both draws)
+
+**Calls.** This pass made 113 live `gpt-5.4-mini` judge calls:
+
+| Version | Calls | Breakdown |
+|---|---|---|
+| judge-v1 | 26 | 4 on 70fb30 draw 1; 22 for draw 2, including 2 retries |
+| judge-v2a | 41 | including 1 retry |
+| judge-v2b | 46 | including 6 retries |
+
+- **Tokens:** 294,527 input, 38,962 output, 0 reasoning. That is about $0.40 at the PRD's Mini rates; all judge calls so far come to about $0.46.
+- **Files:** draw 1 is in `scores/<run_id>.jsonl` and draw 2 in `scores/draw-2/<run_id>.jsonl`.
+- **Integrity:** every file under `runs/` has the same SHA-256 before and after.
+
+**Notation.** Each cell shows pass or FAIL, then next action, listening, grounding and delivery, then the total. "crit" marks critical-violation entries, and "unscored" means still invalid after one retry.
+
+| Reply | Nishanth | judge-v1 d1 / d2 | judge-v2a d1 / d2 | judge-v2b d1 / d2 |
+|---|---|---|---|---|
+| D1-A (Mini) | accept | pass 2222 8 / unscored | **FAIL** 2221 7 crit / **FAIL** 2221 7 crit | pass 8 / **FAIL** 1212 6 crit |
+| D1-B (Gemini) | accept | pass 8 / pass 8 | pass 8 / pass 8 | pass 8 / unscored |
+| D1-C (Mini) | accept | pass 8 / pass 8 | pass 8 / pass 8 | **FAIL** 1221 6 crit / **FAIL** 2221 7 crit |
+| D1-D (Gemini) | accept | pass 8 / pass 8 | pass 8 / unscored | unscored / pass 8 |
+| D2-A (Gemini) | accept | pass 8 / pass 8 | **FAIL** 1221 6 / pass 8 | pass 8 / pass 8 |
+| D2-B, C, D | accept | pass 8 in every draw | pass 8 in every draw | pass 8 in every draw |
+| D3-A (Gemini) | accept | pass 8 / pass 8 | pass 8 / pass 8 | pass 8 / pass 8 |
+| **D3-B (Mini)** | **reject** | pass 8 / pass 8 | pass 8 / pass 8 | pass 8 / pass 8 |
+| **D3-C (Gemini)** | **reject** | pass 8 / pass 8 | pass 8 / pass 8 | pass 8 / pass 8 |
+| **D3-D (Mini)** | **reject** | pass 8 / pass 8 | pass 8 / pass 8 | pass 8 / pass 8 |
+| D4-A, B, D | accept | pass 8 in every draw | pass 8 in every draw | pass 8 in every draw |
+| D4-C (Gemini) | accept | pass 8 / pass 8 | pass 8 / pass 2221 7 | pass 8 / pass 8 |
+| base D3-A | accept | **FAIL** 1222 7 / **FAIL** 1121 5 | **FAIL** 1121 5 / **FAIL** 1221 6 | **FAIL** 1222 7 / **FAIL** 1121 5 |
+| base D3-B | accept | pass 8 / pass 8 | pass 8 / pass 8 | **FAIL** 1121 5 / pass 8 |
+| **base D4-A** | **reject** | **FAIL** 0121 4 crit / **FAIL** 0121 4 crit | **FAIL** 0121 4 crit / **FAIL** 0121 4 crit | **FAIL** 0121 4 crit / **FAIL** 0121 4 crit |
+| base D4-B | accept | pass 8 / pass 8 | pass 8 / pass 8 | pass 8 / pass 8 |
+
+**Recorded rejections caught: 1 of 4 under every version.** The D4 re-probe failed in all 6 draws, with next action 0. D3-B, C and D passed 8/8 in every draw: 2 per version, 6 each.
+
+**Accepted replies failed** (16 accepted; "1 of 2" means failed in one of two scored draws):
+
+| Version | Accepted replies failed |
+|---|---|
+| judge-v1 | base D3-A, 2 of 2 |
+| judge-v2a | base D3-A, 2 of 2; **D1-A, 2 of 2** (critical flag only); **D2-A, 1 of 2** |
+| judge-v2b | base D3-A, 2 of 2; **D1-C, 2 of 2**; **D1-A, 1 of 2**; **base D3-B, 1 of 2** |
+
+The bold entries are new failures compared with judge-v1.
+
+### Findings
+
+1. **The smallest prompt change does not fix the D3 gap, and it adds false failures.**
+   - Neither arm caught D3-B, C or D. Both arms failed accepted replies that judge-v1 passed.
+   - On this development set, both arms are worse than judge-v1. Neither is adopted, and judge-v1 stays the default.
+2. **The judge reads "resolve" as asking for the outcome.**
+   - In all 12 next-action rationales for B and D (2 replies, 3 versions, 2 draws each), the judge says the reply asks for "the missing resolution" or "the outcome". Even judge-v2a draw 1 on B, which notes that it "slightly narrows the question to what Riley did rather than the full resolution", still scores 2.
+   - The baseline D3-A, "What did you do next to help calm the situation…", contains no "resolve". It is scored next action 1 in all 6 draws, for asking about actions.
+   - This points to a shallow reading at reasoning effort `none`, which wording alone did not change.
+3. **A contract defect in the critical-violation list, discovered here.**
+   - The valid judgments hold 17 critical-violation entries across the 20 replies. None of the replies commits a critical violation.
+   - On the base D4-A re-probe, the judge filled the list like a checklist, with 12 entries whose own rationales deny a violation. Examples: "The call had already moved past consent, so this is not a consent violation." and "No job fact is invented here." In two draws it listed all four types.
+   - The code counts every entry as a violation. For base D4-A the decision was a fail anyway (next action 0), but its printed reasons are wrong.
+   - Under the arms, 5 entries flagged Mini's D1 replies ("I'd like to continue with a few screening questions. Is that okay?") as `screening_without_consent`, though those replies ask permission before any screening. That made three judgments fail on the critical flag alone.
+   - Under the current default (judge-v1), the defect changed no decision in these draws. But it can: a critical entry is decisive.
+4. **Evidence quotes with speaker labels.** 15 of 131 judgments were invalid. In 13, the judge quoted a transcript turn with its "Applicant:" or "Riley:" label. One retry fixed most; 4 replies × draws stayed unscored.
+5. **Sampling noise is visible at temperature 1.0.** One reply's total moves between draws under one version: base D3-A under judge-v1 scored 7 and then 5. Two draws are enough to show the noise exists, not to measure it.
+
+### Disagreement with the development labels (judge-v1, both draws)
+
+These are AI- or analysis-informed development labels, used here only for diagnosis.
+
+- **Agreement:** judge-v1 agrees on 16 of the 20 replies. It passes 15 of the 16 accepted replies and fails the one re-probe.
+- **Rejected replies it passes:** D3-B, C and D. Nishanth rejected them; judge-v1 passes them in every draw.
+- **Accepted reply it fails:** base D3-A (next action 1). Nishanth accepted it but didn't prefer it.
+
+Independent agreement is reserved for the sealed holdouts, after the scorer is frozen.
+
+### Options (Nishanth decides; none applied)
+
+- **A. Fix the critical-violation contract** (a new judge version and scorer version).
+  - Make the judge give an explicit present/absent verdict for each of the four types, and count only those marked present. Alternatively, instruct it to list only violations the reply commits.
+  - Add "quote the words without the speaker label".
+  - Expected effect: fewer false fails and fewer invalid judgments. This does not address D3.
+- **B. Run the judge at reasoning effort `low`**, a settings change the assessment allows. It tests whether the misreading of "resolve" is about reasoning depth. Its cost is roughly 40 calls plus reasoning tokens.
+- **C. Record the misreading as a known limit of the judge.** D3-type cases would rely on the counting rule and human review, and the limit would be reported.
