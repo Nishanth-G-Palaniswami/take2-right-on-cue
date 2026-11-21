@@ -197,6 +197,6 @@ The command:
 | 1 | Freeze clarification and these decisions (`docs/judge-v1-known-limits.md`, this section) | lead | Verified (lead) |
 | 2 | Preflight: one `gpt-5.4` call with reasoning effort `none`, kept outside `runs/` | lead | Verified. Accepted: status completed, effort `none` echoed back, 0 reasoning tokens, reported model `gpt-5.4-2026-03-05`, 797 input and 35 output tokens, about $0.00252. Its reply is excluded and wasn't viewed |
 | 3 | Run: v2 × D1–D4 × `gpt-5.4` × 2, then commit the run with its blind key and sheet | lead | Verified. Run `20261121T195552Z-6237ea`: 8 of 8 completed, reported model `gpt-5.4-2026-03-05`, 7,728 input and 251 output tokens, 0 reasoning, about $0.02309. The manifest records `26cd5d4` with a clean tree. The prompt and case files hash the same as in `455c41` |
-| 4 | Labels for the 8 replies, committed before any scoring | Nishanth | Pending |
-| 5 | Score with judge-v1 (one retry), then report next to `455c41` | lead | Pending |
+| 4 | Labels for the 8 replies, committed before any scoring | Nishanth | Verified. Entered by Nishanth and committed in `f13316a` by the coding session, after he reported finishing and before any scoring. Only the answer fields changed. Not model-blind (disclosed) |
+| 5 | Score with judge-v1 (one retry), then report next to `455c41` | lead | Verified. 8 judge calls, all valid on the first attempt, so no retry was needed and none is unscored. 5 acceptable, 3 not acceptable. D4-B's 4 critical entries all deny a violation in their own rationale (known limit 1) and are flagged for Nishanth's human review; its raw verdict is kept |
 | 6 | Final comparison: v1 and v2 × three models, with matched cases and sample counts | lead + Nishanth | Pending |
