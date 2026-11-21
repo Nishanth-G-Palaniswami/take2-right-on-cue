@@ -49,7 +49,8 @@ If two `show` commands open a new run at the same moment, one of them stops with
 
 ## Layout
 
-- `prompts/`: call prompts. `v1.md` is the starter prompt and is never edited.
+- `prompts/`: call prompts. `v1.md` is the starter prompt and is never edited. `v2.md` is the working prompt: v1 with one line changed (see `docs/measurements/2026-11-20-v2-d1-d4.md`).
+- `docs/measurements/`: each prompt experiment, with counting rules committed before its replies were generated, then the results.
 - `cases/dev/`: partial transcripts in JSON Lines, one `{"role": "agent"|"user", "utterance": ...}` per line, ending on a user turn.
 - `cases/notes.toml`: the expected next move for each case, written before any replies were generated. The generator never reads it.
 - `runs/`: saved runs.
