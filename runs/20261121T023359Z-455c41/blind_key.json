@@ -1,0 +1,74 @@
+{
+  "D1": {
+    "A": {
+      "slot_key": "20261121T023359Z-455c41|D1|v2|gpt-5.4-mini|2",
+      "text_sha256": "59a557f10beae5ea466f79efe5fc8e3ea8c4a7db1abfb52c102b22faf83f9662"
+    },
+    "B": {
+      "slot_key": "20261121T023359Z-455c41|D1|v2|gemini-3.5-flash|2",
+      "text_sha256": "41a4d8f7f198a7df709fb8cbc7b914d54a328222b7935a78783b856b8bfad7b6"
+    },
+    "C": {
+      "slot_key": "20261121T023359Z-455c41|D1|v2|gpt-5.4-mini|1",
+      "text_sha256": "85c86f576f5c2bd0e921a6987e7019717d29f7ae7ad2bc5564c2bef84951ecdb"
+    },
+    "D": {
+      "slot_key": "20261121T023359Z-455c41|D1|v2|gemini-3.5-flash|1",
+      "text_sha256": "a853d30067c50d92897c17f79861f31899784f576d88a3d66eb61a198f63d198"
+    }
+  },
+  "D2": {
+    "A": {
+      "slot_key": "20261121T023359Z-455c41|D2|v2|gemini-3.5-flash|1",
+      "text_sha256": "4c26be50189c8ece9dcd315ef98c875d7c777807c14123a0b3695607d9038329"
+    },
+    "B": {
+      "slot_key": "20261121T023359Z-455c41|D2|v2|gemini-3.5-flash|2",
+      "text_sha256": "ee230d1c8a1165700fe0cb95034132bf01f6b1bbdc6cf9ac3819b673cf4aac56"
+    },
+    "C": {
+      "slot_key": "20261121T023359Z-455c41|D2|v2|gpt-5.4-mini|2",
+      "text_sha256": "31e4ecd1dc90f1decee5e89e4ee31836fc585f6681ea46c1cdbd9fb5410e45c4"
+    },
+    "D": {
+      "slot_key": "20261121T023359Z-455c41|D2|v2|gpt-5.4-mini|1",
+      "text_sha256": "dd2a544274e85b7373522e1fb3ddea99e06dc4ee4c85d6e5a4740ed876b8b2ec"
+    }
+  },
+  "D3": {
+    "A": {
+      "slot_key": "20261121T023359Z-455c41|D3|v2|gemini-3.5-flash|1",
+      "text_sha256": "09f436697f1ed199312297af8f1606ecb871b50d6d0019523142a50ec56cc44b"
+    },
+    "B": {
+      "slot_key": "20261121T023359Z-455c41|D3|v2|gpt-5.4-mini|1",
+      "text_sha256": "b3b892c93f1ba4816bd939ea2a63d389d42c6e7ca659a7ead3c9df08fc7e4861"
+    },
+    "C": {
+      "slot_key": "20261121T023359Z-455c41|D3|v2|gemini-3.5-flash|2",
+      "text_sha256": "1ccbac64f87f6e9f3e776cd060e704fb1e73bccd25b6ca1125167bb2d59367ea"
+    },
+    "D": {
+      "slot_key": "20261121T023359Z-455c41|D3|v2|gpt-5.4-mini|2",
+      "text_sha256": "59369c5688e9c148b9dbb31900f932059eb1f6ae9ce5a20f78272754f21fe3d3"
+    }
+  },
+  "D4": {
+    "A": {
+      "slot_key": "20261121T023359Z-455c41|D4|v2|gemini-3.5-flash|1",
+      "text_sha256": "5f3c11227f867a6e96565ab7e5a6def50410cb5e4f3f2d267a9dc03fabc409bb"
+    },
+    "B": {
+      "slot_key": "20261121T023359Z-455c41|D4|v2|gpt-5.4-mini|2",
+      "text_sha256": "efc6b515013979bcd4c41ea3cc44459cdfc0cc494f80337d7c11ef425cbe3e07"
+    },
+    "C": {
+      "slot_key": "20261121T023359Z-455c41|D4|v2|gemini-3.5-flash|2",
+      "text_sha256": "c530d3495d958bd0fc64a52675556215d6b17de1b8169ce485bb266a8fdd3456"
+    },
+    "D": {
+      "slot_key": "20261121T023359Z-455c41|D4|v2|gpt-5.4-mini|1",
+      "text_sha256": "c8eb8eb179f51604a89d04163a7865143bfc62a7ab0d364eae5009181b1e4c6c"
+    }
+  }
+}
