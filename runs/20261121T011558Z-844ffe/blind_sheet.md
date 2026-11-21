@@ -25,14 +25,14 @@ What did you do in that conversation to help calm things down and make sure the 
 <<<<<<<< END REPLY E >>>>>>>>
 
 
-Preference (A / B / C / D / E / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
-Accept E? (y/n):
+Preference (A / B / C / D / E / tie): D
+Words that tipped it: “how did the brother respond?”
+One-sentence reason: Sam stopped just as the conversation was about to begin, and D invites him to explain both what he did and how it turned out for the brother.
+Accept A? (y/n): y
+Accept B? (y/n): y
+Accept C? (y/n): y
+Accept D? (y/n): y
+Accept E? (y/n): y
 
 === CASE D4 ===
 Riley's previous turn:
@@ -61,11 +61,11 @@ Thanks, that sounds like you helped bring everyone onto the same page and calm a
 <<<<<<<< END REPLY E >>>>>>>>
 
 
-Preference (A / B / C / D / E / tie):
-Words that tipped it:
-One-sentence reason:
-Accept A? (y/n):
-Accept B? (y/n):
-Accept C? (y/n):
-Accept D? (y/n):
-Accept E? (y/n):
+Preference (A / B / C / D / E / tie): E
+Words that tipped it: “Tell me about a time you advocated for a patient”
+One-sentence reason: The brother had already said he knew what to expect, so E acknowledges how the story ended and moves naturally into the advocacy question.
+Accept A? (y/n): y
+Accept B? (y/n): n
+Accept C? (y/n): n
+Accept D? (y/n): y
+Accept E? (y/n): y
