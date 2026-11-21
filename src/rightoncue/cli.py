@@ -11,7 +11,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from . import gemini, openai_responses
+from . import gemini, openai_responses, scoring
 from .runs import (
     MAX_REPLIES_PER_CASE,
     PROVIDERS,
@@ -66,6 +66,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
     show = sub.add_parser("show", help="print the blinded reply view for a run")
     show.add_argument("run_dir", type=Path)
+
+    score = sub.add_parser(
+        "score", help="score a run's saved replies (code checks, judge, decision)"
+    )
+    score.add_argument("run_dir", type=Path)
+    score.add_argument("--scores-dir", type=Path, default=Path("scores"))
+    score.add_argument("--notes", type=Path, default=Path("cases/notes.toml"))
     return parser
 
 
@@ -294,6 +301,218 @@ def _cmd_show(args: argparse.Namespace) -> int:
     return 0
 
 
+_DECISION_LABEL = {
+    "needs_review": "NEEDS REVIEW",
+    "judge_failed": "JUDGE FAILED",
+}
+_UNSCORED_NOTE = {
+    "incomplete": "reply was incomplete; not scored",
+    "generation_failed": "reply failed to generate; not scored",
+    "missing": "no saved record for this slot; not scored",
+    "duplicate": "more than one saved record for this slot; not scored",
+    "stopped": "not scored: scoring stopped after a fatal judge error",
+}
+
+
+def _reported(sp: scoring.SlotPlan) -> str:
+    if sp.returned_model:
+        return sp.returned_model
+    if sp.state == "missing":
+        return "none (no saved record)"
+    if sp.state == "duplicate":
+        return "not determined (duplicate records)"
+    return "served version unconfirmed" if sp.responded else "none (no response received)"
+
+
+def _print_score_outcome(outcome: scoring.Outcome, last_case: list[str]) -> None:
+    sp = outcome.slot
+    if not last_case or last_case[0] != sp.case_id:
+        print(f"\n=== CASE {sp.case_id} ===")
+        last_case[:] = [sp.case_id]
+    head = (
+        f"\n{sp.case_id} | requested {sp.requested_model} / reported "
+        f"{_reported(sp)} | sample {sp.sample_index}"
+    )
+    rec = outcome.record
+    if rec is None:
+        print(f"{head}\n  {_UNSCORED_NOTE[outcome.kind]}")
+        return
+    print(head)
+    print(f"  Reply: \"{sp.text}\"")
+    decision = rec["decision"]
+    if rec["status"] == "scored":
+        label = "ACCEPTABLE" if decision["acceptable"] else "NOT ACCEPTABLE"
+    else:
+        label = _DECISION_LABEL[rec["status"]]
+    print(f"  Decision: {label}")
+    print("  Reasons:")
+    for reason in decision["reasons"]:
+        print(f"    - {reason}")
+    scores = decision["scores"]
+    if scores is None:
+        print("  Scores: not judged")
+    else:
+        parts = " · ".join(
+            f"{scoring.DIMENSION_LABELS[d]} {scores[d]}" for d in scoring.DIMENSIONS
+        )
+        print(f"  Scores: {parts} · total {decision['total']}/8")
+    judgment = rec["judgment"]
+    if judgment is not None:
+        print("  Judge:")
+        for d in scoring.DIMENSIONS:
+            dim = judgment[d]
+            print(f"    {scoring.DIMENSION_LABELS[d]} ({dim['score']}): {dim['rationale']}")
+            for ev in dim["evidence"]:
+                print(f"      evidence ({ev['source']}): \"{ev['quote']}\"")
+        violations = judgment["critical_violations"]
+        if not violations:
+            print("    critical violations: none")
+        for cv in violations:
+            print(f"    critical violation {cv['type']}: {cv['rationale']}")
+            for ev in cv["evidence"]:
+                print(f"      evidence ({ev['source']}): \"{ev['quote']}\"")
+    if rec["status"] == "needs_review" and rec["judge_output_text"] is not None:
+        print(f"  Judge output (verbatim): {rec['judge_output_text']}")
+    st = rec["structural"]
+    diag = st["diagnostics"]
+    single = "pass" if st["single_turn_pass"] else f"FAIL ({'; '.join(st['failures'])})"
+    print(
+        f"  checks: single-turn: {single}; words {diag['word_count']}; question "
+        f"marks {diag['question_marks']}; flags: {', '.join(diag['flags']) or 'none'}"
+    )
+    print(f"  criteria: {rec['criteria_source']}")
+    print(f"  score: {outcome.source}")
+
+
+def _print_score_summary(
+    plan: scoring.ScoringPlan, result: scoring.ScoringResult
+) -> None:
+    print("\nSummary")
+    for model in plan.models:
+        outs = [o for o in result.outcomes if o.slot.requested_model == model]
+        kinds = [o.kind for o in outs]
+        states = [o.slot.state for o in outs]
+        present = [o.slot for o in outs if o.slot.state not in ("missing", "duplicate")]
+        reported = sorted({s.returned_model for s in present if s.returned_model})
+        if any(s.responded and not s.returned_model for s in present):
+            reported.append("served version unconfirmed")
+        acceptable = sum(
+            1 for o in outs if o.kind == "scored" and o.record["decision"]["acceptable"]  # type: ignore[index]
+        )
+        print(f"Model {model}:")
+        print(f"  Requested model: {model}")
+        print(
+            f"  Reported model: {', '.join(reported) if reported else 'none (no response received)'}"
+        )
+        ok = states.count("ok") + states.count("empty")
+        print(
+            f"  Slots: {len(outs)} expected, {ok} ok {_plural(ok, 'reply', 'replies')} "
+            f"({states.count('empty')} empty), {states.count('incomplete')} incomplete, "
+            f"{states.count('generation_failed')} generation failed, "
+            f"{states.count('missing')} missing"
+            + (f", {states.count('duplicate')} duplicate" if "duplicate" in states else "")
+        )
+        print(
+            f"  Scores: {acceptable} acceptable, {kinds.count('scored') - acceptable} "
+            f"not acceptable, {kinds.count('needs_review')} needs review, "
+            f"{kinds.count('judge_failed')} judge failed"
+            + (f", {kinds.count('stopped')} not scored (stopped)" if "stopped" in kinds else "")
+        )
+    tokens = (
+        f"input tokens {result.input_tokens}, output tokens {result.output_tokens}"
+        if result.calls_with_usage
+        else "no usage reported"
+    )
+    print(f"Judge calls this run: {result.calls} ({tokens})")
+    print(f"Scores file: {plan.score_path.as_posix()}")
+
+
+def _cmd_score(
+    args: argparse.Namespace,
+    client_factories: Mapping[str, Callable[[], Any]] | None = None,
+) -> int:
+    if not (args.run_dir / "manifest.json").exists():
+        print(f"{args.run_dir}: no manifest.json; not a run directory", file=sys.stderr)
+        return 2
+    try:
+        judge_prompt = scoring.load_judge_prompt(scoring.JUDGE_PROMPT_PATH)
+        plan = scoring.plan_scoring(
+            args.run_dir, args.scores_dir, args.notes, judge_prompt
+        )
+    except (scoring.ScoringInputError, ManifestError) as exc:
+        print(str(exc), file=sys.stderr)
+        print("No judge call was made.", file=sys.stderr)
+        return 2
+
+    reuse = plan.count(action="reuse")
+    empty = plan.count(state="empty")
+    duplicates = plan.count(state="duplicate")
+    print(f"run_id: {plan.run_id}")
+    print(
+        f"Plan: {plan.eligible} eligible {_plural(plan.eligible, 'reply', 'replies')} "
+        f"(status ok): {reuse} reuse a valid score, {plan.calls_needed} need a judge "
+        f"call; {empty} of them empty (no judge call, fails the single-turn check). "
+        f"Not scored: {plan.count(state='incomplete')} incomplete, "
+        f"{plan.count(state='generation_failed')} generation failed, "
+        f"{plan.count(state='missing')} missing"
+        + (f", {duplicates} duplicate" if duplicates else "")
+        + "."
+    )
+    problems: list[str] = []
+    if duplicates:
+        problems.append(
+            f"{duplicates} reply {_plural(duplicates, 'slot has', 'slots have')} more "
+            "than one saved record and "
+            f"{_plural(duplicates, 'was', 'were')} not scored."
+        )
+    if plan.unknown_records:
+        n = plan.unknown_records
+        problems.append(
+            f"{n} saved {_plural(n, 'record matches', 'records match')} no expected "
+            f"reply slot and {_plural(n, 'was', 'were')} ignored."
+        )
+
+    client: Any | None = None
+    if plan.calls_needed:
+        if client_factories is not None:
+            if openai_responses.PROVIDER not in client_factories:
+                raise ValueError("no client factory for provider: openai")
+            client = client_factories[openai_responses.PROVIDER]()
+        else:
+            load_dotenv(override=False)
+            env = openai_responses.API_KEY_ENV
+            if not os.environ.get(env):
+                print(
+                    f"{env} is not set. Put it in a .env file in the current "
+                    f"directory ({env}=...).",
+                    file=sys.stderr,
+                )
+                print("No request was made.", file=sys.stderr)
+                return 2
+            from openai import OpenAI
+
+            client = OpenAI()
+
+    last_case: list[str] = []
+    result = scoring.execute_plan(
+        plan, client, on_outcome=lambda o: _print_score_outcome(o, last_case)
+    )
+    _print_score_summary(plan, result)
+    if problems:
+        print("\nProblems found:", file=sys.stderr)
+        for problem in problems:
+            print(f"  - {problem}", file=sys.stderr)
+    if result.fatal_message:
+        print(result.fatal_message, file=sys.stderr)
+    bad = (
+        duplicates
+        or plan.unknown_records
+        or result.fatal_message
+        or any(o.kind in ("needs_review", "judge_failed") for o in result.outcomes)
+    )
+    return 1 if bad else 0
+
+
 def main(
     argv: list[str] | None = None,
     *,
@@ -306,6 +525,8 @@ def main(
     args = _build_parser().parse_args(argv)
     if args.command == "run":
         return _cmd_run(args, client_factories)
+    if args.command == "score":
+        return _cmd_score(args, client_factories)
     return _cmd_show(args)
 
 

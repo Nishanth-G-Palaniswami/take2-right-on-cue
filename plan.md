@@ -80,9 +80,19 @@ Which replies are scored:
 - **Duplicates.** A slot key with more than one record is reported as a problem and is not scored, so the scorer never guesses which text is the reply.
 
 Code checks:
-- **Single-turn failures.** An empty completed reply, or a reply that contains both sides of the conversation. A reply contains both sides if either holds:
-  - it has an applicant-side role label, such as `Applicant:`, `Candidate:`, `User:` or `Caller:`, anywhere in the text;
-  - two or more lines start with a speaker label: a role word or a single capitalised name followed by `:`.
+- **Single-turn failures.** An empty completed reply, or a reply that contains both sides of the conversation (PRD §7, "multiple speaker blocks").
+  - A *speaker label* is a role word in any case (Riley, Recruiter, Agent, Assistant, AI, Interviewer, Applicant, Candidate, User, Caller, Nurse, Interviewee) or a single capitalised word in any script (for example `José:`). It may be wrapped in `**`, `__` or `[ ]`, and is followed by `:`.
+  - A label counts only at one of three positions:
+    - (a) the start of the reply;
+    - (b) the start of a line;
+    - (c) directly after sentence-ending punctuation (`.`, `?` or `!`, optionally followed by a closing quote) and whitespace.
+  - The reply fails if any of these holds:
+    - R1: an applicant-side role word (applicant, candidate, user, caller, nurse, interviewee) is used as a label at position (a), (b) or (c). A mid-sentence "as a candidate:" doesn't count.
+    - R2: two or more labels sit at positions (a) or (b).
+    - R3: the reply starts with a label at position (a), and another label follows at position (b) or (c).
+    - R4: a label starts any line other than the first non-empty line, at position (b).
+  - A single label at the very start with nothing else is only the `markup` diagnostic flag, not a failure.
+  - Each failure message names the rule that fired and quotes the label.
 - **Diagnostic flags only (no effect on the decision):**
   - word count, flagged `long_reply` above 40 words;
   - question-mark count, flagged `multiple_question_marks` at 2 or more and `no_question_mark` at 0;
@@ -121,17 +131,17 @@ The decision:
 The command:
 - **Output.** For each reply: case, requested and reported model, sample, the verbatim reply, the decision and reason, the four scores and the total, the checks and flags, and whether the score was new or reused.
 - **Summary per model.** Expected slots; replies with status `ok`; empty, incomplete, generation-failed and missing slots; acceptable, not acceptable, needs review and judge failed.
-- **Exit codes.** 0 when everything scored validly. 1 when anything needs review, a judge call failed, or scoring stopped. 2 for input or configuration errors.
+- **Exit codes.** 0 when everything scored validly. 1 when anything needs review, a judge call failed, scoring stopped, a slot has duplicate records, or a record matches no expected slot. 2 for input or configuration errors, including a scores directory inside a run folder or inside a directory that holds run folders (a run folder has a `manifest.json` that is a JSON object with `run_id` and `samples_per_case`), and a corrupt score file.
 
 **Checklist**
 
 | # | Item | Owner | Status |
 |---|---|---|---|
 | 1 | Attribution correction for D3 C (label notes, report) | lead | Verified (`338d1f1`) |
-| 2 | Judge prompt `prompts/judge.md` (judge-v1) | lead | Implemented, awaiting verification |
-| 3 | `scoring.py`: structural checks, judge request, validation, decision rule, score store with reuse; `score` CLI; README | complex-coder | Pending |
-| 4 | Offline tests (decision thresholds incl. high total with next action 1; validation; reuse; judge-input exclusions; run folder byte-identical; partial and failed slots) | complex-coder | Pending |
-| 5 | Independent verification (Opus, high) | verifier | Pending |
+| 2 | Judge prompt `prompts/judge.md` (judge-v1) | lead | Verified (`db3623d`; hash pinned and checked by every verifier pass) |
+| 3 | `scoring.py`: structural checks, judge request, validation, decision rule, score store with reuse; `score` CLI; README | complex-coder | Verified |
+| 4 | Offline tests (decision thresholds incl. high total with next action 1; validation; reuse; judge-input exclusions; run folder byte-identical; partial and failed slots) | complex-coder | Verified (236 tests pass) |
+| 5 | Independent verification (Opus, high) | verifier | First pass: PASS with 6 non-blocking findings. Four were fixed (single-turn rule R1–R4, scores-dir guard, clean exit 2 for corrupt input, exit 1 for unmatched records). Two were left as designed (409 and 422 propagate as in `run`; `--scores-dir`/`--notes` kept as documented options). Second pass: FAIL (`--scores-dir runs/<new>` accepted); fixed, with corrupt reused records, manifest field types and non-ASCII labels. The lead narrowed run-folder detection to real run manifests. Third pass: PASS; its two minor follow-ups (a permission error in the guard becomes an input error; two more false negatives listed under risks) were made by the lead with a test |
 | 6 | Live run of `score` on `runs/20261121T023359Z-455c41` (16 Mini judge calls), re-run to show reuse; D3 B and C development examples written up with the judge's own words | lead | Pending |
 
 **Acceptance criteria**
@@ -145,4 +155,7 @@ The command:
 - Mini judges Mini's own replies, so self-preference is possible. Disagreements involving Mini should be inspected separately (PRD §7).
 - Reasoning effort `none` for the judge is a cost choice. Changing it changes the judge settings, and with them the reuse identity.
 - The both-sides heuristic detects role labels and line-start name labels. A transcript written as prose without labels would pass the check, and the judge's delivery score covers that case.
+- A reply in which a later line starts with a single capitalised word and a colon (for example `Note:`) is treated as a new speaker block and fails R4. That false positive is accepted, because a spoken reply shouldn't contain labelled lines.
+- A reply that starts with its own label and later has an inline single-word label after a sentence end fails R3, for example `"Riley: Great. Question: are both current?"`. That false positive is accepted.
+- The single-turn rule misses these labels: one after a sentence end when the reply doesn't start with a label (`"Are they current? Sam: Yes, both."`), two-word names (`"Sam Lee:"`), parenthesised labels (`"Applicant (Sam):"`), single-asterisk wrapping (`"*Sam*:"`), bullet or quote prefixes (`"- Sam:"`, `"> Sam:"`), a label with no space after the punctuation or after a `…` ellipsis character (three dots `...` are caught), a name written with a combining accent mark rather than a precomposed letter, and a name in a script without letter case (`"李:"`). The judge's delivery score ("exposes tool or role markup") is the backstop for these.
 - Evidence matching normalises only quotes, dashes and whitespace. A quote that differs in any other way goes to review.

@@ -2,7 +2,7 @@
 
 A next-turn evaluation tool for Take2's Forward Deployed Engineer take-home. Given a call prompt and a partial screening-call transcript, it asks a model for the recruiter's next line several times and saves every reply verbatim, so the replies can be compared and judged.
 
-Status: milestone 2, part 1. One or more models per run (OpenAI models such as `gpt-5.4-mini` through the Responses API, Google Gemini models such as `gemini-3.5-flash` through the `google-genai` SDK), raw generation, and a blind review view for human preferences. There is no scoring yet, and failed replies can't be retried yet.
+Status: milestone 3. One or more models per run (OpenAI models such as `gpt-5.4-mini` through the Responses API, Google Gemini models such as `gemini-3.5-flash` through the `google-genai` SDK), raw generation, a blind review view for human preferences, and a scorer for saved replies (code checks, a fixed `gpt-5.4-mini` judge, and a pass/fail decision made in code). Failed generations can't be retried yet.
 
 ## Setup
 
@@ -60,13 +60,79 @@ Runs reviewed before fingerprints existed, such as `runs/20261120T225013Z-70fb30
 
 If two `show` commands open a new run at the same moment, one of them stops with "run show again" and changes nothing. An empty or unreadable `blind_key.json` is reported, never overwritten.
 
+## Score replies
+
+```powershell
+uv run next-turn score runs/<run_id>
+```
+
+`score` scores the exact replies already saved in a run. Only replies with status `ok` are eligible.
+
+**Checked by code.**
+- The single-turn requirement. A reply fails if it is empty, or if it contains both sides of the conversation. A speaker label is a role word or a single capitalised word followed by `:`, at the start of the reply, the start of a line, or right after a sentence ends. The reply fails in any of these cases (the failure names the rule):
+  - R1: an applicant-side label such as `Applicant:` or `Nurse:`;
+  - R2: two or more labels starting the reply or a line;
+  - R3: a label at the start followed by any other label;
+  - R4: a label starting any line after the first.
+
+  A single label at the very start is flagged as `markup` only.
+- Diagnostic flags that never change the decision: `long_reply` (over 40 words), `multiple_question_marks`, `no_question_mark`, and `markup`.
+
+**Scored by the judge.** A fixed `gpt-5.4-mini` judge (reasoning effort `none`, strict JSON output) scores next action, listening, grounding and delivery from 0 to 2, and lists critical violations.
+- Its instructions are `prompts/judge.md` (`judge-v1`). The file's SHA-256 is pinned in code, and a changed file is refused until the version and the hash are bumped.
+- It receives only three things:
+  - the case's `expected_action`, `good_if` and `fail_if` from `cases/notes.toml`, or a "general rubric" note for a case with no notes;
+  - the transcript, labelled Riley and Applicant;
+  - the reply.
+- It never sees model names, the run, the sample or the prompt version.
+- Every quote the judge gives must appear in the reply or in a single transcript turn. Only typographic quotes, dashes and whitespace are normalised before matching.
+- Otherwise the reply is marked `needs review` and gets no decision.
+
+**Decision rule.** Code decides, with the same rule for every model. A reply is acceptable only if all of these hold:
+- the single-turn check passes;
+- next action is 2;
+- grounding is 2;
+- listening is at least 1;
+- delivery is at least 1;
+- there is no critical violation.
+
+The total out of 8 is shown but never overrides the rule. An empty completed reply gets no judge call and is not acceptable.
+
+**Storage.** Scores go to `scores/<run_id>.jsonl` (`--scores-dir` to change it), one line per scoring attempt.
+- Each line holds the judge's verbatim output and the full judge response.
+- Nothing inside `runs/` is written. A `--scores-dir` inside a run folder or inside a directory that holds run folders (such as `runs/` or `runs/new`) is refused. A run folder is one whose `manifest.json` is a JSON object with `run_id` and `samples_per_case`, so another project's `manifest.json` doesn't count.
+- The blind key, the blind sheet and label notes are never read.
+
+**Reuse and retry.** A score is reused when the slot, the SHA-256 of the reply text, the scorer version, the judge prompt version and the SHA-256 of the exact judge request all match.
+- A second `score` therefore makes no judge calls.
+- Replies marked `needs review` or `judge failed` are judged again on the next `score`, and earlier lines are kept.
+- Incomplete, failed, missing and empty replies are counted separately.
+- A slot with more than one saved record is reported and not scored.
+
+**Output.** For each reply, `score` prints:
+- the case, the requested and reported model, the sample and the verbatim reply;
+- the decision with its reasons;
+- the four scores and the total;
+- the judge's rationale and evidence, the checks, and whether the score was new or reused.
+
+It ends with a summary per model and the judge calls and tokens used.
+
+**Score after blind review.** The output names models and shows scores, so record and commit your blind labels for a run before you score it.
+
+**API key and exit codes.**
+- `OPENAI_API_KEY` is needed only when at least one judge call is needed. A fully reused run needs no key.
+- An invalid key, model or request (HTTP 400, 401, 403 or 404) stops scoring.
+- `score` exits 0 when every eligible reply has a valid score. It exits 1 if any reply needs review, a judge call failed, a slot has duplicate records, a saved record matches no expected slot, or scoring stopped. It exits 2 for input or configuration errors, and then no call is made.
+
 ## Layout
 
 - `prompts/`: call prompts. `v1.md` is the starter prompt and is never edited. `v2.md` is the working prompt: v1 with one line changed (see `docs/measurements/2026-11-20-v2-d1-d4.md`).
+- `prompts/judge.md`: the judge's instructions (`judge-v1`), pinned by SHA-256 in `src/rightoncue/scoring.py`.
 - `docs/measurements/`: each prompt experiment, with counting rules committed before its replies were generated, then the results.
 - `cases/dev/`: partial transcripts in JSON Lines, one `{"role": "agent"|"user", "utterance": ...}` per line, ending on a user turn.
 - `cases/notes.toml`: the expected next move for each case, written before any replies were generated. The generator never reads it.
 - `runs/`: saved runs.
+- `scores/`: judge scores, one `<run_id>.jsonl` per scored run, kept apart from the runs.
 - `docs/time-log.md`: hours against the 4 to 6 hour timebox.
 
 ## Tests
