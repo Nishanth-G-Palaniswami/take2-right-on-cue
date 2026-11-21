@@ -66,3 +66,58 @@ The rule and Nishanth's label disagree on C: the rule counts it as asking for th
 | D | "That sounds like a good example of bringing everyone together and setting a clear plan for the family. Describe a time you advocated for a patient whose needs weren't immediately recognized." | No | accept |
 
 Not counted; it belongs to the deferred phrasing experiment (v3). All four D4 replies read "describe a time…" from the question, and A prefixes it with "can you".
+
+## Results by model (added 2026-11-20 23:38 ET, after `6b8faac`, when `blind_key.json` was first opened)
+
+All 16 fingerprints in `blind_key.json` match the saved replies.
+
+| Case | `gpt-5.4-mini` letters (sample) | `gemini-3.5-flash` letters (sample) |
+|---|---|---|
+| D1 | A (2), C (1) | B (2), D (1) |
+| D2 | C (2), D (1) | A (1), B (2) |
+| D3 | B (1), D (2) | A (1), C (2) |
+| D4 | B (2), D (1) | A (1), C (2) |
+
+### gpt-5.4-mini
+
+Requested `gpt-5.4-mini` with reasoning effort `none`. The API reported `gpt-5.4-mini-2026-03-17`.
+
+| Case | Counting rule | Nishanth accepted | Nishanth preferred |
+|---|---|---|---|
+| D1: disclosure and permission | 2 of 2 pass | 2 of 2 | none |
+| D2: asks whether BLS and ACLS are current | 2 of 2 pass | 2 of 2 | none (his first instinct, C, was this model's reply) |
+| D3: asked for the outcome | 0 of 2; moved on early 0 of 2 | 0 of 2 | none |
+| D4: asked again about the incident | 0 of 2 | 2 of 2 | none |
+
+On D3, both replies asked what the applicant did ("What did you do to help resolve it once you brought the charge nurse in?" and "How did you resolve it for the brother and the patient?").
+
+### gemini-3.5-flash
+
+Requested `gemini-3.5-flash` with thinking level `MINIMAL`. The API reported `gemini-3.6-flash`.
+
+| Case | Counting rule | Nishanth accepted | Nishanth preferred |
+|---|---|---|---|
+| D1: disclosure and permission | 2 of 2 pass | 2 of 2 | D |
+| D2: asks whether BLS and ACLS are current | 2 of 2 pass (A borderline: "all of those") | 2 of 2 | B (changed from C after AI reviews) |
+| D3: asked for the outcome | 2 of 2; moved on early 0 of 2 | 1 of 2 (C rejected) | A |
+| D4: asked again about the incident | 0 of 2 | 2 of 2 | A |
+
+### Findings
+
+- Both models passed the D1 and D2 checks in 2 of 2 replies. Neither reopened the D4 story (0 of 2 each).
+- D3 is where the models differed. Both Gemini replies asked for the outcome under the rule, and Nishanth accepted one of them. Neither Mini reply asked for it, and he rejected both.
+- In all four cases, Nishanth's preferred reply was a Gemini reply. These preferences were formed after AI reviews, with two replies per model per case.
+- This run does not decide between models. That decision rests on the planned final comparison, which includes full `gpt-5.4`.
+
+### Limits
+
+- **Sample size.** There are two replies per model per case. The largest gap, 0 of 2 against 2 of 2 on D3, rests on four replies.
+- **AI-informed labels.** The labels were committed after AI reviews (`label_notes.md`). Whether D1, D3 and D4 changed is not recorded. The D2 preference moved from a Mini reply (C) to a Gemini reply (B).
+- **Style may reveal the model.** Before this run, Nishanth had seen only Mini replies, and three Mini replies here repeat earlier Mini wording:
+  - D2 C is word for word the reply he preferred in `20261121T013228Z-5e2c4b`, and it also appears in `20261121T005440Z-0dbed1`.
+  - D3 D opens with the same sentence as a v2 D3 reply in `20261121T013153Z-398359`.
+  - D1 A and C reuse "continue with a few screening questions" from `20261121T013228Z-5e2c4b`.
+
+  The letters hid the model, but the style may not have. It is not recorded whether the reviewing assistants saw earlier runs.
+- **Not pooled.** These counts are not pooled with the Mini-only runs. Separately, Mini's five-sample v2 D3 count was 2 of 5.
+- **Inference, not applied: a possible rubric refinement.** Nishanth's D3 reason faults A's "getting resolved" for assuming a resolution. C's "end up resolving his frustration" assumes more. That may be why C was rejected despite counting as Yes, but the sheet doesn't say. If confirmed, the evaluator could treat outcome questions that presuppose a resolution as weaker.
