@@ -108,14 +108,22 @@ Either way the saved comparison stays up.
 
 **Tests.** The offline suite passes (`uv run pytest -q`).
 
+**Real paid runs, locally (2026-11-22, Docker, real keys, a $0.10 then $1.00 local cap on its own volume, separate from Render's).**
+- **Settles match usage exactly.** Every call settled from the provider's reported usage, and each amount equals tokens × the rates above, to the nano-dollar. No reservation was left open.
+- **The approved D1 run** (`20261122T164927Z-77fa53`; prompt v1; all three models; one sample) cost $0.014099, against a projected maximum of $0.089519.
+- **Gemini at `MINIMAL`** reported no thinking tokens.
+- **Spend survived a container recreation** on the same volume.
+- **Cached judge input is counted at the full input price,** so the ledger can only overstate the bill.
+- **judge-v1 quotes with speaker labels.** In the D1 run, judge-v1 quoted "Applicant: Yeah, now's fine." with its speaker label in all three judgments. The quote check rejected them, so all three are "needs review" with no score. This is known limit 3 in `docs/judge-v1-known-limits.md`. The saved evaluation retried such judgments once; hosted runs make no retries.
+
 **Not verifiable until deploy:**
 - Render's build;
 - the disk mount;
 - TLS for `rightoncue.nishanthgp.me`;
 - the WebSocket through Render's proxy;
-- one real paid run.
+- one real paid run on Render.
 
-The paid run is step 8 below, and needs your go-ahead.
+The Render paid run is step 8 below, and needs your go-ahead.
 
 ## Steps (each needs your go-ahead)
 
