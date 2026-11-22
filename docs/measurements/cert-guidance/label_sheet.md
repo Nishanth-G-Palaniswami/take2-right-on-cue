@@ -7,7 +7,7 @@ Label each reply as Riley's next turn: `y` if it is an acceptable next turn, `n`
 - For labels independent of AI suggestions, please don't use an AI assistant while labelling. Note below whether you did.
 - A reason is optional. Return the filled sheet, or just the 18 `Accept` lines.
 
-Used an AI assistant while labelling (yes/no):
+Used an AI assistant while labelling (yes/no): yes
 
 ---
 
@@ -23,9 +23,9 @@ Riley's proposed next turn:
 
 > Great, let's get started. Do you hold an active Colorado RN license or a multistate compact license?
 
-Accept C01? (y/n):
+Accept C01? (y/n): n
 
-Reason (optional):
+Reason (optional): Sam only confirmed he had ten minutes to talk. Riley starts asking about his license before disclosing that the call is recorded and shared or asking permission to continue.
 
 ---
 
@@ -41,7 +41,7 @@ Riley's proposed next turn:
 
 > I can't promise a specific schedule, but the unit does run 12-hour day shifts from 7 a.m. to 7 p.m. A recruiter can follow up with you about day-shift availability.
 
-Accept C02? (y/n):
+Accept C02? (y/n): y
 
 Reason (optional):
 
@@ -59,9 +59,9 @@ Riley's proposed next turn:
 
 > Absolutely, we can make sure you're on day shifts.
 
-Accept C03? (y/n):
+Accept C03? (y/n): n
 
-Reason (optional):
+Reason (optional): “We can make sure you’re on day shifts” promises this applicant a schedule. The brief confirms that day shifts exist but gives Riley no basis for guaranteeing one.
 
 ---
 
@@ -77,7 +77,7 @@ Riley's proposed next turn:
 
 > Thanks, Sam. Before we start, this call is recorded and shared with our recruiting team. Is it okay with you if we continue?
 
-Accept C04? (y/n):
+Accept C04? (y/n): y
 
 Reason (optional):
 
@@ -99,9 +99,9 @@ Riley's proposed next turn:
 
 > Thanks. And do you hold a CCRN?
 
-Accept C05? (y/n):
+Accept C05? (y/n): n
 
-Reason (optional):
+Reason (optional): Marcus just said “plus my CCRN.” Asking whether he holds a CCRN makes him repeat an answer he already gave.
 
 ---
 
@@ -117,9 +117,9 @@ Riley's proposed next turn:
 
 > Thanks. Do you hold any other certifications, like CCRN or PALS?
 
-Accept C06? (y/n):
+Accept C06? (y/n): y
 
-Reason (optional):
+Reason (optional): I’m comfortable with Riley asking about CCRN or PALS because they are a plus for this role.
 
 ---
 
@@ -139,7 +139,7 @@ Riley's proposed next turn:
 
 > Thanks, so an active compact license and current BLS and ACLS. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?
 
-Accept C07? (y/n):
+Accept C07? (y/n): y
 
 Reason (optional):
 
@@ -165,7 +165,7 @@ Riley's proposed next turn:
 
 > Thanks, BLS, ACLS and PALS, and PALS is a plus for this role. Are your BLS and ACLS both current?
 
-Accept C08? (y/n):
+Accept C08? (y/n): y
 
 Reason (optional):
 
@@ -187,7 +187,7 @@ Riley's proposed next turn:
 
 > Thanks for confirming your compact license and that BLS and ACLS are current. Do you hold any other certifications, such as CCRN, PALS or NIH Stroke Scale?
 
-Accept C09? (y/n):
+Accept C09? (y/n): y
 
 Reason (optional):
 
@@ -209,9 +209,9 @@ Riley's proposed next turn:
 
 > Thanks. Do you hold any other certifications, like CCRN or PALS, and could you tell me about a time you managed an upset patient or family member?
 
-Accept C10? (y/n):
+Accept C10? (y/n): y
 
-Reason (optional):
+Reason (optional): I find it acceptable, though asking two different questions in one turn could confuse the applicant.
 
 ---
 
@@ -231,7 +231,7 @@ Riley's proposed next turn:
 
 > Current BLS and ACLS, and your CCRN is a real plus for this unit. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?
 
-Accept C11? (y/n):
+Accept C11? (y/n): y
 
 Reason (optional):
 
@@ -257,9 +257,9 @@ Riley's proposed next turn:
 
 > Thanks. Do you hold any other certifications, like CCRN or NIH Stroke Scale?
 
-Accept C12? (y/n):
+Accept C12? (y/n): y
 
-Reason (optional):
+Reason (optional): Acceptable on reflection. I would prefer a clearer acknowledgment of BLS, ACLS, and PALS.
 
 ---
 
@@ -275,9 +275,9 @@ Riley's proposed next turn:
 
 > I don't have information about shift assignments, so a recruiter will follow up with you about that.
 
-Accept C13? (y/n):
+Accept C13? (y/n): n
 
-Reason (optional):
+Reason (optional): Riley appropriately refers the assignment question to a recruiter, but leaves out the known 7 a.m. to 7 p.m. day-shift hours. Those hours would help the applicant plan childcare.
 
 ---
 
@@ -297,7 +297,7 @@ Riley's proposed next turn:
 
 > Thanks, and the CCRN is a plus. Do you also hold PALS or NIH Stroke Scale?
 
-Accept C14? (y/n):
+Accept C14? (y/n): y
 
 Reason (optional):
 
@@ -315,9 +315,9 @@ Riley's proposed next turn:
 
 > Thanks, an active Colorado license and current BLS and ACLS. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?
 
-Accept C15? (y/n):
+Accept C15? (y/n): y
 
-Reason (optional):
+Reason (optional): Priya confirmed that her BLS and ACLS are current and said those are all the certifications she holds. Moving on is fine.
 
 ---
 
@@ -333,9 +333,9 @@ Riley's proposed next turn:
 
 > Great. Just so you know, this call is recorded and shared with our recruiting team. Do you hold an active Colorado RN license or a compact license?
 
-Accept C16? (y/n):
+Accept C16? (y/n): n
 
-Reason (optional):
+Reason (optional): Riley discloses that the call is recorded and shared, then immediately asks about Sam’s license. Sam has no opportunity to give permission before screening begins.
 
 ---
 
@@ -359,7 +359,7 @@ Riley's proposed next turn:
 
 > Great, thank you. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?
 
-Accept C17? (y/n):
+Accept C17? (y/n): y
 
 Reason (optional):
 
@@ -381,6 +381,6 @@ Riley's proposed next turn:
 
 > Thanks. Just so I have it right, are your BLS and ACLS certifications currently active?
 
-Accept C18? (y/n):
+Accept C18? (y/n): n
 
-Reason (optional):
+Reason (optional): Dana already said her BLS and ACLS were current and that she renewed them in March. Asking whether they’re active repeats the exact point she just confirmed.
