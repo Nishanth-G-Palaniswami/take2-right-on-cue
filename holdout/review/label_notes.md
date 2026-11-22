@@ -20,6 +20,10 @@
   - Agreement between the judge and these labels on H1–H4 measures agreement with AI-informed labels. It is reported with this caveat, not as an unaided independent check.
 - **The initial judgments** made before reading ChatGPT's suggestions are not part of this record unless Nishanth supplies them.
 
+## Reporting label (Nishanth, 2026-11-21)
+
+Nishanth asked that the holdout labels be described as **AI-assisted** in the report. That covers the review labels here and the pair choices (`holdout/pairs/label_notes.md`). ChatGPT also helped him review the critical flags (`critical_review.md`).
+
 ## What this coding session did
 
 It gave no labels, preferences or comments on these replies, and it did not open the private review key or the pair plan.
