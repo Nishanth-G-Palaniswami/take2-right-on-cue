@@ -13,6 +13,25 @@ uv sync
 Copy-Item .env.example .env   # then put your OpenAI and/or Gemini key in .env
 ```
 
+## App
+
+```powershell
+uv sync
+uv run streamlit run app.py
+```
+
+The app opens on `http://localhost:8501` (use `--server.port` to change it). It serves from the domain root and also works under `--server.baseUrlPath`.
+
+**Without any key (the default, hosted-replay view).** It opens on the saved three-model comparison of holdout case H3 (prompt v2, sample 1). The case, prompt version (v1 or v2) and sample are kept in the URL, for example `?case=H3&prompt=v2&sample=1`. For each model it shows the verbatim reply, the raw judge-v1 verdict, the human reviewer's accept or reject label and, on demand, the four scores, the failed checks and the judge's reasoning. A generation that failed is shown as an operational failure, never as a reply. The "How it was evaluated" tab holds the method, the headline results, the experiment history and the committed documents. Everything is read from the committed `runs/`, `scores/` and `holdout/` files; nothing is written.
+
+**With your own keys (the "Run it yourself" tab).** You can pick or paste a prompt and a transcript, choose models, samples (1 to 5), OpenAI reasoning effort and Gemini thinking level, generate replies, then score them with judge-v1. Put `OPENAI_API_KEY` and/or `GEMINI_API_KEY` in the environment or in `.env`; the app shows only whether each key is present. **Generation and scoring cost money.** The app shows the number of calls and asks for a confirmation checkbox before each. A model whose key is missing can't be generated.
+
+New runs are written to `runs/<run_id>/` (a pasted prompt or transcript is recorded as `pasted/prompt.md` or `pasted/transcript.jsonl`), and scores to `scores/<run_id>.jsonl`, exactly as the command line does.
+
+Set `RIGHTONCUE_HOSTED=1` to turn live evaluation off entirely (for a public replay). The theme and the minimal toolbar are in `.streamlit/config.toml`.
+
+**Hosted replay in a container.** `docker build -t rightoncue:local .` then `docker run -p 127.0.0.1:3001:10000 -e PORT=10000 rightoncue:local` serves the no-key replay at `http://127.0.0.1:3001/` (the image sets `RIGHTONCUE_HOSTED=1` and excludes `.env` and `holdout-private/`). The deployment plan for `https://rightoncue.nishanthgp.me` is in `docs/hosting-plan.md`.
+
 ## Run one next-turn experiment
 
 ```powershell
@@ -169,6 +188,7 @@ Both sheets carry their commitment hash, so the compare commands refuse a sheet 
 - `docs/measurements/`: each prompt experiment, with counting rules committed before its replies were generated, then the results.
 - `cases/dev/`: partial transcripts in JSON Lines, one `{"role": "agent"|"user", "utterance": ...}` per line, ending on a user turn.
 - `cases/notes.toml`: the expected next move for each case, written before any replies were generated. The generator never reads it.
+- `app.py`: the Streamlit app; `src/rightoncue/review.py` loads and joins runs, scores and the holdout human review for it.
 - `runs/`: saved runs.
 - `scores/`: judge scores, one `<run_id>.jsonl` per scored run, kept apart from the runs.
 - `docs/time-log.md`: hours against the 4 to 6 hour timebox.
