@@ -23,13 +23,13 @@ The moment:
 
 | Model | Reply | judge-v1 | Reading |
 |---|---|---|---|
-| gpt-5.4-mini | "Thanks for letting me know. Since ACLS is required, I need to confirm that it's current before we move on. Can you tell me whether you expect it to be renewed by the time you'd start?" | not acceptable · 5/8, with a `screening_without_consent` flag | **Agree with the verdict.** It asks to confirm ACLS is current right after hearing that it lapsed, and it brings in start dates, which Riley can't discuss. The flag is spurious: the judge's own rationale says "no violation applies" (`docs/judge-v1-known-limits.md`). It did not decide the verdict; next action scored 1 did. |
+| gpt-5.4-mini | "Thanks for letting me know. Since ACLS is required, I need to confirm that it’s current before we move on. Can you tell me whether you expect it to be renewed by the time you’d start?" | not acceptable · 5/8, with a `screening_without_consent` flag | **Agree with the verdict.** It asks to confirm ACLS is current right after hearing that it lapsed, and it brings in start dates, which Riley can't discuss. The flag is spurious: the judge's own rationale says "no violation applies" (`docs/judge-v1-known-limits.md`). It did not decide the verdict; next action scored 1 did. |
 | gpt-5.4 | "Thanks for clarifying. So your BLS is current, and your ACLS renewal is scheduled for the 30th. Are your PALS and TNCC also current?" | acceptable · 8/8 | **Agree.** It plays back the facts accurately. Asking whether the optional PALS and TNCC are current is a small detour, the same pattern the reviewer accepted in H2. |
 | gemini-3.5-flash (reported `gemini-3.6-flash`) | "It is good you have your PALS and TNCC, and thank you for letting me know about your ACLS renewal date. Just to double-check, your BLS certification is currently active, correct?" | acceptable · 8/8 | **Disagree.** It re-asks about BLS, which the applicant had just covered ("good through '27"). The judge saw this ("does not ask again about facts already confirmed except to verify BLS") and still scored listening 2. |
 
 **The ideal turn.** None of the three acknowledged the lapse and the renewal date, noted that the recruiting team will see it, and moved on to the behavioral questions. GPT-5.4 came closest.
 
-**An earlier sample of the same transcript** (`20261122T161851Z-d8a5d8`, Mini only, not copied here) replied "Thanks for letting me know. Since ACLS is required, do you expect to have it renewed by the time you'd be ready to start?" It was also not acceptable · 5/8, without the flag.
+**An earlier sample of the same transcript** (`20261122T161851Z-d8a5d8`, Mini only, not copied here) replied "Thanks for letting me know. Since ACLS is required, do you expect to have it renewed by the time you’d be ready to start?" It was also not acceptable · 5/8, without the flag.
 
 ## Prompt v2
 
