@@ -35,6 +35,10 @@ RETRY_OPTIONS: dict[str, Any] = {
     "jitter": 1.0,
     "http_status_codes": [429, 500, 502, 503, 504],
 }
+# For capped (budgeted) runs: exactly one attempt inside the SDK, so every billable
+# request passes the spending guard. attempts must be explicit: the SDK turns
+# attempts=None into its default of 5 (google.genai._api_client.retry_args).
+NO_RETRY_OPTIONS: dict[str, Any] = {"attempts": 1}
 # The SDK sets no timeout unless one is given; a stuck call would hang forever.
 TIMEOUT_MS = 600_000
 
@@ -47,41 +51,65 @@ PARAMS_NOTE = (
     "API answers with finish reason CONTINUATION."
 )
 
+PARAMS_NOTE_CAPPED = (
+    "Only model, contents, config.system_instruction, "
+    "config.thinking_config.thinking_level, config.max_output_tokens and "
+    "config.automatic_continuation (false, applied by the SDK, not sent) are set. "
+    "max_output_tokens caps the generated output (Google's thinking guide says "
+    "thinking can exhaust it); a reply that reaches it ends with finish reason "
+    "MAX_TOKENS. With automatic continuation off, one generate_content call is one "
+    "HTTP request. Every other generation parameter is left to the API defaults."
+)
+
 FATAL_CODES = frozenset({400, 401, 403, 404})
 
 
 def build_request(
-    prompt_text: str, turns: list[Turn], model: str, thinking_level: str
+    prompt_text: str,
+    turns: list[Turn],
+    model: str,
+    thinking_level: str,
+    max_output_tokens: int | None = None,
 ) -> dict[str, Any]:
+    """The generate_content request. Without a cap it is exactly as before.
+
+    With a cap, automatic continuation is turned off as well: each continuation
+    hop is a separately billed request that the cap would not cover.
+    """
+    config: dict[str, Any] = {
+        "system_instruction": prompt_text,
+        "thinking_config": {"thinking_level": thinking_level},
+    }
+    if max_output_tokens is not None:
+        config["max_output_tokens"] = max_output_tokens
+        config["automatic_continuation"] = False
     return {
         "model": model,
         "contents": [
             {"role": _ROLE_MAP[t.role], "parts": [{"text": t.utterance}]} for t in turns
         ],
-        "config": {
-            "system_instruction": prompt_text,
-            "thinking_config": {"thinking_level": thinking_level},
-        },
+        "config": config,
     }
 
 
-def client_settings() -> dict[str, Any]:
+def client_settings(retry_options: dict[str, Any] | None = None) -> dict[str, Any]:
     """What the client is configured with, for the manifest (never the key)."""
     return {
         "api_key_env": API_KEY_ENV,
         "vertexai": False,
-        "retry_options": dict(RETRY_OPTIONS),
+        "retry_options": dict(RETRY_OPTIONS if retry_options is None else retry_options),
         "timeout_ms": TIMEOUT_MS,
     }
 
 
-def make_client(api_key: str) -> Any:
+def make_client(api_key: str, retry_options: dict[str, Any] | None = None) -> Any:
+    options = RETRY_OPTIONS if retry_options is None else retry_options
     return genai.Client(
         api_key=api_key,
         vertexai=False,
         http_options=types.HttpOptions(
             timeout=TIMEOUT_MS,
-            retry_options=types.HttpRetryOptions(**RETRY_OPTIONS),
+            retry_options=types.HttpRetryOptions(**options),
         ),
     )
 

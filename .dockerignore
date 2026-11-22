@@ -1,0 +1,15 @@
+# Never ship secrets or private files into the image.
+.env
+.env.*
+holdout-private/
+
+# Local tooling and caches.
+.venv/
+.git/
+.pytest_cache/
+.mypy_cache/
+**/__pycache__/
+*.py[cod]
+
+# Local live-run data and ledgers must never ship in the image.
+data/

@@ -1,0 +1,12 @@
+{"type":"reserve","id":"533eae3cfea04d34bef46a82baefec17","at":"2026-11-22T16:32:30.833167+00:00","kind":"generation","model":"gpt-5.4-mini","max_nano":5097000,"spend_before_nano":8185500,"budget_nano":1000000000}
+{"type":"settle","id":"533eae3cfea04d34bef46a82baefec17","at":"2026-11-22T16:32:33.059311+00:00","kind":"generation","model":"gpt-5.4-mini","actual_nano":895500,"basis":"usage"}
+{"type":"reserve","id":"6bf9fd1ef0284cb2a3f10d9e8251a92e","at":"2026-11-22T16:32:33.071760+00:00","kind":"generation","model":"gpt-5.4","max_nano":16977500,"spend_before_nano":9081000,"budget_nano":1000000000}
+{"type":"settle","id":"6bf9fd1ef0284cb2a3f10d9e8251a92e","at":"2026-11-22T16:32:34.789230+00:00","kind":"generation","model":"gpt-5.4","actual_nano":2865000,"basis":"usage"}
+{"type":"reserve","id":"614e0c14ad03407e8cc55c1f0044846f","at":"2026-11-22T16:32:34.821738+00:00","kind":"generation","model":"gemini-3.5-flash","max_nano":9786000,"spend_before_nano":11946000,"budget_nano":1000000000}
+{"type":"settle","id":"614e0c14ad03407e8cc55c1f0044846f","at":"2026-11-22T16:32:35.786569+00:00","kind":"generation","model":"gemini-3.5-flash","actual_nano":1732500,"basis":"usage"}
+{"type":"reserve","id":"f3656edec71644979baee0487f7a6897","at":"2026-11-22T16:32:35.806718+00:00","kind":"judge","model":"gpt-5.4-mini","max_nano":15590250,"spend_before_nano":13678500,"budget_nano":1000000000}
+{"type":"settle","id":"f3656edec71644979baee0487f7a6897","at":"2026-11-22T16:32:39.202044+00:00","kind":"judge","model":"gpt-5.4-mini","actual_nano":4161750,"basis":"usage"}
+{"type":"reserve","id":"62bb56020d2c450aa69335c53d9d1cd3","at":"2026-11-22T16:32:39.215964+00:00","kind":"judge","model":"gpt-5.4-mini","max_nano":15549000,"spend_before_nano":17840250,"budget_nano":1000000000}
+{"type":"settle","id":"62bb56020d2c450aa69335c53d9d1cd3","at":"2026-11-22T16:32:41.442373+00:00","kind":"judge","model":"gpt-5.4-mini","actual_nano":3156750,"basis":"usage"}
+{"type":"reserve","id":"3fbc7fa27e374d3bb306dfa8a3e42370","at":"2026-11-22T16:32:41.455624+00:00","kind":"judge","model":"gpt-5.4-mini","max_nano":15583500,"spend_before_nano":20997000,"budget_nano":1000000000}
+{"type":"settle","id":"3fbc7fa27e374d3bb306dfa8a3e42370","at":"2026-11-22T16:32:44.267426+00:00","kind":"judge","model":"gpt-5.4-mini","actual_nano":3705750,"basis":"usage"}

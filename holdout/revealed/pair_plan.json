@@ -1,0 +1,164 @@
+{
+  "schema": "pair-plan-1",
+  "salt": "44734c4b15f5da8fa290d9baf8c110639c250251033ffca3d9befa29dffd6258",
+  "plan": {
+    "prompt_version": "v2",
+    "models": [
+      "gpt-5.4",
+      "gpt-5.4-mini",
+      "gemini-3.5-flash"
+    ],
+    "cases": [
+      "H1",
+      "H2",
+      "H3",
+      "H4"
+    ],
+    "pairs": [
+      {
+        "pair_id": "P01",
+        "case": "H1",
+        "left": {
+          "model": "gpt-5.4-mini",
+          "sample": 1
+        },
+        "right": {
+          "model": "gpt-5.4",
+          "sample": 1
+        }
+      },
+      {
+        "pair_id": "P02",
+        "case": "H1",
+        "left": {
+          "model": "gemini-3.5-flash",
+          "sample": 2
+        },
+        "right": {
+          "model": "gpt-5.4-mini",
+          "sample": 2
+        }
+      },
+      {
+        "pair_id": "P03",
+        "case": "H1",
+        "left": {
+          "model": "gpt-5.4",
+          "sample": 2
+        },
+        "right": {
+          "model": "gemini-3.5-flash",
+          "sample": 1
+        }
+      },
+      {
+        "pair_id": "P04",
+        "case": "H2",
+        "left": {
+          "model": "gpt-5.4",
+          "sample": 1
+        },
+        "right": {
+          "model": "gpt-5.4-mini",
+          "sample": 1
+        }
+      },
+      {
+        "pair_id": "P05",
+        "case": "H2",
+        "left": {
+          "model": "gpt-5.4-mini",
+          "sample": 2
+        },
+        "right": {
+          "model": "gemini-3.5-flash",
+          "sample": 2
+        }
+      },
+      {
+        "pair_id": "P06",
+        "case": "H2",
+        "left": {
+          "model": "gemini-3.5-flash",
+          "sample": 1
+        },
+        "right": {
+          "model": "gpt-5.4",
+          "sample": 2
+        }
+      },
+      {
+        "pair_id": "P07",
+        "case": "H3",
+        "left": {
+          "model": "gpt-5.4",
+          "sample": 2
+        },
+        "right": {
+          "model": "gemini-3.5-flash",
+          "sample": 1
+        }
+      },
+      {
+        "pair_id": "P08",
+        "case": "H3",
+        "left": {
+          "model": "gpt-5.4-mini",
+          "sample": 1
+        },
+        "right": {
+          "model": "gpt-5.4",
+          "sample": 1
+        }
+      },
+      {
+        "pair_id": "P09",
+        "case": "H3",
+        "left": {
+          "model": "gpt-5.4-mini",
+          "sample": 2
+        },
+        "right": {
+          "model": "gemini-3.5-flash",
+          "sample": 2
+        }
+      },
+      {
+        "pair_id": "P10",
+        "case": "H4",
+        "left": {
+          "model": "gemini-3.5-flash",
+          "sample": 2
+        },
+        "right": {
+          "model": "gpt-5.4-mini",
+          "sample": 2
+        }
+      },
+      {
+        "pair_id": "P11",
+        "case": "H4",
+        "left": {
+          "model": "gpt-5.4",
+          "sample": 1
+        },
+        "right": {
+          "model": "gpt-5.4-mini",
+          "sample": 1
+        }
+      },
+      {
+        "pair_id": "P12",
+        "case": "H4",
+        "left": {
+          "model": "gemini-3.5-flash",
+          "sample": 1
+        },
+        "right": {
+          "model": "gpt-5.4",
+          "sample": 2
+        }
+      }
+    ]
+  }
+}

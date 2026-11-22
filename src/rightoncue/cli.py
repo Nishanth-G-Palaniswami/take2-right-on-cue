@@ -11,7 +11,8 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from . import gemini, openai_responses, scoring
+from . import budget as budget_guard
+from . import gemini, holdout, openai_responses, scoring
 from .runs import (
     MAX_REPLIES_PER_CASE,
     PROVIDERS,
@@ -79,6 +80,77 @@ def _build_parser() -> argparse.ArgumentParser:
         default=scoring.DEFAULT_JUDGE_VERSION,
         help=f"judge prompt version (default {scoring.DEFAULT_JUDGE_VERSION})",
     )
+    score.add_argument(
+        "--budget-usd",
+        default=None,
+        help="stop before any judge call that could take the recorded spend of the "
+        "--budget-run runs over this many USD (needs --budget-run)",
+    )
+    score.add_argument(
+        "--budget-run",
+        action="append",
+        type=Path,
+        dest="budget_runs",
+        default=None,
+        help="a run whose recorded spend counts toward --budget-usd; repeat, and "
+        "include the run being scored",
+    )
+
+    plan = sub.add_parser(
+        "pair-plan", help="fix the holdout pair mapping and write its salted commitment"
+    )
+    plan.add_argument("--case", required=True, action="append", dest="cases")
+    plan.add_argument("--model", required=True, action="append", dest="models")
+    plan.add_argument("--prompt-version", required=True)
+    plan.add_argument("--private-out", required=True, type=Path)
+    plan.add_argument("--commitment-out", required=True, type=Path)
+
+    verify = sub.add_parser(
+        "verify-commitment", help="check a private plan or review key against its commitment"
+    )
+    verify.add_argument("--private", required=True, type=Path)
+    verify.add_argument("--commitment", required=True, type=Path)
+
+    review = sub.add_parser(
+        "review-sheet", help="write the combined blind accept/reject sheet for two runs"
+    )
+    review.add_argument("--run", required=True, action="append", type=Path, dest="runs")
+    review.add_argument("--out", required=True, type=Path)
+    review.add_argument("--private-key", required=True, type=Path)
+
+    psheet = sub.add_parser("pair-sheet", help="write the blind A/B/tie pair sheet")
+    psheet.add_argument("--plan-private", required=True, type=Path)
+    psheet.add_argument("--commitment", required=True, type=Path)
+    psheet.add_argument("--run", required=True, type=Path)
+    psheet.add_argument("--out", required=True, type=Path)
+    psheet.add_argument("--review-sheet", required=True, type=Path)
+    psheet.add_argument("--review-commitment", required=True, type=Path)
+
+    judge_choices = list(scoring.JUDGE_PROMPTS)
+    pcomp = sub.add_parser(
+        "pair-compare", help="after reveal: human A/B/tie against the judge's raw verdicts"
+    )
+    pcomp.add_argument("--plan", required=True, type=Path)
+    pcomp.add_argument("--commitment", required=True, type=Path)
+    pcomp.add_argument("--run", required=True, type=Path)
+    pcomp.add_argument("--pair-sheet", required=True, type=Path)
+    pcomp.add_argument("--scores-dir", type=Path, default=Path("scores"))
+    pcomp.add_argument(
+        "--judge-version", choices=judge_choices, default=scoring.DEFAULT_JUDGE_VERSION
+    )
+    pcomp.add_argument("--json-out", type=Path, default=None)
+
+    rcomp = sub.add_parser(
+        "review-compare", help="after reveal: human accept/reject against the judge"
+    )
+    rcomp.add_argument("--key", required=True, type=Path)
+    rcomp.add_argument("--commitment", required=True, type=Path)
+    rcomp.add_argument("--sheet", required=True, type=Path)
+    rcomp.add_argument("--scores-dir", type=Path, default=Path("scores"))
+    rcomp.add_argument(
+        "--judge-version", choices=judge_choices, default=scoring.DEFAULT_JUDGE_VERSION
+    )
+    rcomp.add_argument("--json-out", type=Path, default=None)
     return parser
 
 
@@ -310,6 +382,7 @@ def _cmd_show(args: argparse.Namespace) -> int:
 _DECISION_LABEL = {
     "needs_review": "NEEDS REVIEW",
     "judge_failed": "JUDGE FAILED",
+    "budget_stopped": "BUDGET STOPPED (not judged)",
 }
 _UNSCORED_NOTE = {
     "incomplete": "reply was incomplete; not scored",
@@ -370,7 +443,17 @@ def _print_score_outcome(outcome: scoring.Outcome, last_case: list[str]) -> None
             print(f"    {scoring.DIMENSION_LABELS[d]} ({dim['score']}): {dim['rationale']}")
             for ev in dim["evidence"]:
                 print(f"      evidence ({ev['source']}): \"{ev['quote']}\"")
-        violations = judgment["critical_violations"]
+        scorer_version = rec["scorer_version"]
+        if scorer_version == "scorer-1":
+            violations = judgment["critical_violations"]
+        elif scorer_version == "scorer-2":  # one entry per type; only present ones count
+            violations = [
+                {"type": name, **entry}
+                for name, entry in judgment["critical_violations"].items()
+                if entry["present"]
+            ]
+        else:
+            raise ValueError(f"unknown scorer version {scorer_version!r} in a score record")
         if not violations:
             print("    critical violations: none")
         for cv in violations:
@@ -423,6 +506,11 @@ def _print_score_summary(
             f"not acceptable, {kinds.count('needs_review')} needs review, "
             f"{kinds.count('judge_failed')} judge failed"
             + (f", {kinds.count('stopped')} not scored (stopped)" if "stopped" in kinds else "")
+            + (
+                f", {kinds.count('budget_stopped')} unscored (budget)"
+                if "budget_stopped" in kinds
+                else ""
+            )
         )
     tokens = (
         f"input tokens {result.input_tokens}, output tokens {result.output_tokens}"
@@ -456,6 +544,16 @@ def _cmd_score(
         print("No judge call was made.", file=sys.stderr)
         return 2
 
+    guard: budget_guard.Budget | None = None
+    spend: budget_guard.Spend | None = None
+    if args.budget_usd is not None or args.budget_runs is not None:
+        try:
+            guard, spend = _budget_setup(args, plan)
+        except budget_guard.BudgetInputError as exc:
+            print(str(exc), file=sys.stderr)
+            print("No judge call was made.", file=sys.stderr)
+            return 2
+
     reuse = plan.count(action="reuse")
     empty = plan.count(state="empty")
     duplicates = plan.count(state="duplicate")
@@ -471,6 +569,15 @@ def _cmd_score(
         + "."
     )
     print(_judge_line(plan.judge))
+    if plan.interrupted_attempts:
+        n = plan.interrupted_attempts
+        print(
+            f"Interrupted attempts: {n} ({_plural(n, 'a budgeted judge call was', 'budgeted judge calls were')} "
+            "started but never recorded; each counts its maximum cost and its reply "
+            "is judged again)"
+        )
+    if guard is not None and spend is not None:
+        _print_budget_start(guard, spend)
     problems: list[str] = []
     if duplicates:
         problems.append(
@@ -490,7 +597,10 @@ def _cmd_score(
         if client_factories is not None:
             if openai_responses.PROVIDER not in client_factories:
                 raise ValueError("no client factory for provider: openai")
-            client = client_factories[openai_responses.PROVIDER]()
+            factory = client_factories[openai_responses.PROVIDER]
+            # Under a budget the SDK must not retry on its own: every billable request
+            # has to pass the guard. The guarded rerun of `score` is the retry.
+            client = factory(max_retries=0) if guard is not None else factory()
         else:
             load_dotenv(override=False)
             env = openai_responses.API_KEY_ENV
@@ -504,13 +614,28 @@ def _cmd_score(
                 return 2
             from openai import OpenAI
 
-            client = OpenAI()
+            client = OpenAI(max_retries=0) if guard is not None else OpenAI()
+        if guard is not None and getattr(client, "max_retries", 0) != 0:
+            print(
+                "The judge client would retry on its own, which the budget guard can't "
+                "see; no judge call was made.",
+                file=sys.stderr,
+            )
+            return 2
 
     last_case: list[str] = []
     result = scoring.execute_plan(
-        plan, client, on_outcome=lambda o: _print_score_outcome(o, last_case)
+        plan, client, on_outcome=lambda o: _print_score_outcome(o, last_case), budget=guard
     )
     _print_score_summary(plan, result)
+    if guard is not None:
+        stopped = sum(1 for o in result.outcomes if o.kind == "budget_stopped")
+        print(
+            f"Budget: {budget_guard.fmt_usd(guard.spent_this_command)} recorded this command "
+            "(actual usage, or a call's maximum where usage is missing); spend now "
+            f"{budget_guard.fmt_usd(guard.spent)} of {budget_guard.fmt_usd(guard.limit)}; "
+            f"{stopped} {_plural(stopped, 'reply', 'replies')} unscored (budget)."
+        )
     if problems:
         print("\nProblems found:", file=sys.stderr)
         for problem in problems:
@@ -521,9 +646,174 @@ def _cmd_score(
         duplicates
         or plan.unknown_records
         or result.fatal_message
-        or any(o.kind in ("needs_review", "judge_failed") for o in result.outcomes)
+        or any(o.kind in ("needs_review", "judge_failed", "budget_stopped") for o in result.outcomes)
     )
     return 1 if bad else 0
+
+
+def _budget_setup(
+    args: argparse.Namespace, plan: scoring.ScoringPlan
+) -> tuple[budget_guard.Budget, budget_guard.Spend]:
+    """The guard for this command; raises BudgetInputError before any call."""
+    if args.budget_usd is None:
+        raise budget_guard.BudgetInputError("--budget-run: only applies with --budget-usd")
+    limit = budget_guard.parse_usd(args.budget_usd)
+    runs = args.budget_runs or []
+    if not runs:
+        raise budget_guard.BudgetInputError(
+            "--budget-usd: needs --budget-run for every run whose spend counts, "
+            "including the run being scored"
+        )
+    resolved = [r.resolve() for r in runs]
+    if len(set(resolved)) != len(resolved):
+        raise budget_guard.BudgetInputError("--budget-run: the same run is listed more than once")
+    if args.run_dir.resolve() not in resolved:
+        raise budget_guard.BudgetInputError(
+            f"--budget-run: must include the run being scored ({args.run_dir.as_posix()})"
+        )
+    for r in runs:
+        if not (r / "manifest.json").exists():
+            raise budget_guard.BudgetInputError(
+                f"--budget-run: {r.as_posix()} has no manifest.json; not a run directory"
+            )
+    try:
+        ids = [scoring.load_manifest(r).get("run_id") for r in runs]
+    except (OSError, ValueError) as exc:
+        raise budget_guard.BudgetInputError(f"--budget-run: cannot read a manifest ({exc})") from None
+    if len(set(ids)) != len(ids):
+        raise budget_guard.BudgetInputError("--budget-run: two runs have the same run_id")
+    for sp in plan.slots:  # every needed call must have a cost bound before any call
+        if sp.action == "judge":
+            budget_guard.max_call_cost(sp.request)  # type: ignore[arg-type]
+    spend = budget_guard.spend_so_far(runs, args.scores_dir)
+    return budget_guard.Budget(limit=limit, spent=spend.total), spend
+
+
+def _print_budget_start(guard: budget_guard.Budget, spend: budget_guard.Spend) -> None:
+    fmt = budget_guard.fmt_usd
+    print(
+        f"Budget: {fmt(guard.limit)}; spend so far {fmt(spend.total)} (generation "
+        f"{fmt(spend.generation)}, judge {fmt(spend.judge)}) from recorded usage. "
+        f"{budget_guard.GEMINI_NOTE}"
+    )
+    if spend.no_response:
+        parts = ", ".join(f"{run} {n}" for run, n in sorted(spend.no_response.items()))
+        print(
+            f"Budget: calls that raised and returned no response are counted at $0 "
+            f"(no usage was recorded): {parts}."
+        )
+
+
+# ---------------------------------------------------------------- holdout
+# Before reveal these commands print only paths, counts and commitment hashes:
+# never a salt, a pair mapping or a neutral-ID-to-run/model mapping.
+
+
+def _holdout_error(exc: holdout.HoldoutInputError) -> int:
+    print(str(exc), file=sys.stderr)
+    return 2
+
+
+def _cmd_pair_plan(args: argparse.Namespace) -> int:
+    try:
+        digest = holdout.create_pair_plan(
+            args.cases, args.models, args.prompt_version, args.private_out, args.commitment_out
+        )
+    except holdout.HoldoutInputError as exc:
+        return _holdout_error(exc)
+    print(f"private pair plan: {args.private_out.as_posix()} (do not open before labels are committed)")
+    print(f"commitment: {args.commitment_out.as_posix()}")
+    print(f"commitment sha256: {digest}")
+    return 0
+
+
+def _cmd_verify_commitment(args: argparse.Namespace) -> int:
+    try:
+        kind, digest = holdout.verify_any(args.private, args.commitment)
+    except (holdout.HoldoutInputError, holdout.CommitmentError) as exc:
+        print(f"commitment NOT verified: {exc}", file=sys.stderr)
+        return 1
+    print(f"commitment verified ({kind}, sha256 {digest})")
+    return 0
+
+
+def _cmd_review_sheet(args: argparse.Namespace) -> int:
+    try:
+        res = holdout.create_review_sheet(args.runs, args.out, args.private_key)
+    except holdout.HoldoutInputError as exc:
+        return _holdout_error(exc)
+    print(f"review sheet: {res.sheet.as_posix()}")
+    print(f"private review key: {res.private_key.as_posix()} (do not open before labels are committed)")
+    print(f"commitment: {res.commitment.as_posix()}")
+    print(f"replies shown: {res.n_replies} across {res.n_cases} {_plural(res.n_cases, 'case', 'cases')}")
+    not_shown = sum(res.unavailable.values())
+    print(
+        f"replies not shown (operational failures): {not_shown}"
+        + (" (" + ", ".join(f"{k} {v}" for k, v in res.unavailable.items()) + ")" if not_shown else "")
+    )
+    print(f"commitment sha256: {res.sha256}")
+    return 0
+
+
+def _cmd_pair_sheet(args: argparse.Namespace) -> int:
+    try:
+        res = holdout.create_pair_sheet(
+            args.plan_private, args.commitment, args.run, args.out,
+            args.review_sheet, args.review_commitment,
+        )
+    except holdout.HoldoutInputError as exc:
+        return _holdout_error(exc)
+    print(f"review labels checked: {res.n_labels_checked}, all y or n")
+    print(f"pair sheet: {res.sheet.as_posix()}")
+    print(f"pairs shown: {res.n_pairs} of {res.n_total}")
+    if res.n_unavailable:
+        print(f"{res.n_unavailable} of {res.n_total} pairs cannot be shown")
+    return 0
+
+
+def _cmd_pair_compare(args: argparse.Namespace) -> int:
+    try:
+        if args.json_out is not None:
+            holdout.check_json_out(args.json_out, args.scores_dir)
+        report = holdout.pair_compare(
+            args.plan, args.commitment, args.run, args.pair_sheet,
+            args.scores_dir, args.judge_version,
+        )
+        if args.json_out is not None:
+            holdout.write_json_report(args.json_out, report, args.scores_dir)
+    except holdout.HoldoutInputError as exc:
+        return _holdout_error(exc)
+    print(holdout.format_pair_report(report))
+    if args.json_out is not None:
+        print(f"JSON report: {args.json_out.as_posix()}")
+    return 0
+
+
+def _cmd_review_compare(args: argparse.Namespace) -> int:
+    try:
+        if args.json_out is not None:
+            holdout.check_json_out(args.json_out, args.scores_dir)
+        report = holdout.review_compare(
+            args.key, args.commitment, args.sheet, args.scores_dir, args.judge_version
+        )
+        if args.json_out is not None:
+            holdout.write_json_report(args.json_out, report, args.scores_dir)
+    except holdout.HoldoutInputError as exc:
+        return _holdout_error(exc)
+    print(holdout.format_review_report(report))
+    if args.json_out is not None:
+        print(f"JSON report: {args.json_out.as_posix()}")
+    return 0
+
+
+_HOLDOUT_COMMANDS: dict[str, Callable[[argparse.Namespace], int]] = {
+    "pair-plan": _cmd_pair_plan,
+    "verify-commitment": _cmd_verify_commitment,
+    "review-sheet": _cmd_review_sheet,
+    "pair-sheet": _cmd_pair_sheet,
+    "pair-compare": _cmd_pair_compare,
+    "review-compare": _cmd_review_compare,
+}
 
 
 def main(
@@ -540,6 +830,8 @@ def main(
         return _cmd_run(args, client_factories)
     if args.command == "score":
         return _cmd_score(args, client_factories)
+    if args.command in _HOLDOUT_COMMANDS:
+        return _HOLDOUT_COMMANDS[args.command](args)
     return _cmd_show(args)
 
 

@@ -11,3 +11,10 @@ __pycache__/
 .pytest_cache/
 build/
 dist/
+
+# Holdout blinding: private mapping files (pair plan, review key). Committed only
+# after the labels, when they are revealed and checked against their commitments.
+holdout-private/
+
+# Live-run data: fresh runs, their scores and the spending ledger (RIGHTONCUE_DATA_DIR).
+data/

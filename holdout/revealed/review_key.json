@@ -1,0 +1,393 @@
+{
+  "schema": "review-key-2",
+  "salt": "4d0ce7c4fd9b11267d81604a488b0a2d59acdee5698e15ea06e94523c8caa055",
+  "entries": {
+    "H1-01": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H1|v2|gemini-3.5-flash|1",
+      "prompt_version": "v2",
+      "model": "gemini-3.5-flash",
+      "sample_index": 1,
+      "text_sha256": "ec5ba171511f19da4a1f7d051f57fc549ab3b08d54708e7506ffbe646eb592f1"
+    },
+    "H1-02": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H1|v2|gpt-5.4-mini|1",
+      "prompt_version": "v2",
+      "model": "gpt-5.4-mini",
+      "sample_index": 1,
+      "text_sha256": "b8222a71e0954bd017f84a537e339f5abe293a969e0e340437d4fd019182c28a"
+    },
+    "H1-03": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H1|v1|gpt-5.4|2",
+      "prompt_version": "v1",
+      "model": "gpt-5.4",
+      "sample_index": 2,
+      "text_sha256": "2c944a9d9511f7c9a89e80964b10726eb6eefa1523c5af201520f1622efb8a5b"
+    },
+    "H1-04": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H1|v1|gpt-5.4-mini|2",
+      "prompt_version": "v1",
+      "model": "gpt-5.4-mini",
+      "sample_index": 2,
+      "text_sha256": "b500d3173848f8cbe45f09cf524911c228f0b7e15f3dadc181e4aabeaabb211a"
+    },
+    "H1-05": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H1|v2|gpt-5.4|2",
+      "prompt_version": "v2",
+      "model": "gpt-5.4",
+      "sample_index": 2,
+      "text_sha256": "b04d8040d5745c38935a4f0ae1a13c97d388bf58dc1e39ae8122770cc8047756"
+    },
+    "H1-06": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H1|v1|gemini-3.5-flash|2",
+      "prompt_version": "v1",
+      "model": "gemini-3.5-flash",
+      "sample_index": 2,
+      "text_sha256": "e976256cf4c05e5c2300c791d007c7bd9dbc51f07390711e364c9861e29adaab"
+    },
+    "H1-07": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H1|v2|gemini-3.5-flash|2",
+      "prompt_version": "v2",
+      "model": "gemini-3.5-flash",
+      "sample_index": 2,
+      "text_sha256": "91b901099f6758849a186243c9f3e9af3382906e154f60791508f32f4a80e055"
+    },
+    "H1-08": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H1|v2|gpt-5.4-mini|2",
+      "prompt_version": "v2",
+      "model": "gpt-5.4-mini",
+      "sample_index": 2,
+      "text_sha256": "429edd59300f31efc152bb1cec83b1836c4827ca9b4261934fe78991ded20cc9"
+    },
+    "H1-09": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H1|v1|gemini-3.5-flash|1",
+      "prompt_version": "v1",
+      "model": "gemini-3.5-flash",
+      "sample_index": 1,
+      "text_sha256": "16038822788442ffa9bf44570c5e4466bcdb495b4f20d5f8977477e711d763b1"
+    },
+    "H1-10": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H1|v2|gpt-5.4|1",
+      "prompt_version": "v2",
+      "model": "gpt-5.4",
+      "sample_index": 1,
+      "text_sha256": "b04d8040d5745c38935a4f0ae1a13c97d388bf58dc1e39ae8122770cc8047756"
+    },
+    "H1-11": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H1|v1|gpt-5.4-mini|1",
+      "prompt_version": "v1",
+      "model": "gpt-5.4-mini",
+      "sample_index": 1,
+      "text_sha256": "2100ed9380533b0bb53889dc7bb3edc0bc15bc4fca7ec8ceabe8542495939a63"
+    },
+    "H1-12": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H1|v1|gpt-5.4|1",
+      "prompt_version": "v1",
+      "model": "gpt-5.4",
+      "sample_index": 1,
+      "text_sha256": "19a910fb0614c58bbac8e88543b9cd718d834ac51123069aa3574c89209f8d71"
+    },
+    "H2-01": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H2|v1|gpt-5.4-mini|2",
+      "prompt_version": "v1",
+      "model": "gpt-5.4-mini",
+      "sample_index": 2,
+      "text_sha256": "82d86bc9178b6b2211eb0ca763f6272301f662fc8ab4cb92c2ca1aa89ba84d72"
+    },
+    "H2-02": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H2|v2|gpt-5.4|2",
+      "prompt_version": "v2",
+      "model": "gpt-5.4",
+      "sample_index": 2,
+      "text_sha256": "da2ff0ab2c66905ddd725a5e601e140c9f7cecac0eaba1201d241fe5196e8f2f"
+    },
+    "H2-03": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H2|v1|gpt-5.4|1",
+      "prompt_version": "v1",
+      "model": "gpt-5.4",
+      "sample_index": 1,
+      "text_sha256": "dfddc3280f1e15f0f4a8b28861b0c11c5597188e6b75d49fc8121479fb6c623d"
+    },
+    "H2-04": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H2|v1|gemini-3.5-flash|1",
+      "prompt_version": "v1",
+      "model": "gemini-3.5-flash",
+      "sample_index": 1,
+      "text_sha256": "a250bbf27d966f559d16bcec6ab117bbe77dc15545e0149d5da3ed485b2f10cd"
+    },
+    "H2-05": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H2|v2|gpt-5.4-mini|2",
+      "prompt_version": "v2",
+      "model": "gpt-5.4-mini",
+      "sample_index": 2,
+      "text_sha256": "d9bcd9ab0da274185e685e38adb7ce60ac5816b3a86e00fb0d5b5eb66a8c0460"
+    },
+    "H2-06": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H2|v2|gpt-5.4|1",
+      "prompt_version": "v2",
+      "model": "gpt-5.4",
+      "sample_index": 1,
+      "text_sha256": "da2ff0ab2c66905ddd725a5e601e140c9f7cecac0eaba1201d241fe5196e8f2f"
+    },
+    "H2-07": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H2|v2|gemini-3.5-flash|2",
+      "prompt_version": "v2",
+      "model": "gemini-3.5-flash",
+      "sample_index": 2,
+      "text_sha256": "1cf1a4fd1d68db3fb45e122f4f98943c183ef736a233c61f3b31f21609a469e0"
+    },
+    "H2-08": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H2|v2|gpt-5.4-mini|1",
+      "prompt_version": "v2",
+      "model": "gpt-5.4-mini",
+      "sample_index": 1,
+      "text_sha256": "82d86bc9178b6b2211eb0ca763f6272301f662fc8ab4cb92c2ca1aa89ba84d72"
+    },
+    "H2-09": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H2|v1|gpt-5.4|2",
+      "prompt_version": "v1",
+      "model": "gpt-5.4",
+      "sample_index": 2,
+      "text_sha256": "da2ff0ab2c66905ddd725a5e601e140c9f7cecac0eaba1201d241fe5196e8f2f"
+    },
+    "H2-10": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H2|v1|gpt-5.4-mini|1",
+      "prompt_version": "v1",
+      "model": "gpt-5.4-mini",
+      "sample_index": 1,
+      "text_sha256": "bf017f622bbb3430ff33b4c8013ff97f46a15e4d97ef54387772cb3fe3965e2e"
+    },
+    "H2-11": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H2|v2|gemini-3.5-flash|1",
+      "prompt_version": "v2",
+      "model": "gemini-3.5-flash",
+      "sample_index": 1,
+      "text_sha256": "9a29ba52e612f3e4c272404916bccbe438ee39ec934e41b500cfb2f8c168f9d0"
+    },
+    "H2-12": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H2|v1|gemini-3.5-flash|2",
+      "prompt_version": "v1",
+      "model": "gemini-3.5-flash",
+      "sample_index": 2,
+      "text_sha256": "2b3428f8e4473c24913c5aa8ef888463954e9e7920729b4aaa032670d7b8bfc7"
+    },
+    "H3-01": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H3|v2|gemini-3.5-flash|2",
+      "prompt_version": "v2",
+      "model": "gemini-3.5-flash",
+      "sample_index": 2,
+      "text_sha256": "6c61aa21b8190c29cbaad1c56edfe3e244efc084866a77ddbd7b46ac1d53a834"
+    },
+    "H3-02": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H3|v2|gpt-5.4|2",
+      "prompt_version": "v2",
+      "model": "gpt-5.4",
+      "sample_index": 2,
+      "text_sha256": "c4a3ca4111bd9fee707f2c0e421e087d3b328196e4fd7a6a58cda52419eacb8c"
+    },
+    "H3-03": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H3|v1|gpt-5.4-mini|1",
+      "prompt_version": "v1",
+      "model": "gpt-5.4-mini",
+      "sample_index": 1,
+      "text_sha256": "a3094a316d4458d23427e2b93930a87c755aec54fb559fbe595bfaa86fd017f3"
+    },
+    "H3-04": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H3|v1|gpt-5.4|1",
+      "prompt_version": "v1",
+      "model": "gpt-5.4",
+      "sample_index": 1,
+      "text_sha256": "30114ca9930b002b7c8ed19b70e9b76bb6eec4a4b8e5e730163c79b49e37432e"
+    },
+    "H3-05": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H3|v1|gemini-3.5-flash|1",
+      "prompt_version": "v1",
+      "model": "gemini-3.5-flash",
+      "sample_index": 1,
+      "text_sha256": "298cb273e2c06dd1cc5e3c03b2a1c468e0f9ddab997e6c351e4f71ffb65adf63"
+    },
+    "H3-06": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H3|v1|gpt-5.4|2",
+      "prompt_version": "v1",
+      "model": "gpt-5.4",
+      "sample_index": 2,
+      "text_sha256": "443831141d77ab3ad3b111cf54e90080f3151af351592a638ad925daae1d02bb"
+    },
+    "H3-07": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H3|v1|gpt-5.4-mini|2",
+      "prompt_version": "v1",
+      "model": "gpt-5.4-mini",
+      "sample_index": 2,
+      "text_sha256": "0a3a865b549482096f1d84e25c5b9a2aacadae853da4e1ff9503988198b77733"
+    },
+    "H3-08": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H3|v2|gpt-5.4|1",
+      "prompt_version": "v2",
+      "model": "gpt-5.4",
+      "sample_index": 1,
+      "text_sha256": "d25b197910d57ba0a8db6495bb50f11ef811631ea20675d7dcb85e560a161684"
+    },
+    "H3-09": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H3|v2|gemini-3.5-flash|1",
+      "prompt_version": "v2",
+      "model": "gemini-3.5-flash",
+      "sample_index": 1,
+      "text_sha256": "39be875726cc5f75ffc5d0f7d289909806d21c5388cf05607d8021af5791f365"
+    },
+    "H3-10": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H3|v2|gpt-5.4-mini|2",
+      "prompt_version": "v2",
+      "model": "gpt-5.4-mini",
+      "sample_index": 2,
+      "text_sha256": "3df654d9524e1b9cfa802b025cde0e57264122380bb3b475397bd80d5c9bc7ea"
+    },
+    "H3-11": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H3|v1|gemini-3.5-flash|2",
+      "prompt_version": "v1",
+      "model": "gemini-3.5-flash",
+      "sample_index": 2,
+      "text_sha256": "27f2580667238d22a096ce15b0039605b63c3361d5dfb1270697171c8ec63b75"
+    },
+    "H3-12": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H3|v2|gpt-5.4-mini|1",
+      "prompt_version": "v2",
+      "model": "gpt-5.4-mini",
+      "sample_index": 1,
+      "text_sha256": "0f15011a1890f8967ea1dc0059346a7e7fe8539c969309e4b4c46e27c1a5999b"
+    },
+    "H4-01": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H4|v1|gpt-5.4-mini|1",
+      "prompt_version": "v1",
+      "model": "gpt-5.4-mini",
+      "sample_index": 1,
+      "text_sha256": "456668c0af673b005776ff347dedd1bbcf1a01ba8b3721913bf0069396202779"
+    },
+    "H4-02": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H4|v1|gemini-3.5-flash|1",
+      "prompt_version": "v1",
+      "model": "gemini-3.5-flash",
+      "sample_index": 1,
+      "text_sha256": "b7aa54515631258644ae930f4c4f4186b9d693d37560fb90d1c2d6f8bde22145"
+    },
+    "H4-03": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H4|v2|gemini-3.5-flash|1",
+      "prompt_version": "v2",
+      "model": "gemini-3.5-flash",
+      "sample_index": 1,
+      "text_sha256": "8d839e79a16d134e9eb6c5615bf0499a739f20f5f73e764c10cbb6f50c0cfa81"
+    },
+    "H4-04": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H4|v2|gemini-3.5-flash|2",
+      "prompt_version": "v2",
+      "model": "gemini-3.5-flash",
+      "sample_index": 2,
+      "text_sha256": "5dfe18a4294765a582f302f2c7703c3a869893c1b391c49d9cdeda63bad501c7"
+    },
+    "H4-05": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H4|v2|gpt-5.4|1",
+      "prompt_version": "v2",
+      "model": "gpt-5.4",
+      "sample_index": 1,
+      "text_sha256": "6ad008461ff30a78f44cb48b4588b4b930136bad62a8828eff1183c25230e911"
+    },
+    "H4-06": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H4|v1|gpt-5.4-mini|2",
+      "prompt_version": "v1",
+      "model": "gpt-5.4-mini",
+      "sample_index": 2,
+      "text_sha256": "456668c0af673b005776ff347dedd1bbcf1a01ba8b3721913bf0069396202779"
+    },
+    "H4-07": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H4|v2|gpt-5.4-mini|2",
+      "prompt_version": "v2",
+      "model": "gpt-5.4-mini",
+      "sample_index": 2,
+      "text_sha256": "456668c0af673b005776ff347dedd1bbcf1a01ba8b3721913bf0069396202779"
+    },
+    "H4-08": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H4|v1|gpt-5.4|2",
+      "prompt_version": "v1",
+      "model": "gpt-5.4",
+      "sample_index": 2,
+      "text_sha256": "6ad008461ff30a78f44cb48b4588b4b930136bad62a8828eff1183c25230e911"
+    },
+    "H4-09": {
+      "run_id": "20261122T024845Z-8babdd",
+      "slot_key": "20261122T024845Z-8babdd|H4|v1|gpt-5.4|1",
+      "prompt_version": "v1",
+      "model": "gpt-5.4",
+      "sample_index": 1,
+      "text_sha256": "501d2a12b39d702a25f6eafd0fc9866bff6ec36148809c9c122e26eb7dc0d703"
+    },
+    "H4-10": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H4|v2|gpt-5.4|2",
+      "prompt_version": "v2",
+      "model": "gpt-5.4",
+      "sample_index": 2,
+      "text_sha256": "7c80db582f25505fc9a4fdc4a8248f71d71fd56736a8d720939a1e0d32f4a63e"
+    },
+    "H4-11": {
+      "run_id": "20261122T024715Z-182705",
+      "slot_key": "20261122T024715Z-182705|H4|v2|gpt-5.4-mini|1",
+      "prompt_version": "v2",
+      "model": "gpt-5.4-mini",
+      "sample_index": 1,
+      "text_sha256": "456668c0af673b005776ff347dedd1bbcf1a01ba8b3721913bf0069396202779"
+    }
+  },
+  "unavailable": [
+    {
+      "run_id": "20261122T024845Z-8babdd",
+      "case_id": "H4",
+      "slot_key": "20261122T024845Z-8babdd|H4|v1|gemini-3.5-flash|2",
+      "prompt_version": "v1",
+      "model": "gemini-3.5-flash",
+      "sample_index": 2,
+      "kind": "failed"
+    }
+  ]
+}
