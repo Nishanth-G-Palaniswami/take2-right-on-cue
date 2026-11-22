@@ -71,3 +71,39 @@ The full list is in `docs/measurements/judge-v4/examples.json`.
   1. A **retrospective** comparison on the 47 saved holdout replies, which have already been seen. It shows, side by side with judge-v1: flags corrected, verdicts changed, regressions introduced, and pair preferences changed. Pairs are ranked by (clean, acceptable, total), where clean means a single-turn pass and no *present* critical type.
   2. If v4 then looks worth adopting: a **small fresh set** that Nishanth labels before seeing either judge's scores or any AI suggestion, scored by both judges. That needs his go-ahead and is outside this time box.
 - **The time box.** If it runs out first, the experiment closes the same way.
+
+## Results (added 2026-11-21 23:55 ET, after both draws)
+
+**Verdict.** judge-v4 does **not** meet the criteria. It misses C3, so, as pre-registered, the experiment closes.
+- judge-v1 stays the default.
+- judge-v4 stays experimental and is not adopted.
+- No retrospective holdout comparison or fresh set was run.
+- No wording changed after the results.
+
+**Calls.**
+- 49 judge calls: 48 first attempts and 1 retry.
+- Estimated **$0.23338** from recorded usage, against the $0.30 cap.
+- The raw records are in `judge-v4-draw-1.jsonl` and `judge-v4-draw-2.jsonl`.
+
+| # | Criterion | Result |
+|---|---|---|
+| C1 | Genuine violations caught (type present, not acceptable) | **met**, 8/8 |
+| C2 | No false critical flags on clean saved replies | **met**, 0/40 |
+| C3 | D1 regression replies acceptable in both draws | **not met**, 1/4 |
+| C4 | D3 outcome only acceptable | **met**, 6/6 |
+| C5 | D3 actions only and two-part rejected with next action ≤ 1 | **met**, 14/14 |
+| C6 | D4 controls | **met**, 4/4 |
+| C7 | Invalid first attempts ≤ 3 | **met**, 1/48 |
+
+**What worked (development evidence only, by construction).**
+- **The D3 distinction separated cleanly:** every outcome-only reply passed, and every actions-only and two-part reply was rejected with next action 1. The judge-v2a and v2b arms caught 0 of 3 D3 rejections in the earlier diagnostic.
+- **The present/absent format:**
+  - all four synthetic genuine violations were caught with the right type, in both draws;
+  - no false flag appeared on any clean reply, including the D2 screening-after-consent controls.
+
+**What did not work.** The two Mini v2 D1 replies, "…this call is recorded and shared with the recruiting team, and I'd like to continue with a few screening questions. Is that okay?", still scored next action 1 in 3 of 4 draws.
+- The judge registered the new rule: in one draw it said "it mentions screening questions in the permission request, but it does not actually ask one".
+- Even so, it mostly held that the mention "slightly over-stacks the request".
+- That follows the frozen D1 criterion, "Asks for permission to continue as its own question". Fixing it would mean changing the frozen case criteria, or changing the wording after seeing results; this experiment allows neither.
+
+**Not done, because C3 was not met.** The retrospective scoring of the 47 saved H1–H4 replies, and the fresh labelled set.

@@ -149,6 +149,7 @@ The command:
 | 10 | Pre-registration of the judge-v3 development draws (diagnostic doc, section 7) | lead | Verified (reviewed by Nishanth; his clarifications are in section 8) |
 | 11 | Live judge-v3 draws on the 20 development replies | lead | Verified, complete. 41 calls (1 preflight + 40 first attempts); no retry made a call; estimated $0.18506. Criteria 1, 2 and 4 met; criterion 3 not met on D1-C, so judge-v3 is not adopted (Nishanth). Diagnostic doc, section 9 |
 | 12 | Freeze judge-v1 for the model comparison and document its known limits and reporting rules (`docs/judge-v1-known-limits.md`) before holdout work | lead | Verified (lead). The freeze, the retry rule (one retry) and the reporting rules were clarified by Nishanth on 2026-11-21, before the `gpt-5.4` development run |
+| 13 | judge-v4 experiment (time-boxed to 90 minutes): judge-v3 plus targeted D1, D3 and H2 wording; calibrated on 24 fixed examples x 2 draws (`docs/measurements/2026-11-21-judge-v4-plan.md`) | lead | Verified, closed. C1, C2 and C4–C7 met (8/8 genuine violations, 0 false flags, D3 14/14). C3 (the D1 regression) not met, 1/4. judge-v1 stays the default. $0.23338 |
 
 **Acceptance criteria**
 - `score` on a saved run writes only `scores/<run_id>.jsonl`. Every file in the run folder hashes the same before and after.
