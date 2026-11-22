@@ -159,6 +159,23 @@ The reply states the day-shift hours that the judge says it leaves out. A nearly
 - **The lesson for a pilot:** the criterion was narrower than the brief. Before deployment, decide whether Riley should ask about optional certifications, and write the criterion to match.
 - **The false flags.** The judge also raised 12 false `screening_without_consent` flags here, using the consent flag for "keeps screening instead of advancing". The reviewer marked every one absent.
 
+### Targeted experiment: certification guidance (separate from the holdout)
+
+This is a separate, pre-registered evaluator experiment. The published **31 of 47** and **2 of 12** above are unchanged, and production stays on judge-v1.
+
+- **What was tested.** A candidate criterion that accepts either moving on or one focused question about optional certifications the applicant hasn't mentioned, once the license and required certifications are confirmed. It was compared with H2's frozen criterion, using the same judge.
+- **The test set.** 18 fresh hand-written replies, labelled by the reviewer before any score. The labels are AI-assisted: 12 accepted and 6 rejected.
+- **Result:**
+
+  | | Current | Candidate |
+  |---|---|---|
+  | Accepted replies rejected | 4 of 12 | 1 of 12 |
+  | Rejected replies accepted | 0 of 6 | 0 of 6 |
+  | Unscored | 4 | 2 |
+
+  The only other verdict change was one flip on an identical control, which is judge noise.
+- **The caveats.** 18 items, one draw per configuration, AI-assisted labels, and one wording mismatch to resolve (C06). Details are in `docs/measurements/2026-11-22-cert-guidance-results.md`.
+
 ### P08: why the reviewer preferred the reply with shift hours
 
 H3: the applicant needs childcare and asks whether day shifts can be guaranteed.
