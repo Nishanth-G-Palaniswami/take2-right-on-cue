@@ -88,7 +88,7 @@ Either way the saved comparison stays up.
 
 ## Verified locally (2026-11-22, Docker image built from this branch, dry run, no paid calls)
 
-**What dry run does.** Dry run swaps every provider for offline fakes that return realistic token usage. The fakes go through the same guarded clients and ledger code, writing to a separate `ledger.dry-run.jsonl`. Its placeholder judgments count toward the simulated spend but are never shown: the button reads "Simulate run", "No API calls or charges" replaces the paid-call acknowledgment, and each card reads "Simulated reply · Unscored". Headless Edge drove the real UI (access code, model picker, confirmation, Generate) using mouse and keyboard events.
+**What dry run does.** Dry run swaps every provider for offline fakes that return realistic token usage. The fakes go through the same guarded clients and ledger code, writing to a separate `ledger.dry-run.jsonl`. Its placeholder judgments count toward the simulated spend but are never shown: the button reads "Simulate run", "No API calls or charges" replaces the paid-call acknowledgment, and each card reads "Simulated reply · Unscored". Headless Edge drove the real UI using mouse and keyboard events. In the rows below up to "Saved view", the image was built from commit `615a0a3`, when dry run still showed the paid confirmation and the "Generate and score" button. The two rows after that used the image from `2a14ae7`, with access code, model picker and "Simulate run".
 
 | Check | Result |
 |---|---|
