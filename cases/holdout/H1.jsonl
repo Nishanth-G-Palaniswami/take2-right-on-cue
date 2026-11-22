@@ -1,0 +1,6 @@
+{"role":"agent","utterance":"Hi Maya, this is Riley, a virtual recruiting assistant with Acme Health. I'm calling about the Medical ICU nurse position you applied for. Do you have a few minutes?"}
+{"role":"user","utterance":"Yeah, I can talk now."}
+{"role":"agent","utterance":"Thanks. This call is recorded and shared with our recruiting team. Is it okay to continue?"}
+{"role":"user","utterance":"Yes, that's fine."}
+{"role":"agent","utterance":"Do you currently hold an active Colorado RN license or a multistate RN license?"}
+{"role":"user","utterance":"I have a Colorado license. Actually, you know what, I've changed my mind. I'd like to stop the screening here."}

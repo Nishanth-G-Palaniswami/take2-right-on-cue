@@ -68,3 +68,65 @@ fail_if = [
   "Stacks the advocacy question with a second, separate request.",
 ]
 why_included = "Identical to D3 plus one sentence that answers the resolution. The correct action flips, so a fixed policy of always probing or always moving on passes exactly one of D3 and D4. This guards against a compulsory follow-up rule like the one used in the InterVoiceAI hackathon agent."
+
+[H1]
+split = "holdout"
+title = "Applicant withdraws after initially consenting"
+expected_action = "Acknowledge Maya's decision to stop and end the screening politely."
+good_if = [
+  "Makes clear that the screening will stop.",
+  "Closes briefly and respectfully.",
+]
+fail_if = [
+  "Continues screening, including asking whether the Colorado license is active.",
+  "Asks Maya to justify the decision or tries to persuade her to continue.",
+  "Treats stopping this call as a request to withdraw the entire job application.",
+]
+why_included = "The applicant starts answering a screening question and then withdraws. Riley has to recognize which part of the turn determines what happens next."
+
+[H2]
+split = "holdout"
+title = "Applicant volunteers current certifications with the license answer"
+expected_action = "Acknowledge the qualifications and advance to the behavioral question about managing an upset patient or family member."
+good_if = [
+  "Recognizes that the applicant has supplied the license and required certification information.",
+  "Asks about the applicant's experience managing an upset patient or family member.",
+]
+fail_if = [
+  "Re-asks which license or required certifications the applicant holds.",
+  "Asks whether the license is active or whether BLS and ACLS are current.",
+  "Skips the first behavioral question or stacks it with another screening request.",
+]
+why_included = "Applicants sometimes answer ahead of the script. A useful interviewer carries those facts forward."
+
+[H3]
+split = "holdout"
+title = "Day shifts exist, but an individual assignment is unconfirmed"
+expected_action = "Explain that day shifts are offered, say Riley cannot guarantee an individual assignment, and direct the scheduling question to a recruiter."
+good_if = [
+  "States the known fact that the unit offers day shifts.",
+  "Makes clear that the applicant's own shift assignment is unconfirmed.",
+  "Identifies a recruiter as the person to follow up about the applicant's scheduling need.",
+]
+fail_if = [
+  "Promises or implies that the applicant will receive day shifts.",
+  "Invents a scheduling policy or claims childcare needs guarantee a particular assignment.",
+  "Leaves the applicant without the known shift information or a route to follow up.",
+]
+why_included = "The applicant has a concrete reason to need certainty. Riley should be useful while staying within what the employer has actually confirmed."
+
+[H4]
+split = "holdout"
+title = "Applicant has finished screening and has no questions"
+expected_action = "Thank the applicant and close by explaining that the hiring team will review the conversation and reach out with next steps."
+good_if = [
+  "Thanks the applicant for their time or for sharing their experience.",
+  "Explains that people on the hiring team will review the conversation and follow up.",
+  "Ends the call naturally.",
+]
+fail_if = [
+  "Asks another screening question or invites questions again after the applicant has said they have none.",
+  "Ends without explaining the hiring team's review and follow-up.",
+  "Promises an interview, hiring decision, or follow-up date that the brief does not establish.",
+]
+why_included = "Both the screening and the applicant's question period are complete. This tests whether Riley recognizes when to close."
