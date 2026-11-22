@@ -266,3 +266,72 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
 | 3 | Hosting plan for `https://rightoncue.nishanthgp.me` on Render (Docker), with DNS in Netlify DNS (`docs/hosting-plan.md`) | lead | Awaiting Nishanth's review. No push, deploy or DNS change |
 | 4 | Submission report (`docs/report.md`) and walkthrough outline (`docs/walkthrough.md`) | lead | Drafted, for Nishanth's review |
 | 5 | Video and OpenAI usage screenshot | Nishanth | Pending |
+
+## Hosted live evaluation behind an access code (2026-11-22)
+
+**Objective.** Reviewers at `rightoncue.nishanthgp.me` can run the tool live:
+- the saved comparison stays open to everyone;
+- "Run it yourself" asks for an access code;
+- after the code, they edit or load a prompt and transcript, choose models and a sample count, generate fresh replies, and see side-by-side scores and failed checks from the existing runner and scorer.
+
+**Constraints (Nishanth).**
+- Provider keys stay server-side.
+- Usage is capped across generation and scoring.
+- Saved examples and fresh runs are clearly labelled.
+- Build and test locally first.
+- The browser workflow is shown before any paid test, push or deployment.
+
+**Design (lead).** This is high risk, because it spends money and gates access.
+
+- **Access gate.**
+  - The code lives in `RIGHTONCUE_ACCESS_CODE`, server-side only. It is never displayed, logged or sent back, and it is compared in constant time.
+  - Failed attempts are limited process-wide, so a reload can't reset them: 5 wrong codes start a 60-second cooldown for everyone. This was superseded from per-session after the owner decisions below.
+  - In hosted mode without the variable, live mode is off.
+- **Keys.** They are read from server environment variables only, every provider call is made server-side, and the UI shows no key value.
+- **The cap, in two layers.**
+  1. **In-app spend ledger.** Its location is set by `RIGHTONCUE_DATA_DIR`. Before every paid call (generation and judge, retries included):
+     - the call's maximum cost is reserved under a process-wide lock;
+     - the actual cost is settled afterwards;
+     - a call is refused when the settled spend, plus the open reservations, plus its maximum, would exceed `RIGHTONCUE_BUDGET_USD`.
+
+     Every paid client is wrapped, so the runner and scorer internals don't change. The ledger survives restarts only on persistent storage: a Render persistent disk, which needs a paid instance. On the free tier it resets, which is documented.
+  2. **Provider-side backstop.** A dedicated OpenAI project with "Enforce a hard limit" on. The Gemini key is an open owner decision: the ledger prices Gemini as paid either way (see below).
+- **Bounded generation.**
+  - Hosted fresh runs pass an output cap through the runner: a new optional parameter, recorded in the manifest and in the request. The CLI and the saved runs are unchanged.
+  - This makes each generation call's maximum computable.
+  - A capped reply that comes back incomplete is shown as an operational failure.
+- **Per-run limits:**
+  - models from the three supported;
+  - samples ≤ `RIGHTONCUE_MAX_SAMPLES` (default 2);
+  - prompt and transcript length caps;
+  - one paid run at a time per process.
+- **Fresh runs** are written under `RIGHTONCUE_DATA_DIR`, never into the committed `runs/` or `scores/`. Results are labelled "Fresh run (generated just now; not part of the evaluation)". Saved examples are labelled "Saved example" with their run ID.
+- **Dry run for local demos and tests.** `RIGHTONCUE_DRY_RUN=1` swaps every provider for canned offline replies and judgments, under a prominent "Dry run: no model was called" banner. It is never set in the image or on the host.
+
+**Checklist**
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | Pinning tests for the current hosted-off and local live behaviour, then the gate, ledger, guarded clients, output cap, per-run limits, labels and dry run; offline tests | complex-coder | Verified: 568 passed, 6 skipped. The one FAIL (local guarded runs wrote into the committed `runs/` and `scores/`) was fixed and re-verified |
+| 2 | Independent verification (Opus, high), covering money and access | verifier | PASS on re-verification (Opus, high). Round 1 found that one issue; money, access, persistence and byte-identical pins passed |
+| 3 | Browser workflow in dry run, at desktop and mobile widths, with screenshots | lead | Verified: Docker image, headless Edge. Restart on a named volume, a no-volume control, a mid-call kill, two reviewers at once, cap reached, invalid budget and a corrupt ledger (`docs/hosting-plan.md`, `docs/screenshots/live-dry-run/`) |
+| 4 | Cost estimate for one three-model run, from recorded usage | lead | Done: about $0.016 typical and $0.0895 maximum for 3 models × 1 sample; hosting $7.25/month (`docs/hosting-plan.md`) |
+| 5 | Paid test, push, deploy | Nishanth | Blocked (his go-ahead) |
+
+**Owner decisions (2026-11-22).**
+- `RIGHTONCUE_BUDGET_USD=5.00` is the shared allowance for new hosted reviewer runs. It covers generation and judging, retries included, and holds across simultaneous reviewers.
+- Render runs as an always-on paid instance with a persistent disk. Deployment is approved separately.
+
+**Design changes these decisions force (lead).**
+- `RIGHTONCUE_DATA_DIR` is required for hosted live mode (Render disk mount `/var/data`).
+- Gemini is priced in the hosted ledger at $1.50/M input and $7.50/M output, the conservative 2027 rates for `gemini-3.6-flash`, which is the model every saved Gemini reply reports. `budget.py`'s CLI pricing is unchanged.
+- Gemini SDK retries are off for hosted runs; app-level retries reserve separately.
+- Access-attempt limits are process-wide.
+- Dry run goes through the real ledger code, writing to a separate `ledger.dry-run.jsonl`, so restart and cap behaviour can be verified without paid calls.
+
+**Local verification still to run (lead).**
+- A new container on the same named volume keeps the spend; a no-volume control.
+- Killing a container mid-call keeps the open reservation at its maximum.
+- Two simultaneous sessions near the cap stay within it.
+- Saved comparisons stay available when the budget is exhausted, invalid, or the ledger is corrupt.
+- Peak memory, to size the instance.
