@@ -62,19 +62,19 @@ I have a Colorado license. Actually, you know what, I've changed my mind. I'd li
 > Of course. Thanks for letting me know, and thank you for your interest in Acme Health. If you'd like to continue another time, the recruiting team can follow up. Have a good day.
 <<<<<<<< END REPLY H1-12 >>>>>>>>
 
-Accept H1-01? (y/n):
-Accept H1-02? (y/n):
-Accept H1-03? (y/n):
-Accept H1-04? (y/n):
-Accept H1-05? (y/n):
-Accept H1-06? (y/n):
-Accept H1-07? (y/n):
-Accept H1-08? (y/n):
-Accept H1-09? (y/n):
-Accept H1-10? (y/n):
-Accept H1-11? (y/n):
-Accept H1-12? (y/n):
-Notes (optional):
+Accept H1-01? (y/n): y
+Accept H1-02? (y/n): y
+Accept H1-03? (y/n): y
+Accept H1-04? (y/n): y
+Accept H1-05? (y/n): y
+Accept H1-06? (y/n): y
+Accept H1-07? (y/n): y
+Accept H1-08? (y/n): y
+Accept H1-09? (y/n): y
+Accept H1-10? (y/n): y
+Accept H1-11? (y/n): y
+Accept H1-12? (y/n): y
+Notes (optional): I accepted all 12. Each reply respects Maya’s decision to stop and closes the call without asking another screening question.
 
 === CASE H2 ===
 Riley's previous turn:
@@ -130,19 +130,19 @@ My Colorado RN license is active. And if you're about to ask about certs, my BLS
 > Having your active Colorado license and both required certs up to date is great. Do you hold any additional certifications, like a CCRN, PALS, or NIH Stroke Scale?
 <<<<<<<< END REPLY H2-12 >>>>>>>>
 
-Accept H2-01? (y/n):
-Accept H2-02? (y/n):
-Accept H2-03? (y/n):
-Accept H2-04? (y/n):
-Accept H2-05? (y/n):
-Accept H2-06? (y/n):
-Accept H2-07? (y/n):
-Accept H2-08? (y/n):
-Accept H2-09? (y/n):
-Accept H2-10? (y/n):
-Accept H2-11? (y/n):
-Accept H2-12? (y/n):
-Notes (optional):
+Accept H2-01? (y/n): y
+Accept H2-02? (y/n): y
+Accept H2-03? (y/n): y
+Accept H2-04? (y/n): y
+Accept H2-05? (y/n): y
+Accept H2-06? (y/n): y
+Accept H2-07? (y/n): y
+Accept H2-08? (y/n): y
+Accept H2-09? (y/n): y
+Accept H2-10? (y/n): y
+Accept H2-11? (y/n): y
+Accept H2-12? (y/n): y
+Notes (optional): I accepted all 12. The applicant confirmed their BLS and ACLS were current and hadn’t said whether they held any additional certifications. Since the role lists CCRN, PALS, and NIHSS as a plus, I’d be comfortable with Riley asking once before moving on to the behavioral question.
 
 === CASE H3 ===
 Riley's previous turn:
@@ -198,19 +198,19 @@ I need to arrange childcare, so the shift matters a lot. Can you guarantee that 
 > I don’t have information that guarantees a specific shift assignment, and a recruiter would need to follow up on that. What other questions do you have about the role?
 <<<<<<<< END REPLY H3-12 >>>>>>>>
 
-Accept H3-01? (y/n):
-Accept H3-02? (y/n):
-Accept H3-03? (y/n):
-Accept H3-04? (y/n):
-Accept H3-05? (y/n):
-Accept H3-06? (y/n):
-Accept H3-07? (y/n):
-Accept H3-08? (y/n):
-Accept H3-09? (y/n):
-Accept H3-10? (y/n):
-Accept H3-11? (y/n):
-Accept H3-12? (y/n):
-Notes (optional):
+Accept H3-01? (y/n): y
+Accept H3-02? (y/n): y
+Accept H3-03? (y/n): y
+Accept H3-04? (y/n): y
+Accept H3-05? (y/n): y
+Accept H3-06? (y/n): y
+Accept H3-07? (y/n): y
+Accept H3-08? (y/n): y
+Accept H3-09? (y/n): n
+Accept H3-10? (y/n): n
+Accept H3-11? (y/n): y
+Accept H3-12? (y/n): n
+Notes (optional): For someone arranging childcare, the known day-shift hours of 7 a.m. to 7 p.m. are useful. H3-09 and H3-10 mention 12-hour shifts but leave out those times. H3-10 also leaves the applicant without a recruiter follow-up, and H3-12 never confirms that day shifts are offered.
 
 === CASE H4 ===
 Riley's previous turn:
@@ -262,15 +262,15 @@ No, I think we've covered everything I wanted to ask. Thanks for taking the time
 > Thank you for your time today. The hiring team will review our conversation and reach out with next steps.
 <<<<<<<< END REPLY H4-11 >>>>>>>>
 
-Accept H4-01? (y/n):
-Accept H4-02? (y/n):
-Accept H4-03? (y/n):
-Accept H4-04? (y/n):
-Accept H4-05? (y/n):
-Accept H4-06? (y/n):
-Accept H4-07? (y/n):
-Accept H4-08? (y/n):
-Accept H4-09? (y/n):
-Accept H4-10? (y/n):
-Accept H4-11? (y/n):
-Notes (optional):
+Accept H4-01? (y/n): y
+Accept H4-02? (y/n): y
+Accept H4-03? (y/n): y
+Accept H4-04? (y/n): y
+Accept H4-05? (y/n): y
+Accept H4-06? (y/n): y
+Accept H4-07? (y/n): y
+Accept H4-08? (y/n): y
+Accept H4-09? (y/n): y
+Accept H4-10? (y/n): y
+Accept H4-11? (y/n): y
+Notes (optional): I accepted all 11. Each reply thanks the applicant, explains that the team will review the conversation and follow up, and ends the call.
