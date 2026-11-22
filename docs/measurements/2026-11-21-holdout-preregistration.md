@@ -158,3 +158,59 @@ These are estimates. Token sizes come from these transcripts, fitted to the inpu
    - N-new-2: `pair-sheet --out` must be refused in the private folder.
 
    These will be committed and re-verified before the go-ahead.
+
+## Clarifications (Nishanth, 2026-11-21, added 21:42 ET, before any holdout generation)
+
+Nishanth's decisions of 2026-11-21. Where this section is more specific than the sections above, it governs.
+- **Unchanged:** the pair-plan commitment (`holdout/pair_plan_commitment.json`, sha256 `42e945ab…ec19`), frozen judge-v1, the prompts, the cases and the labelling order.
+- **Where it is implemented:** the tooling that applies these decisions is committed in `0206de9`.
+
+**1. Unusable replies (D1, option B).**
+- **Empty replies.** A completed empty reply is shown on both sheets as `(empty reply)`, for Nishanth to label. In the automated ranking it sits below any scored non-empty reply (total −1).
+- **Failed or incomplete generation** is an operational failure.
+  - It is not shown, and it is counted by kind.
+  - A pair containing it is missing.
+  - Reports give the number of evaluable replies (of 48) and evaluable pairs (of 12).
+- **Identical text from distinct sample slots is kept.** Two models or samples can legitimately give the same answer, so each slot is its own reply with its own ID.
+- **Delimiter look-alikes.** A reply whose text resembles a sheet delimiter is preserved and rendered safely: every reply line is prefixed `> `.
+- **No regeneration.** The original draws are kept.
+- **Integrity errors still stop the work:** duplicate records for the same slot, a record matching no expected slot, or a slot never attempted. A slot is left unattempted when generation aborts partway, which option B does not cover. In any of these cases the lead stops and reports, and Nishanth decides.
+- **Keeping the per-model counts hidden.** `next-turn run` prints empty, failed and incomplete counts per model. If Nishanth saw them, an `(empty reply)` block, or a gap in pair IDs, could be tied to a model. Until his labels are committed:
+  - the lead sends `run`'s output to a file Nishanth does not open. He reports only totals by kind across both runs combined, never per run or per model. Per-run counts would show which prompt produced an `(empty reply)`, which the review sheet hides;
+  - the run commit messages give no per-run or per-model counts;
+  - the committed-reply test counts empty replies without naming a slot, and allows any non-empty structural failure only by the SHA-256 of its text. Its pinned counts are (non-empty, empty) = (76, 0) now. They are updated once, in the second run's commit, with the counts of both runs combined. The first run's commit therefore leaves that single test failing, by design. This replaces both the Generation section's "lists it as an explicit exception" and its per-run pin bumps (76 → 100 → 124);
+  - `runs/` and `holdout-private/` stay closed, and nothing is scored.
+
+  With these in place, the remaining pre-reveal artifacts show only which case or pair position lost a reply, and of what kind. They never show a model or a side.
+
+**2. Budget (option B). This replaces the option A enforcement in the Cost section.**
+- **The cap.** $0.40 covers the holdout's OpenAI calls: generation of both runs, and all judging, retries included.
+- **The guard.** Both runs are scored with:
+
+  ```
+  next-turn score <run> --budget-usd 0.40 --budget-run <v2 run> --budget-run <v1 run>
+  ```
+
+  Before each judge call, retries included, it checks that the call's maximum cost fits within the remaining budget after generation and prior judging.
+- **The maximum cost** is the UTF-8 byte length of the request's canonical JSON × $0.75 per 1M, plus 1,500 output tokens × $4.50 per 1M. On these requests that is about $0.016 per call, which is higher than the $0.009 estimated above because the byte count includes the instructions and the response schema.
+- **When it stops.** The guard stops scoring once the spend so far plus one call's maximum would pass $0.40, which happens at about $0.384 spent. The remaining judgments are recorded as `budget_stopped` (unscored due to budget) and reported separately.
+- **How spend is counted.** From recorded usage, at the PRD rates. Gemini is counted as $0, because it is not billed through OpenAI.
+- **No hidden judge retries.** Under the budget, the judge client is built with `max_retries=0`, so every billable judge request is one guarded call. A transient error becomes `judge_failed`, which the single guarded rerun retries.
+- **Failed calls keep their charge.** Each budgeted judge attempt records its charge: actual usage, or the charged maximum when the call raised. Later commands count it.
+- **Two process rules:**
+  - every `score` lists both holdout runs as `--budget-run`;
+  - scoring runs one command at a time.
+- **Generation has no hard output cap.** Its spend has no hard ceiling: it is counted after the fact, and the guard applies to judging.
+- **Generation keeps the frozen client settings,** including the SDK's default 2 retries. Any billed retry that the SDK makes without recording it is invisible to the spend count. The OpenAI usage page is authoritative.
+- **The estimate is unchanged:** about $0.22 without retries, and about $0.26 with 12 retries.
+- **Known residual risk (non-blocking, disclosed).** A judge call that raises an exception the scorer does not recognise (for example HTTP 409 or 422, or a parsing error after a 200) stops `score` without recording that call's charge. Later commands could undercount by up to one call's maximum, about $0.016. No further call is made in the command that crashed.
+
+**3. Tooling fixes.**
+- The review labels must match the exact committed neutral IDs.
+- The pair sheet cannot be written inside `holdout-private/` or below it.
+
+**4. Authorship correction.**
+- The Cases section above, and the message of `b6166cf`, say H1–H4 "were written by Nishanth". The correct account: ChatGPT helped draft the H1–H4 transcripts and criteria, and Nishanth supplied the final versions.
+- Nishanth's statement: "I'll make my individual labels and pair preferences independently, before seeing scores, identities, or AI suggestions about the generated replies."
+
+**Status of "Open before the go-ahead".** All three items are resolved by this section: D1 by item 1, the cost-cap option by item 2, and the tooling fixes by item 3 (committed in `0206de9`, independently verified). No holdout reply has been generated.
