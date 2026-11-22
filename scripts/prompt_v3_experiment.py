@@ -62,9 +62,10 @@ def generate() -> int:
             cmd += ["--gemini-thinking-level", "minimal"]
         res = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, encoding="utf-8")
         run_id = next((ln.split(":", 1)[1].strip() for ln in res.stdout.splitlines() if ln.startswith("run_id:")), None)
-        if res.returncode != 0 or run_id is None:
+        if run_id is None:
             print(res.stdout[-2000:], res.stderr[-2000:])
-            raise SystemExit(f"{s['step']}: the run command failed")
+            raise SystemExit(f"{s['step']}: the run command did not start a run")
+        # The CLI exits non-zero when a slot fails; the slots, not the exit code, decide completeness.
         statuses = [r["status"] for r in slots(run_id)]
         complete = len(statuses) == len(s["models"]) * len(s["cases"]) * SAMPLES and all(x == "ok" for x in statuses)
         entry = {**s, "run_id": run_id, "statuses": statuses, "complete": complete}
