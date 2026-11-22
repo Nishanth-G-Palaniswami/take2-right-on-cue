@@ -28,8 +28,8 @@ from .runs import ManifestError, make_slot_key, provider_for
 
 PAIR_PLAN_SCHEMA = "pair-plan-1"
 PAIR_COMMITMENT_SCHEMA = "pair-plan-commitment-1"
-REVIEW_KEY_SCHEMA = "review-key-1"
-REVIEW_COMMITMENT_SCHEMA = "review-key-commitment-1"
+REVIEW_KEY_SCHEMA = "review-key-2"
+REVIEW_COMMITMENT_SCHEMA = "review-key-commitment-2"
 
 CANONICAL_JSON = (
     'json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"))'
@@ -39,9 +39,14 @@ PAIR_ALGORITHM = (
     f"where canonical_json(obj) = {CANONICAL_JSON}"
 )
 REVIEW_ALGORITHM = (
-    'sha256((salt + "\\n" + canonical_json(entries)).encode("utf-8")).hexdigest(), '
+    'sha256((salt + "\\n" + canonical_json({"entries": entries, "unavailable": '
+    'unavailable})).encode("utf-8")).hexdigest(), '
     f"where canonical_json(obj) = {CANONICAL_JSON}"
 )
+EMPTY_REPLY_LINE = "(empty reply)"
+REPLY_PREFIX = "> "
+OPERATIONAL_KINDS = ("failed", "incomplete")  # generation failures: not shown, counted
+OPERATIONAL_REASON = "operational failure (reply unavailable)"
 # (first model index, first sample, second model index, second sample); M1=0.
 PAIRINGS: tuple[tuple[int, int, int, int], ...] = (
     (0, 1, 1, 1),
@@ -82,7 +87,7 @@ _SIDE_CLOSE = re.compile(r"^<<<<<<<< END (A|B) >>>>>>>>\s*$")
 _FINGERPRINT = re.compile(r"^Fingerprint: (\S*)\s*$")
 _REASON = re.compile(r"^Reason:(.*)$")
 _PRIVATE_PLAN_KEYS = {"schema", "salt", "plan"}
-_PRIVATE_KEY_KEYS = {"schema", "salt", "entries"}
+_PRIVATE_KEY_KEYS = {"schema", "salt", "entries", "unavailable"}
 
 
 class HoldoutInputError(ValueError):
@@ -431,26 +436,6 @@ def _check_top_keys(data: dict[str, Any], allowed: set[str], path: Path) -> None
         )
 
 
-def _delimiter_count(texts: list[str], patterns: tuple[re.Pattern[str], ...]) -> int:
-    """How many texts contain a line that looks like one of the sheet's delimiters."""
-    return sum(
-        1
-        for text in texts
-        if any(p.match(line.rstrip("\r")) for line in text.split("\n") for p in patterns)
-    )
-
-
-def _refuse_delimiter_lookalikes(texts: list[str], patterns: tuple[re.Pattern[str], ...], what: str) -> None:
-    n = _delimiter_count(texts, patterns)
-    if n:
-        raise HoldoutInputError(
-            f"cannot build the {what}: {n} of {len(texts)} "
-            f"{_plural(len(texts), 'reply contains', 'replies contain')} a line that looks "
-            "like the sheet's reply delimiters, which would make the filled sheet "
-            "ambiguous. Nothing was written."
-        )
-
-
 def _salt(data: dict[str, Any], path: Path) -> str:
     salt = data.get("salt")
     if not isinstance(salt, str) or not salt:
@@ -500,8 +485,10 @@ def load_pair_private(path: Path) -> tuple[str, dict[str, Any]]:
     return salt, plan
 
 
-def load_review_key(path: Path) -> tuple[str, dict[str, dict[str, Any]]]:
-    """(salt, entries) from a private review key, shape-checked by hand."""
+def load_review_key(
+    path: Path,
+) -> tuple[str, dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    """(salt, entries, unavailable) from a private review key, shape-checked by hand."""
     data = _read_json_object(path, "private review key")
     if data.get("schema") != REVIEW_KEY_SCHEMA:
         raise HoldoutInputError(
@@ -510,8 +497,8 @@ def load_review_key(path: Path) -> tuple[str, dict[str, dict[str, Any]]]:
     _check_top_keys(data, _PRIVATE_KEY_KEYS, path)
     salt = _salt(data, path)
     entries = data.get("entries")
-    if not isinstance(entries, dict) or not entries:
-        raise _bad(path, "entries", "a non-empty object")
+    if not isinstance(entries, dict):
+        raise _bad(path, "entries", "an object")
     for e in entries.values():
         where = "an entry"  # never the neutral ID: it would sit next to its fields
         if not isinstance(e, dict):
@@ -521,7 +508,34 @@ def load_review_key(path: Path) -> tuple[str, dict[str, dict[str, Any]]]:
                 raise _bad(path, f"{f} of {where}", "a string")
         if type(e.get("sample_index")) is not int:
             raise _bad(path, f"sample_index of {where}", "an integer")
-    return salt, entries
+    unavailable = data.get("unavailable")
+    if not isinstance(unavailable, list):
+        raise _bad(path, "unavailable", "a list")
+    for u in unavailable:
+        where = "an unavailable slot"
+        if not isinstance(u, dict):
+            raise _bad(path, where, "an object")
+        for f in ("run_id", "case_id", "slot_key", "prompt_version", "model"):
+            if not isinstance(u.get(f), str):
+                raise _bad(path, f"{f} of {where}", "a string")
+        if type(u.get("sample_index")) is not int:
+            raise _bad(path, f"sample_index of {where}", "an integer")
+        if u.get("kind") not in OPERATIONAL_KINDS:
+            raise _bad(path, f"kind of {where}", f"one of {', '.join(OPERATIONAL_KINDS)}")
+    if not entries and not unavailable:
+        raise HoldoutInputError(f"{path.as_posix()}: the review key has no replies")
+    return salt, entries, unavailable
+
+
+def review_key_material(
+    entries: dict[str, dict[str, Any]], unavailable: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """What the review commitment's salted hash covers."""
+    return {"entries": entries, "unavailable": unavailable}
+
+
+def unavailable_counts(unavailable: list[dict[str, Any]]) -> dict[str, int]:
+    return {kind: sum(1 for u in unavailable if u["kind"] == kind) for kind in OPERATIONAL_KINDS}
 
 
 def load_commitment(path: Path) -> dict[str, Any]:
@@ -626,28 +640,46 @@ def plan_rule_problem(plan: dict[str, Any]) -> str | None:
 
 def verify_review_key(
     private: Path, commitment: Path
-) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
-    """(entries, commitment) if the private key matches its commitment."""
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """(entries, unavailable, commitment) if the private key matches its commitment.
+
+    Besides the hash, the commitment's public metadata (shown IDs, unavailable
+    counts by kind, run IDs, case IDs, reply count) must equal what the key implies.
+    """
     com = load_commitment(commitment)
     if com["schema"] != REVIEW_COMMITMENT_SCHEMA:
         raise CommitmentError(
             f"schema mismatch: {commitment.as_posix()} is {com['schema']!r}, not a "
             f"{REVIEW_COMMITMENT_SCHEMA!r} commitment"
         )
-    salt, entries = load_review_key(private)
-    if commitment_hash(salt, entries) != com["sha256"]:
+    salt, entries, unavailable = load_review_key(private)
+    if commitment_hash(salt, review_key_material(entries, unavailable)) != com["sha256"]:
         raise CommitmentError(
             "the salted hash of the private review key does not match the committed "
             f"sha256 {com['sha256']}"
         )
-    run_ids = list(dict.fromkeys(e["run_id"] for e in entries.values()))
-    case_ids = list(dict.fromkeys(rid.rsplit("-", 1)[0] for rid in entries))
-    _check_fields(com, {"algorithm": REVIEW_ALGORITHM, "n_replies": len(entries)})
+    run_ids = list(
+        dict.fromkeys([e["run_id"] for e in entries.values()] + [u["run_id"] for u in unavailable])
+    )
+    case_ids = list(
+        dict.fromkeys([rid.rsplit("-", 1)[0] for rid in entries] + [u["case_id"] for u in unavailable])
+    )
+    _check_fields(
+        com,
+        {
+            "algorithm": REVIEW_ALGORITHM,
+            "n_replies": len(entries),
+            "unavailable": unavailable_counts(unavailable),
+        },
+    )
+    ids = com.get("ids")
+    if not _str_list(ids) or len(set(ids)) != len(ids) or sorted(ids) != sorted(entries):
+        raise CommitmentError("the commitment's ids do not match the private file")
     if sorted(com.get("run_ids") or []) != sorted(run_ids):
         raise CommitmentError("the commitment's run_ids do not match the private file")
     if sorted(com.get("case_ids") or []) != sorted(case_ids):
         raise CommitmentError("the commitment's case_ids do not match the private file")
-    return entries, com
+    return entries, unavailable, com
 
 
 def verify_any(private: Path, commitment: Path) -> tuple[str, str]:
@@ -658,7 +690,7 @@ def verify_any(private: Path, commitment: Path) -> tuple[str, str]:
         _, digest = verify_pair_plan(private, commitment)
         return "pair plan", digest
     if schema == REVIEW_KEY_SCHEMA:
-        _, com = verify_review_key(private, commitment)
+        _, _, com = verify_review_key(private, commitment)
         return "review key", com["sha256"]
     raise CommitmentError(
         f"schema mismatch: {private.as_posix()} is neither a {PAIR_PLAN_SCHEMA!r} "
@@ -675,7 +707,7 @@ def _verified_plan(private: Path, commitment: Path) -> tuple[dict[str, Any], str
 
 def _verified_key(
     private: Path, commitment: Path
-) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     try:
         return verify_review_key(private, commitment)
     except CommitmentError as exc:
@@ -722,8 +754,12 @@ def load_run(run_dir: Path) -> RunData:
     return RunData(run_dir, run_id, version, models, samples, cases, by_key)
 
 
-def _slot_problem(recs: list[dict[str, Any]]) -> str | None:
-    """Why a slot can't be shown (missing, duplicate, failed, ...), or None."""
+SHOWN_STATES = ("ok", "empty")
+
+
+def _slot_state(recs: list[dict[str, Any]]) -> str:
+    """ok / empty (shown); failed / incomplete (operational, not shown); or an
+    integrity problem: missing, duplicate, unknown status, malformed."""
     if not recs:
         return "missing"
     if len(recs) > 1:
@@ -736,9 +772,21 @@ def _slot_problem(recs: list[dict[str, Any]]) -> str | None:
     if status != "ok":
         return "unknown status"
     text = recs[0].get("output_text")
-    if not isinstance(text, str) or not text.strip():
-        return "empty"
-    return None
+    if not isinstance(text, str):
+        return "malformed"
+    return "ok" if text.strip() else "empty"
+
+
+def render_reply(text: str) -> list[str]:
+    """Sheet lines for a reply: a bare "(empty reply)" line for an empty reply;
+    otherwise every non-empty line prefixed with "> ", so no reply line can equal
+    a column-0 delimiter, header, title or answer line. Lines are split on CR as
+    well as LF, so an editor normalising line endings can't create a new line.
+    Fingerprints and SHA-256s are always of the raw text, never of these lines.
+    """
+    if not text.strip():
+        return [EMPTY_REPLY_LINE]
+    return [REPLY_PREFIX + line if line else "" for line in re.split(r"\r\n|\r|\n", text)]
 
 
 def _context_lines(case_id: str, turns: list[dict[str, Any]]) -> list[str]:
@@ -775,10 +823,16 @@ class ReviewSheetResult:
     sha256: str
     n_replies: int
     n_cases: int
+    unavailable: dict[str, int]
 
 
 def _review_preconditions(runs: list[RunData]) -> list[str]:
-    """Every problem that blocks the combined sheet, without model names."""
+    """Integrity problems that block the combined sheet, without model names.
+
+    Failed and incomplete generations are operational failures, not problems:
+    they are left off the sheet and counted. Missing, duplicate, unknown-status
+    and malformed slots, and records matching no expected slot, are refused.
+    """
     problems: list[str] = []
     a, b = runs
     if a.run_id == b.run_id:
@@ -805,13 +859,12 @@ def _review_preconditions(runs: list[RunData]) -> list[str]:
                 for idx in range(1, run.samples + 1):
                     key = make_slot_key(run.run_id, cid, run.prompt_version, model, idx)
                     expected.add(key)
-                    kind = _slot_problem(run.by_key.get(key, []))
-                    if kind is not None:
-                        counts[kind] = counts.get(kind, 0) + 1
+                    state = _slot_state(run.by_key.get(key, []))
+                    if state not in SHOWN_STATES and state not in OPERATIONAL_KINDS:
+                        counts[state] = counts.get(state, 0) + 1
             for kind, n in sorted(counts.items()):
                 problems.append(
-                    f"run {run.run_id}: case {cid}: {n} {kind} "
-                    f"{_plural(n, 'reply', 'replies')}"
+                    f"run {run.run_id}: case {cid}: {n} {kind} {_plural(n, 'slot', 'slots')}"
                 )
         stray = sum(len(v) for k, v in run.by_key.items() if k not in expected)
         if stray:
@@ -820,6 +873,10 @@ def _review_preconditions(runs: list[RunData]) -> list[str]:
                 f"{_plural(stray, 'record matches', 'records match')} no expected slot"
             )
     return problems
+
+
+def _counts_text(counts: dict[str, int]) -> str:
+    return ", ".join(f"{kind} {n}" for kind, n in counts.items())
 
 
 def create_review_sheet(
@@ -843,14 +900,30 @@ def create_review_sheet(
     rng = secrets.SystemRandom()
     entries: dict[str, dict[str, Any]] = {}
     texts: dict[str, str] = {}
+    unavailable: list[dict[str, Any]] = []
     case_ids = [c for c, _ in runs[0].cases]
     per_case: dict[str, list[str]] = {}
     for cid in case_ids:
+        # one item per slot: identical texts from distinct slots each get an ID
         items: list[tuple[RunData, str, int, str, str]] = []
         for run in runs:
             for model in run.models:
                 for idx in range(1, run.samples + 1):
                     key = make_slot_key(run.run_id, cid, run.prompt_version, model, idx)
+                    state = _slot_state(run.by_key[key])
+                    if state in OPERATIONAL_KINDS:
+                        unavailable.append(
+                            {
+                                "run_id": run.run_id,
+                                "case_id": cid,
+                                "slot_key": key,
+                                "prompt_version": run.prompt_version,
+                                "model": model,
+                                "sample_index": idx,
+                                "kind": state,
+                            }
+                        )
+                        continue
                     items.append((run, model, idx, key, run.by_key[key][0]["output_text"]))
         if len(items) > 99:
             raise HoldoutInputError(
@@ -871,12 +944,15 @@ def create_review_sheet(
             texts[rid] = text
             per_case[cid].append(rid)
 
-    _refuse_delimiter_lookalikes(
-        list(texts.values()), (_REPLY_OPEN, _REPLY_CLOSE), "review sheet"
-    )
     salt = secrets.token_hex(32)
-    digest = commitment_hash(salt, entries)
-    key_doc = {"schema": REVIEW_KEY_SCHEMA, "salt": salt, "entries": entries}
+    digest = commitment_hash(salt, review_key_material(entries, unavailable))
+    counts = unavailable_counts(unavailable)
+    key_doc = {
+        "schema": REVIEW_KEY_SCHEMA,
+        "salt": salt,
+        "entries": entries,
+        "unavailable": unavailable,
+    }
     commitment = {
         "schema": REVIEW_COMMITMENT_SCHEMA,
         "algorithm": REVIEW_ALGORITHM,
@@ -884,6 +960,8 @@ def create_review_sheet(
         "run_ids": [r.run_id for r in runs],
         "case_ids": case_ids,
         "n_replies": len(entries),
+        "ids": list(entries),
+        "unavailable": counts,
         "created_at": _now(),
     }
     turns_by_case = dict(runs[0].cases)
@@ -893,18 +971,27 @@ def create_review_sheet(
         f"{REVIEW_HEADER}{digest}",
         "",
         "For each reply, write y (accept) or n (reject) after the colon on its",
-        "Accept line. Leave the reply text and the other lines unchanged.",
+        "Accept line. Leave the reply text and the other lines unchanged. Reply",
+        f"lines start with '{REPLY_PREFIX.strip()}'; a reply with no text shows as {EMPTY_REPLY_LINE}.",
         "",
     ]
+    if unavailable:
+        lines += [
+            f"{len(unavailable)} {_plural(len(unavailable), 'reply', 'replies')} could not "
+            f"be shown (operational failures: {_counts_text(counts)}).",
+            "",
+        ]
     for cid in case_ids:
         lines += _context_lines(cid, turns_by_case[cid])
         for rid in per_case[cid]:
             lines += [
                 f"<<<<<<<< REPLY {rid} >>>>>>>>",
-                texts[rid],
+                *render_reply(texts[rid]),
                 f"<<<<<<<< END REPLY {rid} >>>>>>>>",
                 "",
             ]
+        if not per_case[cid]:
+            lines += ["(No reply can be shown for this case.)", ""]
         lines += [f"Accept {rid}? (y/n):" for rid in per_case[cid]]
         lines += [NOTES_LINE, ""]
     write_new_files(
@@ -915,7 +1002,7 @@ def create_review_sheet(
         ]
     )
     return ReviewSheetResult(
-        sheet_path, private_key, commitment_path, digest, len(entries), len(case_ids)
+        sheet_path, private_key, commitment_path, digest, len(entries), len(case_ids), counts
     )
 
 
@@ -953,8 +1040,9 @@ def parse_review_sheet(path: Path) -> tuple[str, dict[str, str]]:
 
 
 def check_review_labels(sheet: Path, review_commitment: Path, run_id: str) -> int:
-    """Number of labels, if the review sheet is the committed one, covers `run_id`
-    and every Accept line is exactly y or n; otherwise an input error.
+    """Number of labels, if the review sheet is the committed one, the commitment
+    covers `run_id`, the sheet's Accept IDs are exactly the commitment's `ids`
+    (each once, none missing, none extra) and every value is exactly y or n.
 
     Errors name counts and neutral IDs only, never models.
     """
@@ -964,21 +1052,23 @@ def check_review_labels(sheet: Path, review_commitment: Path, run_id: str) -> in
             f"{review_commitment.as_posix()}: not a review-key commitment "
             f"(schema must be {REVIEW_COMMITMENT_SCHEMA!r})"
         )
-    run_ids, n_replies = com.get("run_ids"), com.get("n_replies")
+    run_ids, ids = com.get("run_ids"), com.get("ids")
     if not _str_list(run_ids):
         raise _bad(review_commitment, "run_ids", "a list of strings")
-    if type(n_replies) is not int:
-        raise _bad(review_commitment, "n_replies", "an integer")
-    header, labels = parse_review_sheet(sheet)
+    if not _str_list(ids) or len(set(ids)) != len(ids):
+        raise _bad(review_commitment, "ids", "a list of distinct strings")
+    header, labels = parse_review_sheet(sheet)  # a repeated Accept ID is refused there
     errors: list[str] = []
     if header != com["sha256"]:
         errors.append("its 'Review key commitment' line does not match the review commitment")
     if run_id not in run_ids:
         errors.append(f"the review commitment does not cover run {run_id}")
-    if len(labels) != n_replies:
-        errors.append(
-            f"it has {len(labels)} Accept lines; the review commitment has {n_replies} replies"
-        )
+    missing = [rid for rid in ids if rid not in labels]
+    extra = [rid for rid in labels if rid not in set(ids)]
+    if missing:
+        errors.append(f"{len(missing)} committed IDs have no Accept line: {', '.join(missing)}")
+    if extra:
+        errors.append(f"{len(extra)} Accept lines are not committed IDs: {', '.join(extra)}")
     blank = [rid for rid, v in labels.items() if v == ""]
     invalid = [rid for rid, v in labels.items() if v not in ("", "y", "n")]
     if blank:
@@ -1000,7 +1090,9 @@ def check_review_labels(sheet: Path, review_commitment: Path, run_id: str) -> in
 @dataclass
 class PairSheetResult:
     sheet: Path
-    n_pairs: int
+    n_pairs: int  # shown
+    n_total: int
+    n_unavailable: int
     n_cases: int
     n_labels_checked: int
 
@@ -1036,39 +1128,45 @@ def pair_fingerprint(a_text: str, b_text: str) -> str:
     return hashlib.sha256(canonical_json([a_text, b_text]).encode("utf-8")).hexdigest()
 
 
-def _pair_texts(run: RunData, plan: dict[str, Any], what: str) -> dict[str, tuple[str, str]]:
-    """{pair ID: (A text, B text)} from the run's slots for the plan's sides.
+def _pair_texts(
+    run: RunData, plan: dict[str, Any], what: str
+) -> tuple[dict[str, tuple[str, str]], list[str]]:
+    """({pair ID: (A text, B text)} for showable pairs, [unavailable pair IDs]).
 
-    Any unusable reply refuses the command with counts only: no pair ID, side,
-    case or model, which together with per-model failure counts could reveal
-    the placement.
+    A pair with a failed or incomplete reply is unavailable (an operational
+    failure). An empty reply is shown. A missing, duplicate, unknown-status or
+    malformed slot refuses the command, with counts only: no pair ID, side, case
+    or model, which with per-model failure counts could reveal the placement.
     """
     texts: dict[str, tuple[str, str]] = {}
+    unavailable: list[str] = []
     counts: dict[str, int] = {}
     total = 0
     for pair in plan["pairs"]:
         found: list[str] = []
+        operational = False
         for side in ("left", "right"):
             total += 1
             recs = run.by_key.get(_side_key(run, pair["case"], pair[side]), [])
-            kind = _slot_problem(recs)
-            if kind is None:
+            state = _slot_state(recs)
+            if state in SHOWN_STATES:
                 found.append(recs[0]["output_text"])
+            elif state in OPERATIONAL_KINDS:
+                operational = True
             else:
-                counts[kind] = counts.get(kind, 0) + 1
-        if len(found) == 2:
+                counts[state] = counts.get(state, 0) + 1
+        if operational:
+            unavailable.append(pair["pair_id"])
+        elif len(found) == 2:
             texts[pair["pair_id"]] = (found[0], found[1])
     if counts:
         bad = sum(counts.values())
         detail = ", ".join(f"{kind} {n}" for kind, n in sorted(counts.items()))
         raise HoldoutInputError(
             f"cannot build the {what}: {bad} of {total} pair replies "
-            f"{_plural(bad, 'is', 'are')} unusable ({detail}). Nothing was written."
+            f"{_plural(bad, 'has', 'have')} an integrity problem ({detail}). Nothing was written."
         )
-    _refuse_delimiter_lookalikes(
-        [t for pair in texts.values() for t in pair], (_SIDE_OPEN, _SIDE_CLOSE), what
-    )
-    return texts
+    return texts, unavailable
 
 
 def create_pair_sheet(
@@ -1080,15 +1178,23 @@ def create_pair_sheet(
     review_commitment: Path,
 ) -> PairSheetResult:
     sheet_path = out_dir / PAIR_SHEET_NAME
+    private_dir = plan_private.resolve().parent
+    out_resolved = out_dir.resolve()
+    if out_resolved == private_dir or private_dir in out_resolved.parents:
+        raise HoldoutInputError(
+            f"{out_dir.as_posix()}: the pair sheet must not be written inside the folder "
+            f"that holds the private plan ({private_dir.as_posix()}). Nothing was written."
+        )
     _check_targets([sheet_path])
     plan, digest = _verified_plan(plan_private, commitment)
     run = load_run(run_dir)
     _check_run_matches_plan(run, plan)
     n_labels = check_review_labels(review_sheet, review_commitment, run.run_id)
-    texts = _pair_texts(run, plan, "pair sheet")
+    texts, unavailable = _pair_texts(run, plan, "pair sheet")
+    total = len(plan["pairs"])
 
     turns_by_case = dict(run.cases)
-    pairs = sorted(plan["pairs"], key=lambda p: p["pair_id"])
+    pairs = sorted((p for p in plan["pairs"] if p["pair_id"] in texts), key=lambda p: p["pair_id"])
     lines = [
         "# Holdout pair sheet",
         "",
@@ -1096,9 +1202,12 @@ def create_pair_sheet(
         "",
         "For each pair, write A, B or tie after the colon on its Choice line, and a",
         "reason after its Reason line. Leave the reply text, the <<<<<<<< >>>>>>>>",
-        "delimiter lines and the Fingerprint lines unchanged.",
+        "delimiter lines and the Fingerprint lines unchanged. Reply lines start with",
+        f"'{REPLY_PREFIX.strip()}'; a reply with no text shows as {EMPTY_REPLY_LINE}.",
         "",
     ]
+    if unavailable:
+        lines += [f"{len(unavailable)} of {total} pairs cannot be shown.", ""]
     current_case: str | None = None
     for pair in pairs:
         if pair["case"] != current_case:
@@ -1109,11 +1218,11 @@ def create_pair_sheet(
         lines += [
             f"=== PAIR {pid} ===",
             "<<<<<<<< A >>>>>>>>",
-            a_text,
+            *render_reply(a_text),
             "<<<<<<<< END A >>>>>>>>",
             "",
             "<<<<<<<< B >>>>>>>>",
-            b_text,
+            *render_reply(b_text),
             "<<<<<<<< END B >>>>>>>>",
             "",
             f"{FINGERPRINT_PREFIX}{pair_fingerprint(a_text, b_text)}",
@@ -1122,7 +1231,9 @@ def create_pair_sheet(
             "",
         ]
     write_new_files([(sheet_path, "\n".join(lines))])
-    return PairSheetResult(sheet_path, len(pairs), len(plan["cases"]), n_labels)
+    return PairSheetResult(
+        sheet_path, len(pairs), total, len(unavailable), len(plan["cases"]), n_labels
+    )
 
 
 @dataclass
@@ -1245,6 +1356,32 @@ def first_scored(
     )
 
 
+UNSCORED_INVALID = "unscored (invalid or failed judgment)"
+UNSCORED_BUDGET = "unscored (budget)"
+UNSCORED_NONE = "unscored (no judge record)"
+
+
+def unscored_reason(
+    records: list[dict[str, Any]], slot_key: str, judge_version: str, text_sha256: str
+) -> str:
+    """Why a reply has no scored record: the latest attempt for the same slot,
+    judge version and words decides (budget_stopped -> budget; needs_review or
+    judge_failed -> invalid or failed judgment, however many attempts); no
+    attempt at all is its own reason."""
+    attempts = [
+        r
+        for r in records
+        if r.get("slot_key") == slot_key
+        and r.get("text_sha256") == text_sha256
+        and r.get("judge_prompt_version") == judge_version
+    ]
+    if not attempts:
+        return UNSCORED_NONE
+    if attempts[-1].get("status") == "budget_stopped":
+        return UNSCORED_BUDGET
+    return UNSCORED_INVALID
+
+
 def _acceptable(record: dict[str, Any]) -> bool:
     decision = record.get("decision")
     if not isinstance(decision, dict) or not isinstance(decision.get("acceptable"), bool):
@@ -1341,16 +1478,16 @@ def pair_compare(
     plan, digest = _verified_plan(plan_private, commitment)
     run = load_run(run_dir)
     _check_run_matches_plan(run, plan)
-    pair_ids = [p["pair_id"] for p in plan["pairs"]]
-    answers = parse_pair_sheet(pair_sheet, pair_ids, digest)
+    texts, unavailable = _pair_texts(run, plan, "pair comparison")
+    shown_ids = [p["pair_id"] for p in plan["pairs"] if p["pair_id"] in texts]
+    answers = parse_pair_sheet(pair_sheet, shown_ids, digest)
     if all(a.choice == "missing" for a in answers.values()):
         raise HoldoutInputError(
             f"{pair_sheet.as_posix()}: every Choice line is blank. Fill in and commit the "
             "pair sheet before comparing; nothing was compared or printed."
         )
-    texts = _pair_texts(run, plan, "pair comparison")
     mismatched = [
-        pid for pid in sorted(pair_ids) if answers[pid].fingerprint != pair_fingerprint(*texts[pid])
+        pid for pid in sorted(shown_ids) if answers[pid].fingerprint != pair_fingerprint(*texts[pid])
     ]
     if mismatched:
         raise HoldoutInputError(
@@ -1362,19 +1499,29 @@ def pair_compare(
 
     rows: list[dict[str, Any]] = []
     for pair in sorted(plan["pairs"], key=lambda p: p["pair_id"]):
+        pid = pair["pair_id"]
+        shown = pid in texts
         sides: dict[str, dict[str, Any]] = {}
         ranks: dict[str, Rank | None] = {}
+        reasons: list[str] = []
         for i, side in enumerate(("left", "right")):
             key = _side_key(run, pair["case"], pair[side])
-            text_sha = _text_sha(texts[pair["pair_id"]][i])
-            rec = first_scored(records, key, judge_version, text_sha)
-            rank = rank_of(rec) if rec is not None else None
+            rank: Rank | None = None
+            reason: str | None = None
+            if shown:
+                text_sha = _text_sha(texts[pid][i])
+                rec = first_scored(records, key, judge_version, text_sha)
+                if rec is not None:
+                    rank = rank_of(rec)
+                else:
+                    reason = unscored_reason(records, key, judge_version, text_sha)
             ranks[side] = rank
             sides[side] = {
                 "model": pair[side]["model"],
                 "sample": pair[side]["sample"],
                 "slot_key": key,
                 "scored": rank is not None,
+                "unscored_reason": reason,
                 "rank": list(rank.as_tuple()) if rank else None,
                 "single_turn_pass": rank.single_turn_pass if rank else None,
                 "critical_entries": rank.critical_entries if rank else None,
@@ -1384,36 +1531,44 @@ def pair_compare(
             machine, decided, decisive = "missing", None, False
         else:
             machine, decided, decisive = machine_result(left, right)
-        h = answers[pair["pair_id"]].choice
-        reason = None
-        if h == "missing" and machine == "missing":
-            reason = "both"
-        elif h == "missing":
-            reason = "human blank"
-        elif machine == "missing":
-            reason = "reply unscored"
+        human = answers[pid].choice if shown else "missing"
+        if not shown:
+            reasons = [OPERATIONAL_REASON]
+        else:
+            if human == "missing":
+                reasons.append("human blank")
+            for side in ("left", "right"):
+                r = sides[side]["unscored_reason"]
+                if r is not None and r not in reasons:
+                    reasons.append(r)
+        evaluable = not reasons
         rows.append(
             {
-                "pair_id": pair["pair_id"],
+                "pair_id": pid,
                 "case": pair["case"],
+                "shown": shown,
                 "left": sides["left"],
                 "right": sides["right"],
-                "human": h,
+                "human": human,
                 "machine": machine,
                 "deciding_key": decided,
                 "raw_critical_decisive": decisive,
-                "evaluable": reason is None,
-                "exact_match": (h == machine) if reason is None else None,
-                "missing_reason": reason,
-                "human_reason": answers[pair["pair_id"]].reason,
+                "evaluable": evaluable,
+                "exact_match": (human == machine) if evaluable else None,
+                "missing_reasons": reasons,
+                "human_reason": answers[pid].reason if shown else "",
             }
         )
-    evaluable = [r for r in rows if r["evaluable"]]
-    chosen = [r for r in rows if r["human"] != "missing"]
-    exact = sum(1 for r in evaluable if r["exact_match"])
+    evaluable_rows = [r for r in rows if r["evaluable"]]
+    exact = sum(1 for r in evaluable_rows if r["exact_match"])
     confusion = _empty_confusion()
-    for r in evaluable:
+    for r in evaluable_rows:
         confusion[r["human"]][r["machine"]] += 1
+    chosen = [r for r in rows if r["human"] != "missing"]
+    by_reason: dict[str, int] = {}
+    for r in rows:
+        for reason in r["missing_reasons"]:
+            by_reason[reason] = by_reason.get(reason, 0) + 1
     return {
         "run_id": run.run_id,
         "judge_prompt_version": judge_version,
@@ -1421,16 +1576,19 @@ def pair_compare(
         "pairs": rows,
         "summary": {
             "total_pairs": len(rows),
-            "evaluable": len(evaluable),
+            "shown_pairs": len(shown_ids),
+            "unavailable_pairs": len(unavailable),
+            "evaluable": len(evaluable_rows),
             "exact_matches": exact,
-            "exact_match_fraction": (exact / len(evaluable)) if evaluable else None,
+            "exact_match_fraction": (exact / len(evaluable_rows)) if evaluable_rows else None,
             "confusion_human_by_machine": confusion,
             "human_ties": sum(1 for r in rows if r["human"] == "tie"),
             "machine_ties": sum(1 for r in rows if r["machine"] == "tie"),
             "human_chosen": len(chosen),
             "chosen_without_reason": sum(1 for r in chosen if not r["human_reason"]),
+            "missing_by_reason": by_reason,
             "missing": [
-                {"pair_id": r["pair_id"], "reason": r["missing_reason"]}
+                {"pair_id": r["pair_id"], "reasons": r["missing_reasons"]}
                 for r in rows
                 if not r["evaluable"]
             ],
@@ -1465,7 +1623,7 @@ def format_pair_report(report: dict[str, Any]) -> str:
                 r["case"],
                 f"{r['left']['model']} s{r['left']['sample']}",
                 f"{r['right']['model']} s{r['right']['sample']}",
-                r["human"],
+                r["human"] if r["shown"] else "not shown",
                 r["machine"],
                 _fmt_rank(r["left"]["rank"]),
                 _fmt_rank(r["right"]["rank"]),
@@ -1477,6 +1635,8 @@ def format_pair_report(report: dict[str, Any]) -> str:
     )
     lines += ["", "Reasons:"]
     for r in report["pairs"]:
+        if not r["shown"]:
+            continue
         text = r["human_reason"].replace("\n", " / ") if r["human_reason"] else "(none)"
         lines.append(f"{r['pair_id']}: {text}")
     n, k = s["evaluable"], s["exact_matches"]
@@ -1500,7 +1660,14 @@ def format_pair_report(report: dict[str, Any]) -> str:
         f"Chosen pairs without a reason: {s['chosen_without_reason']} of {s['human_chosen']}",
     ]
     if s["missing"]:
-        lines.append("Missing: " + ", ".join(f"{m['pair_id']} ({m['reason']})" for m in s["missing"]))
+        lines.append(
+            "Missing: "
+            + ", ".join(f"{m['pair_id']} ({'; '.join(m['reasons'])})" for m in s["missing"])
+        )
+        lines.append(
+            "Missing by reason: "
+            + ", ".join(f"{reason} {n}" for reason, n in s["missing_by_reason"].items())
+        )
     else:
         lines.append("Missing: none")
     return "\n".join(lines)
@@ -1509,10 +1676,16 @@ def format_pair_report(report: dict[str, Any]) -> str:
 # -------------------------------------------------------------- review compare
 
 
-def _counts() -> dict[str, int]:
+def _counts() -> dict[str, Any]:
     return {
-        "n": 0, "human_accepted": 0, "judge_acceptable": 0, "scored": 0,
-        "unscored": 0, "agree": 0,
+        "shown": 0,
+        "human_accepted": 0,
+        "judge_acceptable": 0,
+        "unscored": 0,
+        "unscored_by_reason": {},
+        "operational_failures": 0,
+        "evaluable": 0,
+        "agree": 0,
     }
 
 
@@ -1523,7 +1696,7 @@ def review_compare(
     scores_dir: Path,
     judge_version: str,
 ) -> dict[str, Any]:
-    entries, com = _verified_key(key_path, commitment)
+    entries, unavailable, com = _verified_key(key_path, commitment)
     header, labels = parse_review_sheet(sheet)
     if header != com["sha256"]:
         raise HoldoutInputError(
@@ -1546,18 +1719,21 @@ def review_compare(
     if errors:
         raise HoldoutInputError(f"{sheet.as_posix()}: " + "; ".join(errors))
 
-    records_by_run = {
-        run_id: _score_records(scores_dir, run_id)
-        for run_id in dict.fromkeys(e["run_id"] for e in entries.values())
-    }
+    run_ids = dict.fromkeys(
+        [e["run_id"] for e in entries.values()] + [u["run_id"] for u in unavailable]
+    )
+    records_by_run = {run_id: _score_records(scores_dir, run_id) for run_id in run_ids}
     replies: list[dict[str, Any]] = []
     for rid in sorted(entries):
         e = entries[rid]
+        records = records_by_run[e["run_id"]]
         # e["text_sha256"]: the slot's words when the sheet was made (committed)
-        rec = first_scored(
-            records_by_run[e["run_id"]], e["slot_key"], judge_version, e["text_sha256"]
-        )
+        rec = first_scored(records, e["slot_key"], judge_version, e["text_sha256"])
         judge = None if rec is None else _acceptable(rec)
+        reason = (
+            None if rec is not None
+            else unscored_reason(records, e["slot_key"], judge_version, e["text_sha256"])
+        )
         human = labels[rid] == "y"
         replies.append(
             {
@@ -1569,53 +1745,69 @@ def review_compare(
                 "sample_index": e["sample_index"],
                 "human_accept": human,
                 "judge_acceptable": judge,
+                "unscored_reason": reason,
                 "agree": None if judge is None else judge == human,
             }
         )
 
     def tally(group_keys: tuple[str, ...]) -> list[dict[str, Any]]:
-        groups: dict[tuple[str, ...], dict[str, int]] = {}
+        groups: dict[tuple[str, ...], dict[str, Any]] = {}
         for r in replies:
             c = groups.setdefault(tuple(r[k] for k in group_keys), _counts())
-            c["n"] += 1
+            c["shown"] += 1
             c["human_accepted"] += int(r["human_accept"])
             if r["judge_acceptable"] is None:
                 c["unscored"] += 1
+                c["unscored_by_reason"][r["unscored_reason"]] = (
+                    c["unscored_by_reason"].get(r["unscored_reason"], 0) + 1
+                )
             else:
-                c["scored"] += 1
+                c["evaluable"] += 1
                 c["judge_acceptable"] += int(r["judge_acceptable"])
                 c["agree"] += int(r["agree"])
-        return [
-            {**dict(zip(group_keys, k)), **v} for k, v in sorted(groups.items())
-        ]
+        for u in unavailable:
+            row = {"case": u["case_id"], "prompt_version": u["prompt_version"], "model": u["model"]}
+            c = groups.setdefault(tuple(row[k] for k in group_keys), _counts())
+            c["operational_failures"] += 1
+        return [{**dict(zip(group_keys, k)), **v} for k, v in sorted(groups.items())]
 
     return {
         "run_ids": com.get("run_ids"),
         "judge_prompt_version": judge_version,
         "review_commitment_sha256": com["sha256"],
         "n_replies": len(replies),
+        "operational_failures": unavailable_counts(unavailable),
         "by_prompt_model": tally(("prompt_version", "model")),
         "by_case_prompt_model": tally(("case", "prompt_version", "model")),
         "disagreements": [r for r in replies if r["agree"] is False],
-        "unscored": [r["id"] for r in replies if r["judge_acceptable"] is None],
+        "unscored": [{"id": r["id"], "reason": r["unscored_reason"]} for r in replies if r["judge_acceptable"] is None],
         "replies": replies,
     }
 
 
 def _count_cells(c: dict[str, Any]) -> list[str]:
+    reasons = "; ".join(f"{k} {v}" for k, v in sorted(c["unscored_by_reason"].items()))
     return [
-        f"{c['human_accepted']}/{c['n']}",
-        f"{c['judge_acceptable']}/{c['n']}",
-        str(c["unscored"]),
-        f"{c['agree']}/{c['scored']}",
+        str(c["shown"]),
+        f"{c['human_accepted']}/{c['shown']}",
+        f"{c['judge_acceptable']}/{c['shown']}",
+        str(c["unscored"]) + (f" ({reasons})" if reasons else ""),
+        str(c["operational_failures"]),
+        str(c["evaluable"]),
+        f"{c['agree']}/{c['evaluable']}",
     ]
 
 
 def format_review_report(report: dict[str, Any]) -> str:
-    cols = ["human accepted", "judge acceptable", "unscored", "agreement (scored)"]
+    cols = [
+        "shown", "human accepted", "judge acceptable", "unscored (reason)",
+        "operational failures (not shown)", "evaluable", "agreement (evaluable)",
+    ]
+    ops = report["operational_failures"]
     lines = [
         f"Review comparison: runs {', '.join(report['run_ids'] or [])}, judge "
-        f"{report['judge_prompt_version']}, {report['n_replies']} replies",
+        f"{report['judge_prompt_version']}, {report['n_replies']} replies shown; "
+        f"operational failures not shown: {_counts_text(ops)}",
         "",
         "By prompt and model:",
     ]
@@ -1647,7 +1839,12 @@ def format_review_report(report: dict[str, Any]) -> str:
     else:
         lines.append("none")
     lines.append(
-        "Unscored: " + (", ".join(report["unscored"]) if report["unscored"] else "none")
+        "Unscored: "
+        + (
+            ", ".join(f"{u['id']} ({u['reason']})" for u in report["unscored"])
+            if report["unscored"]
+            else "none"
+        )
     )
     return "\n".join(lines)
 

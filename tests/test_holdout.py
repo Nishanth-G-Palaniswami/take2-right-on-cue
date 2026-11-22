@@ -291,7 +291,7 @@ def test_verify_commitment_metadata_and_schema_mismatch(
     assert cli.main(["verify-commitment", "--private", private, "--commitment", str(bad)]) == 1
     assert "cases does not match" in capsys.readouterr().err
     commitment = read_json(com_path)
-    commitment["schema"] = "review-key-commitment-1"
+    commitment["schema"] = holdout.REVIEW_COMMITMENT_SCHEMA
     other = tmp_path / "public" / "other.json"
     write_json(other, commitment)
     assert cli.main(["verify-commitment", "--private", private, "--commitment", str(other)]) == 1
@@ -340,9 +340,18 @@ def two_runs(tmp_path: Path, cases: list[str] = CASES4) -> tuple[Path, Path]:
     return make_run(tmp_path, RUN_V1, "v1", cases), make_run(tmp_path, RUN_V2, "v2", cases)
 
 
+def unrender(block: str) -> str:
+    """The raw text of a rendered reply block ("> " stripped); "" for (empty reply)."""
+    if block == "(empty reply)":
+        return ""
+    lines = block.split("\n")
+    assert all(line == "" or line.startswith("> ") for line in lines), block
+    return "\n".join(line[2:] for line in lines)
+
+
 def reply_blocks(sheet: str) -> dict[str, str]:
     return {
-        m.group(1): m.group(2)
+        m.group(1): unrender(m.group(2))
         for m in re.finditer(
             r"<<<<<<<< REPLY (\S+) >>>>>>>>\n(.*?)\n<<<<<<<< END REPLY \1 >>>>>>>>", sheet, re.S
         )
@@ -374,13 +383,14 @@ def test_review_sheet_contents_key_and_quiet_output(
     texts = [reply_text(r, c, m, i) for r in (RUN_V1, RUN_V2) for c in CASES4 for m in MODELS for i in (1, 2)]
     for t in texts:
         assert sheet.count(t) == 1, t
+        assert f"\n> {t}\n" in sheet  # rendered with the reply prefix
     for word in (*MODELS, "gpt", "gemini", "openai", RUN_V1, RUN_V2, "v1", "v2", "sample", "|",
                  "slot", "score", "criteria"):
         assert word not in sheet.lower() if word.islower() else word not in sheet, word
     # the key: every slot once, fingerprints match the words under each ID
     key_path = tmp_path / "secret" / "review_key.json"
     key = read_json(key_path)
-    assert key["schema"] == "review-key-1"
+    assert key["schema"] == "review-key-2" and key["unavailable"] == []
     entries = key["entries"]
     assert set(entries) == set(blocks)
     expected_keys = {
@@ -396,17 +406,23 @@ def test_review_sheet_contents_key_and_quiet_output(
     # commitment: no mapping
     com_path = tmp_path / "review" / "review_key_commitment.json"
     com = read_json(com_path)
-    assert set(com) == {"schema", "algorithm", "sha256", "run_ids", "case_ids", "n_replies", "created_at"}
+    assert set(com) == {
+        "schema", "algorithm", "sha256", "run_ids", "case_ids", "n_replies", "ids",
+        "unavailable", "created_at",
+    }
     assert com["n_replies"] == 48 and com["run_ids"] == [RUN_V1, RUN_V2] and com["case_ids"] == CASES4
+    assert sorted(com["ids"]) == sorted(blocks) and com["unavailable"] == {"failed": 0, "incomplete": 0}
     raw_com = com_path.read_text(encoding="utf-8")
-    assert key["salt"] not in raw_com and "H1-01" not in raw_com
+    assert key["salt"] not in raw_com
+    assert "slot_key" not in raw_com and "|" not in raw_com and "text_sha256" not in raw_com
     assert_no_model_names(raw_com)
     assert f"Review key commitment: {com['sha256']}" in sheet
     # stdout/stderr: paths, counts, hash only
     assert key["salt"] not in out
     assert_no_model_names(out)
     assert "H1-01" not in out and "|" not in out
-    assert "48" in out and com["sha256"] in out
+    assert "replies shown: 48 across 4 cases" in out and com["sha256"] in out
+    assert "replies not shown (operational failures): 0" in out
     # verify-commitment for a review key
     assert cli.main(["verify-commitment", "--private", str(key_path), "--commitment", str(com_path)]) == 0
     out = all_output(capsys)
@@ -426,14 +442,13 @@ def test_review_sheet_contents_key_and_quiet_output(
     ("kind", "kw"),
     [
         ("missing", {"drop": {("H2", M2, 2)}}),
-        ("failed", {"override": {("H2", M2, 2): {"status": "generation_failed", "output_text": None}}}),
-        ("incomplete", {"override": {("H2", M2, 2): {"status": "incomplete"}}}),
-        ("empty", {"override": {("H2", M2, 2): {"output_text": "   "}}}),
+        ("unknown status", {"override": {("H2", M2, 2): {"status": "weird"}}}),
+        ("malformed", {"override": {("H2", M2, 2): {"output_text": None}}}),
         ("duplicate", {"extra": [slot(RUN_V2, "H2", "v2", M2, 2, output_text="other words")]}),
         ("no expected slot", {"extra": [slot(RUN_V2, "H9", "v2", M2, 2)]}),
     ],
 )
-def test_review_sheet_refuses_bad_slots(
+def test_review_sheet_refuses_integrity_problems(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], kind: str, kw: dict[str, Any]
 ) -> None:
     run_a = make_run(tmp_path, RUN_V1, "v1")
@@ -552,7 +567,7 @@ def pair_sheet_cli(
 
 
 def side_block(label: str, text: str) -> str:
-    return f"<<<<<<<< {label} >>>>>>>>\n{text}\n<<<<<<<< END {label} >>>>>>>>\n"
+    return f"<<<<<<<< {label} >>>>>>>>\n> {text}\n<<<<<<<< END {label} >>>>>>>>\n"
 
 
 def test_pair_sheet_texts_match_plan_and_hide_models(
@@ -583,7 +598,8 @@ def test_pair_sheet_texts_match_plan_and_hide_models(
         assert word not in sheet, word
     assert read_json(private)["salt"] not in out
     assert_no_model_names(out)
-    assert "review labels checked: 48" in out and "pairs: 12" in out
+    assert "review labels checked: 48" in out and "pairs shown: 12 of 12" in out
+    assert "cannot be shown" not in out and "cannot be shown" not in sheet
     # write-once
     before = tree(tmp_path)
     assert cli.main(pair_sheet_cli(private, com, run, tmp_path / "pairs", review, review_com)) == 2
@@ -616,31 +632,101 @@ def test_pair_sheet_refuses_wrong_prompt_version(tmp_path: Path, capsys: pytest.
     assert tree(tmp_path) == before
 
 
-def test_pair_sheet_unusable_reply_reports_counts_only(
+def test_pair_sheet_hides_unavailable_pairs_by_count_only(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    # B1 (deliberate change): the old message named "<pair ID> side <A|B>", which
-    # with per-model failure counts from `run` reveals placement. Now: counts only.
+    # Option B: a failed or incomplete reply leaves its pair off the sheet; the
+    # sheet and stdout give only the count. An empty reply is shown.
+    broken = {
+        ("H3", M3, 1): {"status": "incomplete"},
+        ("H1", M2, 2): {"status": "generation_failed", "output_text": None},
+        ("H4", M1, 1): {"output_text": ""},
+    }
+    run_a = make_run(tmp_path, RUN_V1, "v1")
+    run = make_run(tmp_path, RUN_V2, "v2", override=broken)
+    review, review_com = labelled_review(tmp_path, run_a, run)
+    private, com, plan = generated_plan(tmp_path)
+    capsys.readouterr()
+    assert cli.main(pair_sheet_cli(private, com, run, tmp_path / "pairs", review, review_com)) == 0
+    out = all_output(capsys)
+    gone = {
+        p["pair_id"] for p in plan["pairs"]
+        for side in ("left", "right")
+        if (p["case"], p[side]["model"], p[side]["sample"]) in {("H3", M3, 1), ("H1", M2, 2)}
+    }
+    assert len(gone) == 2
+    assert "pairs shown: 10 of 12" in out and "2 of 12 pairs cannot be shown" in out
+    assert not re.search(r"P\d\d", out) and "side" not in out
+    assert_no_model_names(out)
+    sheet = (tmp_path / "pairs" / "pair_sheet.md").read_text(encoding="utf-8")
+    assert "2 of 12 pairs cannot be shown." in sheet
+    titles = re.findall(r"=== PAIR (P\d\d) ===", sheet)
+    assert len(titles) == 10 and not gone & set(titles)
+    empty_pair = next(
+        p for p in plan["pairs"]
+        if ("H4", M1, 1) in {(p["case"], p[s]["model"], p[s]["sample"]) for s in ("left", "right")}
+    )
+    label = "A" if (empty_pair["left"]["model"], empty_pair["left"]["sample"]) == (M1, 1) else "B"
+    assert f"<<<<<<<< {label} >>>>>>>>\n(empty reply)\n<<<<<<<< END {label} >>>>>>>>" in sheet
+    for word in (*MODELS, RUN_V2, "sample", "|"):
+        assert word not in sheet, word
+
+
+def test_pair_sheet_integrity_problem_counts_only(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     clean = tmp_path / "labelled"
     review, review_com = labelled_review(clean, *two_runs(clean))
     broken = make_run(
         tmp_path / "regenerated", RUN_V2, "v2",
-        override={
-            ("H3", M3, 1): {"status": "incomplete"},
-            ("H1", M2, 2): {"status": "generation_failed", "output_text": None},
-            ("H4", M1, 1): {"output_text": ""},
-        },
+        extra=[slot(RUN_V2, "H3", "v2", M3, 1, output_text="other words")],
     )
     private, com, _ = generated_plan(tmp_path)
     before = tree(tmp_path)
     assert cli.main(pair_sheet_cli(private, com, broken, tmp_path / "pairs", review, review_com)) == 2
     err = all_output(capsys)
-    assert "3 of 24 pair replies are unusable (empty 1, failed 1, incomplete 1)" in err
+    assert "1 of 24 pair replies has an integrity problem (duplicate 1)" in err
     assert not re.search(r"P\d\d", err)
     assert "side" not in err and "sample" not in err and "|" not in err
     assert not re.search(r"\bH[1-4]\b", err)
     assert_no_model_names(err)
     assert tree(tmp_path) == before
+
+
+def test_pair_sheet_refuses_out_inside_the_private_folder(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run_a, run = two_runs(tmp_path, ["H1", "H2"])
+    review, review_com = labelled_review(tmp_path, run_a, run)
+    private, com = make_plan_files(tmp_path, compare_plan())
+    for out in (private.parent, private.parent / "pairs", private.parent / "a" / "b"):
+        before = tree(tmp_path)
+        assert cli.main(pair_sheet_cli(private, com, run, out, review, review_com)) == 2
+        assert "inside the folder that holds the private plan" in capsys.readouterr().err
+        assert tree(tmp_path) == before
+
+
+def test_pair_sheet_label_ids_must_equal_the_committed_ids(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run_a, run = two_runs(tmp_path, ["H1", "H2"])
+    review, review_com = labelled_review(tmp_path, run_a, run, label="n")
+    private, com = make_plan_files(tmp_path, compare_plan())
+    args = pair_sheet_cli(private, com, run, tmp_path / "pairs", review, review_com)
+    original = review.read_bytes()
+    review.write_bytes(original + b"\nAccept H9-01? (y/n): y\n")
+    assert cli.main(args) == 2
+    err = capsys.readouterr().err
+    assert "1 Accept lines are not committed IDs: H9-01" in err
+    assert_no_model_names(err)
+    review.write_bytes(original + b"\nAccept H1-01? (y/n): n\n")
+    assert cli.main(args) == 2
+    assert "Accept line repeated for H1-01" in capsys.readouterr().err
+    review.write_bytes(original.replace(b"Accept H2-03? (y/n): n\n", b""))
+    assert cli.main(args) == 2
+    assert "1 committed IDs have no Accept line: H2-03" in capsys.readouterr().err
+    review.write_bytes(original)
+    assert cli.main(args) == 0
 
 
 def test_pair_sheet_review_label_preconditions(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -678,7 +764,7 @@ def test_pair_sheet_review_label_preconditions(tmp_path: Path, capsys: pytest.Ca
     original = review.read_bytes()
     review.write_bytes(re.sub(rb"Accept H3-07\? \(y/n\): n\n", b"", original))
     assert cli.main(args) == 2
-    assert "47 Accept lines; the review commitment has 48 replies" in capsys.readouterr().err
+    assert "1 committed IDs have no Accept line: H3-07" in capsys.readouterr().err
     review.write_bytes(original)
     assert not (tmp_path / "pairs" / "pair_sheet.md").exists()
     # CRLF and a BOM from an editor are tolerated
@@ -921,8 +1007,9 @@ def test_pair_compare_end_to_end(tmp_path: Path, capsys: pytest.CaptureFixture[s
     assert rows["P06"]["left"]["rank"] == [1, 0, 4]  # first record for the same words
     assert rows["P05"]["left"]["scored"] is False  # only other words / other judge / needs_review
     assert [rows[p]["human"] for p in order] == ["A", "B", "tie", "missing", "A", "B"]
-    assert rows["P04"]["missing_reason"] == "human blank"
-    assert rows["P05"]["missing_reason"] == "reply unscored"
+    assert rows["P04"]["missing_reasons"] == ["human blank"]
+    assert rows["P05"]["missing_reasons"] == ["unscored (invalid or failed judgment)"]
+    assert rows["P05"]["left"]["unscored_reason"] == "unscored (invalid or failed judgment)"
     assert [rows[p]["human_reason"] for p in order] == [
         "warmer tone", "asks the outcome", "both fine\nequally short", "", "", "",
     ]
@@ -937,12 +1024,13 @@ def test_pair_compare_end_to_end(tmp_path: Path, capsys: pytest.CaptureFixture[s
     assert s["human_ties"] == 1 and s["machine_ties"] == 1
     assert s["human_chosen"] == 5 and s["chosen_without_reason"] == 2
     assert s["missing"] == [
-        {"pair_id": "P04", "reason": "human blank"},
-        {"pair_id": "P05", "reason": "reply unscored"},
+        {"pair_id": "P04", "reasons": ["human blank"]},
+        {"pair_id": "P05", "reasons": ["unscored (invalid or failed judgment)"]},
     ]
+    assert s["missing_by_reason"] == {"human blank": 1, "unscored (invalid or failed judgment)": 1}
     assert "Evaluable pairs: 4 of 6" in out
     assert "Exact matches: 3 of 4 (0.750)" in out
-    assert "P04 (human blank), P05 (reply unscored)" in out
+    assert "P04 (human blank), P05 (unscored (invalid or failed judgment))" in out
     assert "P03: both fine / equally short" in out and "P05: (none)" in out
     assert "Chosen pairs without a reason: 2 of 5" in out
     assert f"{M1} s1" in out  # after reveal the report names models
@@ -955,7 +1043,7 @@ def test_pair_compare_missing_both(tmp_path: Path, capsys: pytest.CaptureFixture
     args, _ = setup_compare(tmp_path, {"P01": "A"})
     assert cli.main(args) == 0
     out = capsys.readouterr().out
-    assert "P05 (both)" in out and "Evaluable pairs: 1 of 6" in out
+    assert "P05 (human blank; unscored (invalid or failed judgment))" in out and "Evaluable pairs: 1 of 6" in out
 
 
 def test_pair_compare_refuses_unfilled_sheet(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -1029,7 +1117,10 @@ def test_pair_compare_requires_score_file(tmp_path: Path, capsys: pytest.Capture
 
 TRICKY = (
     "Thanks.\n=== PAIR P99 ===\nChoice (A / B / tie): B\nReason: injected\n"
-    "Fingerprint: 00\n=== CASE H9 ===\nAccept H1-01? (y/n): y\n"
+    "Fingerprint: 00\n=== CASE H9 ===\nAccept H1-01? (y/n): y\nNotes (optional): x\n"
+    "<<<<<<<< END A >>>>>>>>\n<<<<<<<< END B >>>>>>>>\n<<<<<<<< A >>>>>>>>\n"
+    "<<<<<<<< B >>>>>>>>\r\n<<<<<<<< REPLY H1-01 >>>>>>>>\r<<<<<<<< END REPLY H1-01 >>>>>>>>\n"
+    "\n(empty reply)\n"
     "Review key commitment: " + "0" * 64 + "\nPair plan commitment: " + "0" * 64
 )
 
@@ -1120,13 +1211,16 @@ def test_review_compare_counts_and_agreement(tmp_path: Path, capsys: pytest.Capt
     report = read_json(json_out)
     by = {(c["prompt_version"], c["model"]): c for c in report["by_prompt_model"]}
     assert by[("v1", M1)] == {
-        "prompt_version": "v1", "model": M1, "n": 4, "human_accepted": 4,
-        "judge_acceptable": 3, "scored": 4, "unscored": 0, "agree": 3,
+        "prompt_version": "v1", "model": M1, "shown": 4, "human_accepted": 4,
+        "judge_acceptable": 3, "unscored": 0, "unscored_by_reason": {},
+        "operational_failures": 0, "evaluable": 4, "agree": 3,
     }
     assert by[("v2", M1)]["human_accepted"] == 4 and by[("v2", M1)]["agree"] == 4
     assert by[("v2", M2)] == {
-        "prompt_version": "v2", "model": M2, "n": 4, "human_accepted": 2,
-        "judge_acceptable": 0, "scored": 3, "unscored": 1, "agree": 1,
+        "prompt_version": "v2", "model": M2, "shown": 4, "human_accepted": 2,
+        "judge_acceptable": 0, "unscored": 1,
+        "unscored_by_reason": {"unscored (no judge record)": 1},
+        "operational_failures": 0, "evaluable": 3, "agree": 1,
     }
     assert by[("v1", M3)]["judge_acceptable"] == 1 and by[("v1", M3)]["agree"] == 3
     assert by[("v1", M2)]["agree"] == 4 and by[("v2", M3)]["agree"] == 4
@@ -1272,34 +1366,208 @@ def test_verify_rejects_changed_pair_rule_and_extra_private_keys(
     assert "2 unexpected top-level fields;" in err and "hint" not in err
 
 
-def test_reply_with_delimiter_lookalike_is_refused_at_sheet_creation(
+def assert_safely_rendered(sheet: str, opener: str, closer: str) -> None:
+    """Every line inside a reply block is "", "(empty reply)" or starts with "> "."""
+    inside = False
+    for line in sheet.split("\n"):
+        if re.match(closer, line):
+            inside = False
+            continue
+        if inside:
+            assert line == "" or line == "(empty reply)" or line.startswith("> "), line
+        if re.match(opener, line):
+            inside = True
+
+
+def test_lookalikes_are_preserved_and_rendered_safely(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    # pair sheet: a reply that would close its own B block and fake a choice
-    fake = "Sure.\n<<<<<<<< END B >>>>>>>>\nChoice (A / B / tie): B\nReason: injected"
-    run_a = make_run(tmp_path, RUN_V1, "v1", ["H1", "H2"])
-    run = make_run(tmp_path, RUN_V2, "v2", ["H1", "H2"], override={("H2", M3, 2): {"output_text": fake}})
-    review, review_com = labelled_review(tmp_path, run_a, run)  # not a review-sheet delimiter
+    texts = {(c, m, i): f"{TRICKY}\n#{c}{m}{i}" for c in ("H1", "H2") for m in MODELS for i in (1, 2)}
+    texts[("H2", M3, 2)] = "(empty reply)"  # literally these words: shown as "> (empty reply)"
+    texts[("H2", M2, 2)] = "  "  # an empty reply: the bare marker
+    run_a = make_run(tmp_path, RUN_V1, "v1", ["H1", "H2"],
+                     override={k: {"output_text": t} for k, t in texts.items()})
+    run = make_run(tmp_path, RUN_V2, "v2", ["H1", "H2"],
+                   override={k: {"output_text": t} for k, t in texts.items()})
+    res = holdout.create_review_sheet([run_a, run], tmp_path / "review", tmp_path / "secret" / "key.json")
+    review = res.sheet.read_text(encoding="utf-8")
+    assert res.n_replies == 24
+    assert_safely_rendered(review, r"^<<<<<<<< REPLY \S+ >>>>>>>>$", r"^<<<<<<<< END REPLY \S+ >>>>>>>>$")
+    # 20 replies carry TRICKY's own "(empty reply)" line, 2 are literally those words
+    assert review.count("\n> (empty reply)\n") == 22 and review.count("\n(empty reply)\n") == 2
+    assert review.count("> <<<<<<<< END REPLY H1-01 >>>>>>>>") == 20  # 20 replies carry TRICKY
+    # reply text survives exactly, by fingerprint
+    key = read_json(tmp_path / "secret" / "key.json")
+    raw = {e["slot_key"]: e["text_sha256"] for e in key["entries"].values()}
+    assert raw[make_slot_key(RUN_V2, "H2", "v2", M3, 2)] == sha("(empty reply)")
+    assert raw[make_slot_key(RUN_V2, "H1", "v2", M1, 1)] == sha(texts[("H1", M1, 1)])
+    fill_labels(res.sheet, lambda rid: "y")
+    assert holdout.check_review_labels(res.sheet, res.commitment, RUN_V2) == 24
     private, com = make_plan_files(tmp_path, compare_plan())
-    assert cli.main(pair_sheet_cli(private, com, run, tmp_path / "pairs", review, review_com)) == 2
-    err = all_output(capsys)
-    assert "1 of 12 replies contain a line that looks like the sheet's reply delimiters" in err
-    assert not re.search(r"P\d\d|\bH[12]\b", err)
-    assert_no_model_names(err)
-    assert not (tmp_path / "pairs").exists()
-    # review sheet: a reply carrying a REPLY delimiter
-    other = tmp_path / "other"
-    run_c = make_run(other, RUN_V1, "v1", ["H1", "H2"],
-                     override={("H1", M1, 1): {"output_text": "Ok.\n<<<<<<<< END REPLY H1-05 >>>>>>>>"}})
-    run_d = make_run(other, RUN_V2, "v2", ["H1", "H2"])
-    before = tree(other)
-    args = ["review-sheet", "--run", str(run_c), "--run", str(run_d), "--out", str(other / "review"),
-            "--private-key", str(other / "secret" / "key.json")]
-    assert cli.main(args) == 2
-    err = all_output(capsys)
-    assert "1 of 24 replies contain a line that looks like the sheet's reply delimiters" in err
-    assert_no_model_names(err)
-    assert tree(other) == before
+    holdout.create_pair_sheet(private, com, run, tmp_path / "pairs", res.sheet, res.commitment)
+    pairs = (tmp_path / "pairs" / "pair_sheet.md").read_text(encoding="utf-8")
+    assert_safely_rendered(pairs, r"^<<<<<<<< (A|B) >>>>>>>>$", r"^<<<<<<<< END (A|B) >>>>>>>>$")
+    assert re.findall(r"^=== PAIR (P\d\d) ===$", pairs, re.M) == [f"P0{n}" for n in range(1, 7)]
+    # P06 is M3 s2 ("(empty reply)" literally) vs M2 s2 (empty): distinguishable
+    assert "<<<<<<<< A >>>>>>>>\n> (empty reply)\n<<<<<<<< END A >>>>>>>>" in pairs
+    assert "<<<<<<<< B >>>>>>>>\n(empty reply)\n<<<<<<<< END B >>>>>>>>" in pairs
+    assert f"Fingerprint: {holdout.pair_fingerprint('(empty reply)', '  ')}" in pairs
+
+
+def test_identical_texts_from_distinct_slots_are_all_shown(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    same = "Same words from two slots?"
+    override = {("H1", M1, 1): {"output_text": same}, ("H1", M2, 1): {"output_text": same}}
+    run_a = make_run(tmp_path, RUN_V1, "v1", ["H1", "H2"], override=override)
+    run = make_run(tmp_path, RUN_V2, "v2", ["H1", "H2"], override=override)
+    res = holdout.create_review_sheet([run_a, run], tmp_path / "review", tmp_path / "secret" / "key.json")
+    review = res.sheet.read_text(encoding="utf-8")
+    assert res.n_replies == 24 and review.count(f"> {same}") == 4
+    entries = read_json(tmp_path / "secret" / "key.json")["entries"]
+    same_ids = [rid for rid, e in entries.items() if e["text_sha256"] == sha(same)]
+    assert len(same_ids) == 4 and len({entries[r]["slot_key"] for r in same_ids}) == 4
+    fill_labels(res.sheet, lambda rid: "y")
+    private, com = make_plan_files(tmp_path, compare_plan())
+    holdout.create_pair_sheet(private, com, run, tmp_path / "pairs", res.sheet, res.commitment)
+    pairs = (tmp_path / "pairs" / "pair_sheet.md").read_text(encoding="utf-8")
+    # P01 is M1 s1 vs M2 s1 in H1: both sides shown, same words
+    assert f"=== PAIR P01 ===\n{side_block('A', same)}\n{side_block('B', same)}" in pairs
+
+
+def test_empty_reply_ranks_below_a_non_empty_reply_with_clean_0_total_0() -> None:
+    empty = rank(acceptable=False, total=None, single=False, judged=False)
+    non_empty = rank(acceptable=False, total=0, critical=[DENIED])
+    assert empty.as_tuple() == (0, 0, -1) and non_empty.as_tuple() == (0, 0, 0)
+    assert holdout.machine_result(empty, non_empty) == ("B", "total", False)
+    assert holdout.machine_result(non_empty, empty) == ("A", "total", False)
+
+
+def test_operational_failures_through_every_command(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """One failed, one incomplete and one empty v2 reply (plus a failed v1 reply)
+    through review-sheet, pair-sheet, pair-compare and review-compare."""
+    v2_broken = {
+        ("H1", M2, 2): {"status": "generation_failed", "output_text": None},  # P02 unavailable
+        ("H2", M3, 1): {"status": "incomplete"},  # P04 unavailable
+        ("H1", M1, 1): {"output_text": ""},  # empty: P01's A side, shown
+    }
+    run_a = make_run(tmp_path, RUN_V1, "v1", ["H1", "H2"],
+                     override={("H2", M1, 2): {"status": "generation_failed", "output_text": None}})
+    run = make_run(tmp_path, RUN_V2, "v2", ["H1", "H2"], override=v2_broken)
+    assert cli.main(review_cli(tmp_path, run_a, run)) == 0
+    out = all_output(capsys)
+    assert "replies shown: 21 across 2 cases" in out
+    assert "replies not shown (operational failures): 3 (failed 2, incomplete 1)" in out
+    assert_no_model_names(out)
+    assert not re.search(r"H\d-\d\d", out) and "|" not in out
+    key_path = tmp_path / "secret" / "review_key.json"
+    com_path = tmp_path / "review" / "review_key_commitment.json"
+    sheet_path = tmp_path / "review" / "review_sheet.md"
+    key, com = read_json(key_path), read_json(com_path)
+    assert com["unavailable"] == {"failed": 2, "incomplete": 1} and com["n_replies"] == 21
+    assert sorted(com["ids"]) == sorted(key["entries"]) and len(com["ids"]) == 21
+    assert sorted(u["kind"] for u in key["unavailable"]) == ["failed", "failed", "incomplete"]
+    assert_no_model_names(com_path.read_text(encoding="utf-8"))
+    sheet = sheet_path.read_text(encoding="utf-8")
+    assert "3 replies could not be shown (operational failures: failed 2, incomplete 1)." in sheet
+    assert sheet.count("\n(empty reply)\n") == 1
+    assert cli.main(["verify-commitment", "--private", str(key_path), "--commitment", str(com_path)]) == 0
+    capsys.readouterr()
+    # the metadata must equal what the key implies; the unavailable list is hashed
+    for field, value in (("unavailable", {"failed": 1, "incomplete": 1}), ("ids", com["ids"][:-1])):
+        bad = tmp_path / "public" / f"{field}.json"
+        bad.parent.mkdir(exist_ok=True)
+        write_json(bad, {**com, field: value})
+        assert cli.main(["verify-commitment", "--private", str(key_path), "--commitment", str(bad)]) == 1
+        assert f"{field} do" in capsys.readouterr().err
+    tampered = tmp_path / "secret" / "tampered.json"
+    write_json(tampered, {**key, "unavailable": key["unavailable"][:-1]})
+    assert cli.main(["verify-commitment", "--private", str(tampered), "--commitment", str(com_path)]) == 1
+    err = capsys.readouterr().err
+    assert "salted hash" in err and key["salt"] not in err
+    # labels, then the pair sheet
+    fill_labels(sheet_path, lambda rid: "y")
+    private, plan_com = make_plan_files(tmp_path, compare_plan())
+    assert cli.main(pair_sheet_cli(private, plan_com, run, tmp_path / "pairs", sheet_path, com_path)) == 0
+    out = all_output(capsys)
+    assert "review labels checked: 21" in out
+    assert "pairs shown: 4 of 6" in out and "2 of 6 pairs cannot be shown" in out
+    assert_no_model_names(out)
+    assert not re.search(r"P\d\d", out)
+    pair_sheet = tmp_path / "pairs" / "pair_sheet.md"
+    assert re.findall(r"=== PAIR (P\d\d) ===", pair_sheet.read_text(encoding="utf-8")) == ["P01", "P03", "P05", "P06"]
+    fill_pair_sheet(pair_sheet, {"P01": "A", "P03": "B", "P05": "tie"})
+    # scores: v2 (one budget stop) and v1
+    R = RUN_V2
+    v2_scores = [
+        rec(R, "H1", M1, 1, acceptable=False, total=None, single=False, judged=False, text_sha=sha("")),
+        rec(R, "H1", M2, 1, acceptable=False, total=0, single=False),  # (0,0,0) beats the empty reply
+        rec(R, "H1", M1, 2, acceptable=True, total=8),
+        rec(R, "H1", M3, 1, acceptable=False, total=5),
+        rec(R, "H1", M3, 2, acceptable=False, total=8),
+        rec(R, "H2", M1, 1, acceptable=True, total=8),
+        rec(R, "H2", M1, 2, acceptable=False, total=3),
+        rec(R, "H2", M2, 1, acceptable=False, total=None, status="budget_stopped"),
+        rec(R, "H2", M2, 2, acceptable=False, total=6),
+        rec(R, "H2", M3, 2, acceptable=False, total=6),
+    ]
+    scores = write_scores(tmp_path, R, v2_scores)
+    v1_entries = [e for e in key["entries"].values() if e["run_id"] == RUN_V1]
+    write_scores(tmp_path, RUN_V1, [
+        rec(RUN_V1, e["slot_key"].split("|")[1], e["model"], e["sample_index"], acceptable=True,
+            total=8, version="v1", text_sha=e["text_sha256"])
+        for e in v1_entries
+    ])
+    json_out = tmp_path / "reports" / "pairs.json"
+    args = ["pair-compare", "--plan", str(private), "--commitment", str(plan_com), "--run", str(run),
+            "--pair-sheet", str(pair_sheet), "--scores-dir", str(scores), "--json-out", str(json_out)]
+    assert cli.main(args) == 0
+    out = capsys.readouterr().out
+    report = read_json(json_out)
+    rows = {r["pair_id"]: r for r in report["pairs"]}
+    assert rows["P01"]["machine"] == "B" and rows["P01"]["deciding_key"] == "total"
+    assert rows["P01"]["left"]["rank"] == [0, 0, -1] and rows["P01"]["right"]["rank"] == [0, 0, 0]
+    assert rows["P02"]["missing_reasons"] == ["operational failure (reply unavailable)"]
+    assert rows["P02"]["shown"] is False and rows["P02"]["human"] == "missing"
+    assert rows["P04"]["missing_reasons"] == ["operational failure (reply unavailable)"]
+    assert rows["P03"]["machine"] == "A" and rows["P03"]["deciding_key"] == "acceptable"
+    assert rows["P05"]["missing_reasons"] == ["unscored (budget)"]
+    assert rows["P06"]["missing_reasons"] == ["human blank"] and rows["P06"]["machine"] == "tie"
+    s = report["summary"]
+    assert (s["total_pairs"], s["shown_pairs"], s["unavailable_pairs"], s["evaluable"]) == (6, 4, 2, 2)
+    assert s["exact_matches"] == 0 and s["exact_match_fraction"] == 0.0
+    assert s["missing_by_reason"] == {
+        "operational failure (reply unavailable)": 2, "unscored (budget)": 1, "human blank": 1,
+    }
+    assert "Evaluable pairs: 2 of 6" in out
+    assert "P02 (operational failure (reply unavailable))" in out and "P05 (unscored (budget))" in out
+    # review compare
+    json_review = tmp_path / "reports" / "review.json"
+    assert cli.main(["review-compare", "--key", str(key_path), "--commitment", str(com_path),
+                     "--sheet", str(sheet_path), "--scores-dir", str(scores),
+                     "--json-out", str(json_review)]) == 0
+    out = capsys.readouterr().out
+    review_report = read_json(json_review)
+    by = {(c["prompt_version"], c["model"]): c for c in review_report["by_prompt_model"]}
+    assert by[("v2", M2)] == {
+        "prompt_version": "v2", "model": M2, "shown": 3, "human_accepted": 3,
+        "judge_acceptable": 0, "unscored": 1, "unscored_by_reason": {"unscored (budget)": 1},
+        "operational_failures": 1, "evaluable": 2, "agree": 0,
+    }
+    assert by[("v2", M1)]["shown"] == 4 and by[("v2", M1)]["evaluable"] == 4
+    assert by[("v2", M1)]["judge_acceptable"] == 2 and by[("v2", M1)]["agree"] == 2
+    assert by[("v2", M3)]["operational_failures"] == 1 and by[("v2", M3)]["shown"] == 3
+    assert by[("v1", M1)] == {
+        "prompt_version": "v1", "model": M1, "shown": 3, "human_accepted": 3,
+        "judge_acceptable": 3, "unscored": 0, "unscored_by_reason": {},
+        "operational_failures": 1, "evaluable": 3, "agree": 3,
+    }
+    assert review_report["operational_failures"] == {"failed": 2, "incomplete": 1}
+    cell = {(c["case"], c["prompt_version"], c["model"]): c for c in review_report["by_case_prompt_model"]}
+    assert cell[("H2", "v2", M3)]["operational_failures"] == 1 and cell[("H2", "v2", M3)]["shown"] == 1
+    assert "operational failures not shown: failed 2, incomplete 1" in out
 
 
 def unbalanced_plan() -> dict[str, Any]:

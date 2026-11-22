@@ -417,11 +417,22 @@ def test_diagnostic_flags() -> None:
     assert (d.word_count, d.question_marks, d.flags) == (8, 1, [])
 
 
-def test_committed_ok_replies_pass_single_turn() -> None:
-    """Every real saved reply with status ok passes the structural check."""
-    files = sorted((REPO / "runs").glob("*/slots.jsonl"))
-    assert files, "no committed runs found"
-    checked = 0
+# Non-empty committed `ok` replies allowed to fail the single-turn or markup check,
+# keyed ONLY by the SHA-256 of the reply text: never by slot key, run or model, so an
+# entry added before blind labelling reveals no identity. Empty for now.
+STRUCTURE_FAILURE_ALLOWLIST: frozenset[str] = frozenset()
+# Pinned counts of committed `ok` replies: (non-empty, empty). Empty replies fail the
+# single-turn check by definition (shown as "(empty reply)" under option B), so they
+# are counted here and not asserted on. Total as of run 20261121T202643Z-96f2fa: 76.
+COMMITTED_OK_REPLIES = (76, 0)
+
+
+def committed_ok_counts(files: list[Path], allowlist: frozenset[str]) -> tuple[int, int]:
+    """(non-empty, empty) `ok` replies in `files`; raises AssertionError if a non-empty
+    reply fails the structural check without its text's SHA-256 on `allowlist`, or if
+    an allowlist entry is stale. Messages name only text hashes: no path, slot or model."""
+    non_empty = empty = 0
+    allowlisted_failures: set[str] = set()
     for path in files:
         for line in path.read_text(encoding="utf-8").split("\n"):
             if not line.strip():
@@ -429,11 +440,52 @@ def test_committed_ok_replies_pass_single_turn() -> None:
             record = json.loads(line)
             if record["status"] != "ok":
                 continue
-            result = scoring.check_structure(record["output_text"])
-            assert result.single_turn_pass, (path, record["output_text"], result.failures)
-            assert "markup" not in result.diagnostics.flags, record["output_text"]
-            checked += 1
-    assert checked == 76  # every ok reply committed as of run 20261121T202643Z-96f2fa
+            text = record["output_text"]
+            if not text.strip():
+                empty += 1
+                continue
+            non_empty += 1
+            result = scoring.check_structure(text)
+            fails = not result.single_turn_pass or "markup" in result.diagnostics.flags
+            digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            if digest in allowlist:
+                assert fails, f"allowlisted reply {digest} no longer fails; remove it"
+                allowlisted_failures.add(digest)
+                continue
+            assert not fails, f"committed ok reply {digest} fails the structural check"
+    assert allowlisted_failures == allowlist, "stale allowlist entries"
+    return non_empty, empty
+
+
+def test_committed_ok_replies_pass_single_turn() -> None:
+    """Every real non-empty `ok` reply passes the structural check, unless its text's
+    SHA-256 is on the allowlist; the counts are pinned and name no model."""
+    files = sorted((REPO / "runs").glob("*/slots.jsonl"))
+    assert files, "no committed runs found"
+    assert committed_ok_counts(files, STRUCTURE_FAILURE_ALLOWLIST) == COMMITTED_OK_REPLIES
+
+
+def test_committed_ok_count_rules_on_fixtures(tmp_path: Path) -> None:
+    both_sides = "Riley: Are you licensed?\nApplicant: Yes."
+    rows = [
+        {"status": "ok", "output_text": REPLY},
+        {"status": "ok", "output_text": "   "},  # empty: counted apart, not asserted on
+        {"status": "incomplete", "output_text": both_sides},  # not ok: ignored
+        {"status": "ok", "output_text": both_sides},
+    ]
+    path = tmp_path / "slots.jsonl"
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    bad = hashlib.sha256(both_sides.encode("utf-8")).hexdigest()
+    with pytest.raises(AssertionError) as exc:
+        committed_ok_counts([path], frozenset())
+    assert bad in str(exc.value) and "gpt" not in str(exc.value)
+    assert committed_ok_counts([path], frozenset({bad})) == (2, 1)
+    stale = hashlib.sha256(b"never saved").hexdigest()
+    with pytest.raises(AssertionError, match="stale"):
+        committed_ok_counts([path], frozenset({bad, stale}))
+    passing = hashlib.sha256(REPLY.encode("utf-8")).hexdigest()
+    with pytest.raises(AssertionError, match="no longer fails"):
+        committed_ok_counts([path], frozenset({bad, passing}))
 
 
 def test_plan_reads_every_committed_run_and_writes_nothing(tmp_path: Path) -> None:

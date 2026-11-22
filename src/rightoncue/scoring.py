@@ -28,6 +28,7 @@ from pydantic import (
     ValidationError,
 )
 
+from . import budget as budget_guard
 from . import openai_responses
 from .runs import SCHEMA_VERSION, load_manifest, make_slot_key, manifest_models
 from .transcript import Turn
@@ -1184,6 +1185,7 @@ def plan_scoring(
 OutcomeKind = Literal[
     "scored", "needs_review", "judge_failed",
     "incomplete", "generation_failed", "missing", "duplicate", "stopped",
+    "budget_stopped",
 ]
 
 
@@ -1328,14 +1330,55 @@ def _judge_record(
     return record, fatal
 
 
+def _budget_record(
+    plan: ScoringPlan, sp: SlotPlan, guard: budget_guard.Budget, max_cost: int, first: bool
+) -> dict[str, Any]:
+    """A `budget_stopped` record: no judge call was made for this slot."""
+    started = _now()
+    record = _base_record(plan, sp, judged=False)
+    fmt = budget_guard.fmt_usd
+    numbers = (
+        f"spend so far {fmt(guard.spent)}, this call's maximum {fmt(max_cost)}, "
+        f"budget {fmt(guard.limit)}"
+    )
+    if first:
+        reason = (
+            f"not judged: the budget guard stopped scoring before this call ({numbers}; "
+            "spend plus maximum exceeds the budget). No further judge calls were made."
+        )
+    else:
+        reason = (
+            "not judged: the budget guard stopped scoring earlier in this command "
+            f"({numbers}). No further judge calls were made."
+        )
+    record.update(
+        status="budget_stopped",
+        decision={"acceptable": None, "scores": None, "total": None, "reasons": [reason]},
+        budget={
+            "unit": "nano-USD",
+            "spent": guard.spent,
+            "max_call": max_cost,
+            "budget": guard.limit,
+        },
+        started_at=started,
+        finished_at=_now(),
+    )
+    return record
+
+
 def execute_plan(
     plan: ScoringPlan,
     client: Any | None,
     on_outcome: Callable[[Outcome], None] | None = None,
+    budget: budget_guard.Budget | None = None,
 ) -> ScoringResult:
     """Score in manifest order (case, model, sample). One appended line per attempt.
 
     A fatal judge error (400/401/403/404) is recorded, then no further call is made.
+    With a budget, each judge call (retries included) is made only if the spend so
+    far plus that call's maximum cost is within the budget; otherwise that slot and
+    every remaining slot that needs a judge call is recorded as `budget_stopped`.
+    Without a budget the behaviour is unchanged.
     """
     if plan.calls_needed and client is None:
         raise ValueError("a judge client is required: some replies need a judge call")
@@ -1352,8 +1395,19 @@ def execute_plan(
             record = _empty_record(plan, sp)
             append_score_record(plan.score_path, record)
             outcome = Outcome(sp, "scored", record, "new")
+        elif budget is not None and not budget.allows(
+            max_cost := budget_guard.max_call_cost(sp.request)  # type: ignore[arg-type]
+        ):
+            record = _budget_record(plan, sp, budget, max_cost, first=not budget.stopped)
+            budget.stopped = True
+            append_score_record(plan.score_path, record)
+            outcome = Outcome(sp, "budget_stopped", record, "new")
         else:
             record, fatal = _judge_record(plan, sp, client, result)
+            if budget is not None:
+                record[budget_guard.CHARGE_FIELD] = budget.charge(
+                    record, budget_guard.max_call_cost(sp.request)  # type: ignore[arg-type]
+                )
             append_score_record(plan.score_path, record)
             outcome = Outcome(sp, record["status"], record, "new")
             if fatal:
