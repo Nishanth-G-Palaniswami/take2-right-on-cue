@@ -143,6 +143,11 @@ def max_costs(run_dir: Path, scores_dir: Path, notes: Path) -> list[int]:
 FACTORY_KWARGS: list[dict[str, Any]] = []  # how each judge client was built
 
 
+def finals(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Score records without the write-ahead `judge_pending` records."""
+    return [r for r in records if r["status"] != budget.PENDING_STATUS]
+
+
 def run_score(score: Scorer, judge_client: Any, *extra: str) -> int:
     def factory(**kwargs: Any) -> Any:
         FACTORY_KWARGS.append(kwargs)
@@ -176,7 +181,7 @@ def test_stops_before_a_call_that_would_exceed_and_records_the_rest(
     assert run_score(score, fake, *budget_args(score, limit)) == 1
     out = capsys.readouterr().out
     assert len(fake.calls) == 1
-    recs = score.records
+    recs = finals(score.records)
     assert [r["status"] for r in recs] == ["scored", "budget_stopped", "budget_stopped"]
     first_stop, later = recs[1], recs[2]
     assert first_stop["budget"] == {
@@ -210,7 +215,7 @@ def test_boundary_equal_is_allowed_one_over_is_not(
     fake = FakeJudge([judge()])
     assert run_score(score, fake, *budget_args(score, exact)) == 0
     assert len(fake.calls) == 1
-    assert [r["status"] for r in score.records] == ["budget_stopped", "scored"]
+    assert [r["status"] for r in finals(score.records)] == ["budget_stopped", "scored"]
 
 
 def test_retry_is_guarded_and_budget_stopped_is_never_reused(
@@ -286,7 +291,7 @@ def test_spend_counts_recorded_usage_across_two_runs(
     ) in out
     assert f"spend now {budget.fmt_usd(gen + 2 * JUDGE_CALL)} of $1.000000" in out
     # the empty reply needed no call and is recorded as before
-    recs = scoring.read_score_records(score_b.scores_dir / "RIDB.jsonl")
+    recs = finals(scoring.read_score_records(score_b.scores_dir / "RIDB.jsonl"))
     assert [r["status"] for r in recs] == ["scored", "scored"]
     assert recs[1]["judge_model"] is None
     # reasoning tokens (7 per slot) are part of output tokens, not added again
@@ -457,7 +462,7 @@ def test_charges_are_persisted_and_counted_by_the_next_command(
     raised = openai.APITimeoutError(request=httpx2.Request("POST", "https://x"))
     # command 1: the first call raises (charged m1), the second exactly fits
     assert run_score(score, FakeJudge([raised, judge()]), *budget_args(score, gen + m1 + m2)) == 1
-    recs = score.records
+    recs = finals(score.records)
     assert [r["status"] for r in recs] == ["judge_failed", "scored"]
     assert recs[0][budget.CHARGE_FIELD] == m1  # no response: its maximum, persisted
     assert recs[1][budget.CHARGE_FIELD] == JUDGE_CALL  # actual usage, persisted
@@ -512,7 +517,7 @@ def test_the_stop_is_sticky_even_for_a_later_cheaper_call(
     fake = FakeJudge([judge(), judge()])
     assert run_score(score, fake, *budget_args(score, limit)) == 1
     assert len(fake.calls) == 1
-    assert [r["status"] for r in score.records] == ["scored", "budget_stopped", "budget_stopped"]
+    assert [r["status"] for r in finals(score.records)] == ["scored", "budget_stopped", "budget_stopped"]
 
 
 def test_spend_counts_judge_records_of_every_judge_version(
@@ -547,3 +552,154 @@ def test_every_needed_request_is_bounded_before_any_call(
     assert "max_output_tokens" in capsys.readouterr().err
     assert fake.calls == []  # refused up front, not after the first call
     assert not (score.scores_dir / "RID.jsonl").exists()
+
+
+
+# ---------------------------------------------- write-ahead charges (crashes)
+
+
+class Killed(BaseException):
+    """Stands in for a kill or crash: not an Exception, so nothing handles it."""
+
+
+class KillingJudge(FakeJudge):
+    """The call starts (a possibly billed request) and the process is killed."""
+
+    def _create(self, **request: Any) -> Any:
+        self.calls.append(request)
+        raise Killed()
+
+
+def test_pending_record_is_written_before_the_call_and_paired_with_the_final(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(tmp_path, [gslot("RID", 1)], model=MINI)
+    (m1,) = max_costs(score.run_dir, score.scores_dir, score.notes)
+    seen_before_call: list[list[str]] = []
+
+    class Watching(FakeJudge):
+        def _create(self, **request: Any) -> Any:
+            seen_before_call.append([r["status"] for r in score.records])
+            return super()._create(**request)
+
+    fake = Watching([judge()])
+    assert run_score(score, fake, *budget_args(score, 10**9)) == 0
+    assert seen_before_call == [[budget.PENDING_STATUS]]  # written (and fsynced) first
+    pending, final = score.records
+    assert pending["status"] == budget.PENDING_STATUS and final["status"] == "scored"
+    assert re.fullmatch(r"[0-9a-f]{32}", pending["attempt_id"])
+    assert final["attempt_id"] == pending["attempt_id"]
+    assert pending[budget.CHARGE_FIELD] == m1 and final[budget.CHARGE_FIELD] == JUDGE_CALL
+    for field in ("slot_key", "text_sha256", "judge_prompt_version", "scorer_version",
+                  "judge_request_sha256"):
+        assert pending[field] == final[field]
+    # pending + final count once: the final's actual charge, not maximum + actual
+    spend = budget.spend_so_far([score.run_dir], score.scores_dir)
+    assert spend.judge == JUDGE_CALL
+
+
+def test_a_crash_between_pending_and_final_counts_the_maximum_on_restart(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(tmp_path, [gslot("RID", 1)], model=MINI)
+    (m1,) = max_costs(score.run_dir, score.scores_dir, score.notes)
+    gen = gen_cost(1)
+    with pytest.raises(Killed):
+        run_score(score, KillingJudge([]), *budget_args(score, 10**9))
+    assert [r["status"] for r in score.records] == [budget.PENDING_STATUS]  # no final record
+    assert budget.interrupted_attempt_ids(score.records) == {score.records[0]["attempt_id"]}
+    assert budget.spend_so_far([score.run_dir], score.scores_dir).judge == m1
+    capsys.readouterr()
+    # restart: the retry fits only if the interrupted attempt were counted at $0
+    limit = gen + m1 + m1 - 1
+    assert gen + m1 <= limit
+    no_calls = FakeJudge([])
+    assert run_score(score, no_calls, *budget_args(score, limit)) == 1
+    out = capsys.readouterr().out
+    assert no_calls.calls == []
+    assert "Interrupted attempts: 1" in out
+    assert score.records[-1]["status"] == "budget_stopped"
+    assert score.records[-1]["budget"]["spent"] == gen + m1
+
+
+def test_a_crash_in_the_final_append_leaves_the_pending_maximum(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    score = setup(tmp_path, [gslot("RID", 1)], model=MINI)
+    (m1,) = max_costs(score.run_dir, score.scores_dir, score.notes)
+    original = scoring.append_score_record
+
+    def append_then_die(path: Path, record: dict[str, Any]) -> None:
+        if record["status"] != budget.PENDING_STATUS:
+            raise Killed()
+        original(path, record)
+
+    monkeypatch.setattr(scoring, "append_score_record", append_then_die)
+    fake = FakeJudge([judge()])
+    with pytest.raises(Killed):
+        run_score(score, fake, *budget_args(score, 10**9))
+    assert len(fake.calls) == 1  # the call was made (possibly billed)
+    monkeypatch.setattr(scoring, "append_score_record", original)
+    assert [r["status"] for r in score.records] == [budget.PENDING_STATUS]
+    assert budget.spend_so_far([score.run_dir], score.scores_dir).judge == m1
+
+
+def test_an_unrecognised_exception_writes_a_final_failure_then_propagates(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(tmp_path, [gslot("RID", 1)], model=MINI)
+    (m1,) = max_costs(score.run_dir, score.scores_dir, score.notes)
+
+    class Unrecognised(Exception):
+        pass
+
+    with pytest.raises(Unrecognised):
+        run_score(score, FakeJudge([Unrecognised("HTTP 422 or a parse error")]), *budget_args(score, 10**9))
+    pending, final = score.records
+    assert final["status"] == "judge_failed" and final["attempt_id"] == pending["attempt_id"]
+    assert final[budget.CHARGE_FIELD] == m1
+    assert final["error"]["type"] == "Unrecognised"
+    assert budget.interrupted_attempt_ids(score.records) == set()
+    # a restart counts the maximum once, not twice
+    assert budget.spend_so_far([score.run_dir], score.scores_dir).judge == m1
+
+
+def test_a_pending_only_slot_is_judged_again_and_never_reused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    score = setup(tmp_path, [gslot("RID", 1)], model=MINI)
+    with pytest.raises(Killed):
+        run_score(score, KillingJudge([]), *budget_args(score, 10**9))
+    plan = scoring.plan_scoring(score.run_dir, score.scores_dir, score.notes,
+                                scoring.load_judge_prompt("judge-v1"))
+    assert [sp.action for sp in plan.slots] == ["judge"] and plan.interrupted_attempts == 1
+    fake = FakeJudge([judge()])
+    assert run_score(score, fake, *budget_args(score, 10**9)) == 0
+    assert len(fake.calls) == 1
+    assert [r["status"] for r in score.records] == [
+        budget.PENDING_STATUS, budget.PENDING_STATUS, "scored",
+    ]
+    # the interrupted attempt keeps its maximum; the new one counts its actual cost
+    (m1,) = max_costs(score.run_dir, tmp_path / "empty-scores", score.notes)
+    assert budget.spend_so_far([score.run_dir], score.scores_dir).judge == m1 + JUDGE_CALL
+
+
+def test_duplicate_final_records_for_one_attempt_are_refused(tmp_path: Path) -> None:
+    score = setup(tmp_path, [gslot("RID", 1)], model=MINI)
+    score.scores_dir.mkdir()
+    rows = [
+        {"slot_key": "x", "attempt_id": "a" * 32, "status": "scored", budget.CHARGE_FIELD: 1},
+        {"slot_key": "x", "attempt_id": "a" * 32, "status": "judge_failed", budget.CHARGE_FIELD: 2},
+    ]
+    (score.scores_dir / "RID.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8", newline="\n"
+    )
+    with pytest.raises(budget.BudgetInputError, match="more than one pending or final"):
+        budget.spend_so_far([score.run_dir], score.scores_dir)
+
+
+def test_no_budget_writes_no_pending_records(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    score = setup(tmp_path, [gslot("RID", 1)], model=MINI)
+    assert run_score(score, FakeJudge([judge()])) == 0
+    assert [r["status"] for r in score.records] == ["scored"]
+    assert "attempt_id" not in score.records[0]

@@ -1710,3 +1710,82 @@ def test_salts_are_fresh(tmp_path: Path) -> None:
         holdout.create_review_sheet([run_a, run_b], tmp_path / f"review{i}", tmp_path / "secret" / f"k{i}.json")
         keys.append(read_json(tmp_path / "secret" / f"k{i}.json")["salt"])
     assert keys[0] != keys[1] and all(re.fullmatch(r"[0-9a-f]{64}", s) for s in keys)
+
+
+
+# ------------------------------------------- interrupted (write-ahead) attempts
+
+
+def pending(record: dict[str, Any], attempt: str) -> dict[str, Any]:
+    """The write-ahead pending record for `record`'s attempt."""
+    return {**record, "status": "judge_pending", "attempt_id": attempt, "decision": None,
+            "judgment": None, "budget_charged_nano": 1}
+
+
+def test_unscored_reason_with_pending_records() -> None:
+    final = {**rec(RUN_V2, "H1", M1, 1, acceptable=False, total=None, status="needs_review"),
+             "attempt_id": "a" * 32}
+    key, text_sha = final["slot_key"], final["text_sha256"]
+    reason = holdout.unscored_reason
+    # pending + final: the pending record is ignored
+    assert reason([pending(final, "a" * 32), final], key, "judge-v1", text_sha) == (
+        "unscored (invalid or failed judgment)"
+    )
+    # only a pending record: interrupted
+    assert reason([pending(final, "b" * 32)], key, "judge-v1", text_sha) == "unscored (attempt interrupted)"
+    # a later interrupted attempt after a failed one decides
+    later = [pending(final, "a" * 32), final, pending(final, "c" * 32)]
+    assert reason(later, key, "judge-v1", text_sha) == "unscored (attempt interrupted)"
+    # pending records are never a score
+    assert holdout.first_scored([pending(final, "b" * 32)], key, "judge-v1", text_sha) is None
+
+
+def test_compare_tools_report_interrupted_attempts(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # P05's left reply (M2 s1, H2): its latest attempt was interrupted
+    scores = compare_scores()
+    interrupted = rec(RUN_V2, "H2", M2, 1, acceptable=False, total=None)
+    scores.append(pending(interrupted, "d" * 32))
+    # P06's right reply (M2 s2, H2): a pending record paired with its scored final
+    scored = next(r for r in scores if r["slot_key"] == interrupted["slot_key"].replace("|1", "|2")
+                  and r["status"] == "scored")
+    scored["attempt_id"] = "e" * 32
+    scores.insert(scores.index(scored), pending(scored, "e" * 32))
+    args, _ = setup_compare(tmp_path, {"P01": "A", "P05": "A", "P06": "b"}, scores=scores)
+    json_out = tmp_path / "reports" / "pairs.json"
+    assert cli.main([*args, "--json-out", str(json_out)]) == 0
+    out = capsys.readouterr().out
+    rows = {r["pair_id"]: r for r in read_json(json_out)["pairs"]}
+    assert rows["P05"]["missing_reasons"] == ["unscored (attempt interrupted)"]
+    assert rows["P06"]["machine"] == "B" and rows["P06"]["right"]["rank"] == [1, 0, 6]
+    assert "P05 (unscored (attempt interrupted))" in out
+    # review compare: an entry whose only attempt is pending
+    key_path = tmp_path / "secret" / "review_key.json"
+    entries = read_json(key_path)["entries"]
+    target = next(e for e in entries.values() if e["run_id"] == RUN_V2)
+    case = target["slot_key"].split("|")[1]
+    only_pending = pending(
+        rec(RUN_V2, case, target["model"], target["sample_index"], acceptable=True, total=8,
+            text_sha=target["text_sha256"]),
+        "f" * 32,
+    )
+    others = [
+        rec(e["run_id"], e["slot_key"].split("|")[1], e["model"], e["sample_index"],
+            acceptable=True, total=8, version=e["prompt_version"], text_sha=e["text_sha256"])
+        for e in entries.values() if e is not target
+    ]
+    scores_dir = tmp_path / "review-scores"
+    scores_dir.mkdir()
+    for run_id in (RUN_V1, RUN_V2):
+        rows_for = [r for r in [*others, only_pending] if r["run_id"] == run_id]
+        (scores_dir / f"{run_id}.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in rows_for), encoding="utf-8", newline="\n"
+        )
+    review_json = tmp_path / "reports" / "review.json"
+    assert cli.main(["review-compare", "--key", str(key_path),
+                     "--commitment", str(tmp_path / "review" / "review_key_commitment.json"),
+                     "--sheet", str(tmp_path / "review" / "review_sheet.md"),
+                     "--scores-dir", str(scores_dir), "--json-out", str(review_json)]) == 0
+    report = read_json(review_json)
+    assert [u["reason"] for u in report["unscored"]] == ["unscored (attempt interrupted)"]

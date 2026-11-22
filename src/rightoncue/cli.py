@@ -569,6 +569,13 @@ def _cmd_score(
         + "."
     )
     print(_judge_line(plan.judge))
+    if plan.interrupted_attempts:
+        n = plan.interrupted_attempts
+        print(
+            f"Interrupted attempts: {n} ({_plural(n, 'a budgeted judge call was', 'budgeted judge calls were')} "
+            "started but never recorded; each counts its maximum cost and its reply "
+            "is judged again)"
+        )
     if guard is not None and spend is not None:
         _print_budget_start(guard, spend)
     problems: list[str] = []

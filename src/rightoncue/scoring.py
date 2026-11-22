@@ -12,6 +12,7 @@ import json
 import os
 import re
 import tomllib
+import uuid
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -894,6 +895,9 @@ class ScoringPlan:
     slots: list[SlotPlan]
     unknown_records: int
     judge: JudgePrompt
+    # budgeted judge attempts whose pending record has no final record (a crash or
+    # kill after the call started); counted at their maximum, the slot is judged again
+    interrupted_attempts: int = 0
 
     def count(self, *, state: str | None = None, action: str | None = None) -> int:
         return sum(
@@ -1177,7 +1181,10 @@ def plan_scoring(
                         )
                     sp.reused = record
     unknown = sum(1 for _, r in records if r["slot_key"] not in expected)
-    return ScoringPlan(run_id, models, score_path, slots, unknown, judge)
+    return ScoringPlan(
+        run_id, models, score_path, slots, unknown, judge,
+        interrupted_attempts=len(budget_guard.interrupted_attempt_ids(r for _, r in existing)),
+    )
 
 
 # ----------------------------------------------------------------------- execute
@@ -1366,6 +1373,70 @@ def _budget_record(
     return record
 
 
+def _pending_record(
+    plan: ScoringPlan, sp: SlotPlan, attempt_id: str, max_cost: int
+) -> dict[str, Any]:
+    """Written and fsynced BEFORE a budgeted judge call: a possibly billed attempt is
+    charged its maximum until its final record (same attempt_id) replaces the charge."""
+    record = _base_record(plan, sp, judged=True)
+    record.update(
+        status=budget_guard.PENDING_STATUS,
+        attempt_id=attempt_id,
+        started_at=_now(),
+        finished_at=None,
+    )
+    record[budget_guard.CHARGE_FIELD] = max_cost
+    return record
+
+
+def _unrecognised_failure_record(
+    plan: ScoringPlan, sp: SlotPlan, exc: Exception
+) -> dict[str, Any]:
+    """The final record for a budgeted call that raised an exception classify_error
+    doesn't recognise; the exception is re-raised after it is appended."""
+    record = _base_record(plan, sp, judged=True)
+    message = f"judge call raised an unrecognised {type(exc).__name__}: {exc}"
+    record.update(
+        status="judge_failed",
+        error={"type": type(exc).__name__, "message": str(exc), "status_code": None},
+        decision={"acceptable": None, "scores": None, "total": None, "reasons": [message]},
+        started_at=_now(),
+        finished_at=_now(),
+    )
+    return record
+
+
+def _budgeted_judge_call(
+    plan: ScoringPlan,
+    sp: SlotPlan,
+    client: Any,
+    result: ScoringResult,
+    budget: budget_guard.Budget,
+    max_cost: int,
+) -> tuple[dict[str, Any], bool]:
+    """Pending record first, then the call, then the final record with the same
+    attempt_id and its charge (actual usage, or the maximum without usage).
+
+    An unrecognised exception gets a final judge_failed record charged its maximum,
+    then propagates. A BaseException (KeyboardInterrupt, SystemExit) or a kill leaves
+    only the pending record, which counts its maximum on the next command.
+    """
+    attempt_id = uuid.uuid4().hex
+    append_score_record(plan.score_path, _pending_record(plan, sp, attempt_id, max_cost))
+    try:
+        record, fatal = _judge_record(plan, sp, client, result)
+    except Exception as exc:
+        failed = _unrecognised_failure_record(plan, sp, exc)
+        failed["attempt_id"] = attempt_id
+        failed[budget_guard.CHARGE_FIELD] = budget.charge(failed, max_cost)
+        append_score_record(plan.score_path, failed)
+        raise
+    record["attempt_id"] = attempt_id
+    record[budget_guard.CHARGE_FIELD] = budget.charge(record, max_cost)
+    append_score_record(plan.score_path, record)
+    return record, fatal
+
+
 def execute_plan(
     plan: ScoringPlan,
     client: Any | None,
@@ -1402,12 +1473,19 @@ def execute_plan(
             budget.stopped = True
             append_score_record(plan.score_path, record)
             outcome = Outcome(sp, "budget_stopped", record, "new")
+        elif budget is not None:
+            record, fatal = _budgeted_judge_call(plan, sp, client, result, budget, max_cost)
+            outcome = Outcome(sp, record["status"], record, "new")
+            if fatal:
+                err = record["error"]
+                result.fatal_message = (
+                    f"Scoring stopped after a fatal judge error: {err['type']} (HTTP "
+                    f"{err['status_code']}): {err['message']}. Check your API key, the "
+                    "judge model name and the request settings. No further judge "
+                    "calls were made."
+                )
         else:
             record, fatal = _judge_record(plan, sp, client, result)
-            if budget is not None:
-                record[budget_guard.CHARGE_FIELD] = budget.charge(
-                    record, budget_guard.max_call_cost(sp.request)  # type: ignore[arg-type]
-                )
             append_score_record(plan.score_path, record)
             outcome = Outcome(sp, record["status"], record, "new")
             if fatal:

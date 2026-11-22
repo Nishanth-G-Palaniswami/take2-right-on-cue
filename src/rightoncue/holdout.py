@@ -23,6 +23,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
+from . import budget as budget_guard
 from . import scoring
 from .runs import ManifestError, make_slot_key, provider_for
 
@@ -1359,24 +1360,34 @@ def first_scored(
 UNSCORED_INVALID = "unscored (invalid or failed judgment)"
 UNSCORED_BUDGET = "unscored (budget)"
 UNSCORED_NONE = "unscored (no judge record)"
+UNSCORED_INTERRUPTED = "unscored (attempt interrupted)"
 
 
 def unscored_reason(
     records: list[dict[str, Any]], slot_key: str, judge_version: str, text_sha256: str
 ) -> str:
     """Why a reply has no scored record: the latest attempt for the same slot,
-    judge version and words decides (budget_stopped -> budget; needs_review or
+    judge version and words decides (budget_stopped -> budget; a write-ahead
+    pending record with no final record -> attempt interrupted; needs_review or
     judge_failed -> invalid or failed judgment, however many attempts); no
-    attempt at all is its own reason."""
+    attempt at all is its own reason. A pending record whose attempt has a final
+    record is ignored."""
+    interrupted = budget_guard.interrupted_attempt_ids(records)
     attempts = [
         r
         for r in records
         if r.get("slot_key") == slot_key
         and r.get("text_sha256") == text_sha256
         and r.get("judge_prompt_version") == judge_version
+        and (
+            r.get("status") != budget_guard.PENDING_STATUS
+            or r.get(budget_guard.ATTEMPT_FIELD) in interrupted
+        )
     ]
     if not attempts:
         return UNSCORED_NONE
+    if attempts[-1].get("status") == budget_guard.PENDING_STATUS:
+        return UNSCORED_INTERRUPTED
     if attempts[-1].get("status") == "budget_stopped":
         return UNSCORED_BUDGET
     return UNSCORED_INVALID

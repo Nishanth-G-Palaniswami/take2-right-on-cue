@@ -35,6 +35,23 @@ GEMINI_NOTE = "Gemini generation is priced at $0: it is not billed by OpenAI."
 # On every judge attempt made under a budget: the nano-USD the guard charged for it
 # (actual usage, or the call's maximum when usage is missing). Spend so far prefers it.
 CHARGE_FIELD = "budget_charged_nano"
+# Appended and fsynced before each budgeted judge call; its final record carries the
+# same attempt_id. Spend counts one charge per attempt_id: the final's, or the
+# pending maximum when no final record was written (a crash or kill).
+PENDING_STATUS = "judge_pending"
+ATTEMPT_FIELD = "attempt_id"
+
+
+def interrupted_attempt_ids(records: Any) -> set[str]:
+    """attempt_ids that have a pending record and no final record."""
+    pending: set[str] = set()
+    final: set[str] = set()
+    for rec in records:
+        attempt = rec.get(ATTEMPT_FIELD)
+        if not isinstance(attempt, str):
+            continue
+        (pending if rec.get("status") == PENDING_STATUS else final).add(attempt)
+    return pending - final
 
 
 class BudgetInputError(ValueError):
@@ -173,7 +190,11 @@ def spend_so_far(run_dirs: list[Path], scores_dir: Path) -> Spend:
                 )
             spend.generation += cost
         score_path = scores_dir / f"{run_id}.jsonl"
-        for rec in _jsonl(score_path, "score file") if score_path.exists() else []:
+        records = _jsonl(score_path, "score file") if score_path.exists() else []
+        spend.judge += _attempt_charges(records, run_id, score_path)
+        for rec in records:
+            if ATTEMPT_FIELD in rec:  # counted once per attempt above
+                continue
             if CHARGE_FIELD in rec:  # charged by the guard when the call was made
                 charged = rec[CHARGE_FIELD]
                 if type(charged) is not int or charged < 0:
@@ -201,6 +222,39 @@ def spend_so_far(run_dirs: list[Path], scores_dir: Path) -> Spend:
                 )
             spend.judge += cost
     return spend
+
+
+def _charge_of(rec: dict[str, Any], run_id: str, score_path: Path) -> int:
+    charged = rec.get(CHARGE_FIELD)
+    if type(charged) is not int or charged < 0:
+        raise BudgetInputError(
+            f"run {run_id}: judge record {rec.get('slot_key')} in {score_path.as_posix()} "
+            f"has a missing or invalid {CHARGE_FIELD}"
+        )
+    return charged
+
+
+def _attempt_charges(records: list[dict[str, Any]], run_id: str, score_path: Path) -> int:
+    """One charge per attempt_id: its final record's, else its pending maximum."""
+    by_attempt: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for rec in records:
+        attempt = rec.get(ATTEMPT_FIELD)
+        if attempt is None:
+            continue
+        if not isinstance(attempt, str):
+            raise BudgetInputError(f"run {run_id}: a score record has an invalid {ATTEMPT_FIELD}")
+        kind = "pending" if rec.get("status") == PENDING_STATUS else "final"
+        by_attempt.setdefault(attempt, {"pending": [], "final": []})[kind].append(rec)
+    total = 0
+    for attempt, group in by_attempt.items():
+        if len(group["pending"]) > 1 or len(group["final"]) > 1:
+            raise BudgetInputError(
+                f"run {run_id}: attempt {attempt} has more than one pending or final "
+                f"record in {score_path.as_posix()}"
+            )
+        chosen = group["final"][0] if group["final"] else group["pending"][0]
+        total += _charge_of(chosen, run_id, score_path)
+    return total
 
 
 @dataclass

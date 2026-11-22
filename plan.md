@@ -248,7 +248,7 @@ judge-v4 is deferred until the assessment comparison is complete (Nishanth, 2026
 | 5 | Format checks (parse, notes load, offline suite), pre-registration and pair-plan commitment, committed before generation | lead | Verified. 353 tests pass. Pre-registration in `docs/measurements/2026-11-21-holdout-preregistration.md`; pair-plan commitment `holdout/pair_plan_commitment.json` (sha256 `42e945ab…ec19`, verified). D1 (option B), the cost cap (option B) and the fixes were resolved by Nishanth's dated clarification, at the end of the pre-registration |
 | 6 | Generation, v2 and v1 runs (only on Nishanth's go-ahead) | lead | Pending |
 | 7 | Labels: 48 individual, then 12 pairs | Nishanth | Pending |
-| 8 | Scoring, reveal and verification, report | lead | Pending |
+| 8 | Scoring, reveal and verification, report | lead | Pending. Prerequisite done: write-ahead budget charges, so a crash cannot make a possibly billed judge attempt count as free on restart (independent Opus PASS, 68 mutations). An interrupted attempt counts its maximum and uses the slot's one retry |
 
 **Risks.**
 - **Blinding depends on discipline.** The committed run folders (`slots.jsonl`) and the private mapping files hold the identities, so they must not be opened before the labels are committed.
