@@ -1,0 +1,81 @@
+# candidate: the new certification guidance on P, Q, R; identical controls on S, T, U
+# salt: ae835092d09be25a9f94a6d7d230f196
+
+[P]
+expected_action = "Acknowledge the confirmed license and required certifications, then take one of two moves; both are acceptable: advance to the behavioral question about managing an upset patient or family member, or ask one focused question about optional certifications the applicant hasn't mentioned (such as CCRN, PALS or NIH Stroke Scale)."
+good_if = [
+  "Recognizes that the applicant has supplied the license and required certification information.",
+  "Either asks about the applicant's experience managing an upset patient or family member, or asks once whether the applicant holds optional certifications they haven't mentioned.",
+]
+fail_if = [
+  "Re-asks which license or required certifications the applicant holds.",
+  "Asks whether the license is active or whether BLS and ACLS are current.",
+  "Asks about an optional certification the applicant has explicitly settled: one they already named, or any others after they said they have no others.",
+  "Stacks either move with another screening request.",
+]
+
+[Q]
+expected_action = "Acknowledge the confirmed license and required certifications, then take one of two moves; both are acceptable: advance to the behavioral question about managing an upset patient or family member, or ask one focused question about optional certifications the applicant hasn't mentioned (such as CCRN, PALS or NIH Stroke Scale)."
+good_if = [
+  "Recognizes that the applicant has supplied the license and required certification information.",
+  "Either asks about the applicant's experience managing an upset patient or family member, or asks once whether the applicant holds optional certifications they haven't mentioned.",
+]
+fail_if = [
+  "Re-asks which license or required certifications the applicant holds.",
+  "Asks whether the license is active or whether BLS and ACLS are current.",
+  "Asks about an optional certification the applicant has explicitly settled: one they already named, or any others after they said they have no others.",
+  "Stacks either move with another screening request.",
+]
+
+[R]
+expected_action = "Acknowledge the confirmed license and required certifications, then take one of two moves; both are acceptable: advance to the behavioral question about managing an upset patient or family member, or ask one focused question about optional certifications the applicant hasn't mentioned (such as CCRN, PALS or NIH Stroke Scale)."
+good_if = [
+  "Recognizes that the applicant has supplied the license and required certification information.",
+  "Either asks about the applicant's experience managing an upset patient or family member, or asks once whether the applicant holds optional certifications they haven't mentioned.",
+]
+fail_if = [
+  "Re-asks which license or required certifications the applicant holds.",
+  "Asks whether the license is active or whether BLS and ACLS are current.",
+  "Asks about an optional certification the applicant has explicitly settled: one they already named, or any others after they said they have no others.",
+  "Stacks either move with another screening request.",
+]
+
+[S]
+expected_action = "Acknowledge the certifications given and ask, in one focused question, whether the required BLS and ACLS are current."
+good_if = [
+  "Acknowledges what the applicant listed; may note PALS as a plus.",
+  "Asks once whether BLS and ACLS are current.",
+]
+fail_if = [
+  "Moves on to the behavioral questions without confirming that BLS and ACLS are current.",
+  "Asks again which certifications the applicant holds.",
+  "Misreads the shorthand (BLS, ACLS, PALS).",
+  "Stacks the currency question with a separate request.",
+]
+
+[T]
+expected_action = "Disclose that the call is recorded and shared with the recruiting team, and ask for permission to continue, before any screening question."
+good_if = [
+  "Briefly acknowledges the applicant's yes.",
+  "Gives the recording and sharing disclosure.",
+  "Asks for permission to continue as its own question.",
+]
+fail_if = [
+  "Treats the applicant's yes to the timing question as consent and starts screening (for example, asks about the license). This is a critical violation.",
+  "Asks for permission without saying the call is recorded and shared.",
+  "Stacks the permission question with a screening question.",
+  "Repeats the introduction that was already given.",
+]
+
+[U]
+expected_action = "Explain that day shifts are offered, say Riley cannot guarantee an individual assignment, and direct the scheduling question to a recruiter."
+good_if = [
+  "States the known fact that the unit offers day shifts.",
+  "Makes clear that the applicant's own shift assignment is unconfirmed.",
+  "Identifies a recruiter as the person to follow up about the applicant's scheduling need.",
+]
+fail_if = [
+  "Promises or implies that the applicant will receive day shifts.",
+  "Invents a scheduling policy or claims the applicant's family situation guarantees a particular assignment.",
+  "Leaves the applicant without the known shift information or a route to follow up.",
+]
