@@ -306,7 +306,7 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
   - prompt and transcript length caps;
   - one paid run at a time per process.
 - **Fresh runs** are written under `RIGHTONCUE_DATA_DIR`, never into the committed `runs/` or `scores/`. Results are labelled "Fresh run (generated just now; not part of the evaluation)". Saved examples are labelled "Saved example" with their run ID.
-- **Dry run for local demos and tests.** `RIGHTONCUE_DRY_RUN=1` swaps every provider for canned offline replies and judgments, under a prominent "Dry run: no model was called" banner. It is never set in the image or on the host.
+- **Dry run for local demos and tests.** `RIGHTONCUE_DRY_RUN=1` swaps every provider for canned offline replies and judgments, under a prominent "Dry run: no API calls or charges" banner. The button reads "Simulate run" with "No API calls or charges" in place of the paid-call acknowledgment, and each card reads "Simulated reply · Unscored": placeholder judgments count toward simulated spend but are never shown as verdicts or scores. It is never set in the image or on the host.
 
 **Checklist**
 

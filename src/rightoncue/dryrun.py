@@ -1,10 +1,13 @@
 """Offline stand-ins for every provider client (RIGHTONCUE_DRY_RUN=1).
 
 No network, no key. They answer like the real SDKs closely enough for the runner,
-the scorer and the spending guard: canned replies marked as placeholders, valid
-judge-v1 judgments, and realistic token usage so the guarded wrappers reserve and
-settle nonzero amounts at the real prices (into a separate dry-run ledger). They
-are wrapped by the same guards as the real clients.
+the scorer and the spending guard: canned replies marked as placeholders, schema-valid
+placeholder judge-v1 judgments, and realistic token usage so the guarded wrappers
+reserve and settle nonzero amounts at the real prices (into a separate dry-run
+ledger). They are wrapped by the same guards as the real clients. The placeholder
+judgments exist only so the simulated spend covers judging: the app never shows them
+as verdicts or scores (a card whose reported model is DRY_MODEL reads "Simulated
+reply · Unscored").
 """
 
 from __future__ import annotations

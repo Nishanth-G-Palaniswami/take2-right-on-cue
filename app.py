@@ -9,7 +9,7 @@ from typing import Any
 
 import streamlit as st
 
-from rightoncue import budget, gemini, live, openai_responses, review, scoring
+from rightoncue import budget, dryrun, gemini, live, openai_responses, review, scoring
 from rightoncue.transcript import parse_transcript
 
 # The judge prompt paths are relative to the repository root.
@@ -20,7 +20,12 @@ st.set_page_config(page_title="Right on Cue", layout="wide", initial_sidebar_sta
 JUDGE = scoring.DEFAULT_JUDGE_VERSION
 DEFAULT_SELECTION = {"case": "H3", "prompt": "v2", "sample": "1"}
 MUTED = "#6b7280"
-DRY_RUN_BANNER = "Dry run: no model was called; replies and scores are placeholders."
+DRY_RUN_BANNER = "Dry run: no API calls or charges. Replies are placeholders and are not scored."
+# Dry run, at the click and on the result. Keyed on cfg.dry_run (the flag that builds
+# the offline fakes) and, on cards, on the record's own dry-run marker.
+DRY_RUN_BUTTON = "Simulate run"
+DRY_RUN_NO_CHARGE = "No API calls or charges"
+SIMULATED_BADGE = "Simulated reply · Unscored"
 
 # ------------------------------------------------------------------------- helpers
 
@@ -78,6 +83,9 @@ def render_card(card: review.Card) -> None:
             para(card.note, size="0.85rem", muted=True)
             return
         para(card.reply if card.reply and card.reply.strip() else "(empty reply)")
+        if card.reported_model == dryrun.DRY_MODEL:  # a placeholder judgment is not a judgment
+            st.markdown(badge("gray", SIMULATED_BADGE))
+            return
         total = f" · {card.total}/8" if card.total is not None else ""
         decision = card.decision or "unscored"
         st.markdown(badge(_VERDICT_COLOR[decision], f"{JUDGE}: {decision}{total}"))
@@ -328,6 +336,11 @@ LIVE_LEDGER_ERROR = (
     "written, so no paid call is allowed. The saved comparison is unaffected."
 )
 FRESH_LABEL = "Fresh run: generated just now, not part of the saved evaluation"
+SIMULATED_LABEL = "Simulated run: no model was called, not part of the saved evaluation"
+DRY_RUN_RESULT_NOTE = (
+    "Dry run: these replies are placeholders and are not scored. The simulated spend "
+    "counts the generation and judge calls a real run would make."
+)
 BUSY = "Another run is in progress, try again shortly."
 INTERRUPTED = (
     "This run was interrupted before it finished (the page was changed while it ran). "
@@ -416,7 +429,10 @@ def render_hosted_live(cfg: live.LiveConfig) -> None:
 
 
 def render_gate(cfg: live.LiveConfig) -> None:
-    st.caption("Fresh runs call paid models, so they need the access code from the owner.")
+    if cfg.dry_run:
+        st.caption("Dry run: no API calls or charges. The access code is still required, as on the live site.")
+    else:
+        st.caption("Fresh runs call paid models, so they need the access code from the owner.")
     wait = live.gate_wait_s()
     with st.form("hl_gate", clear_on_submit=True):
         entered = st.text_input("Access code", type="password")
@@ -451,10 +467,14 @@ def _editable_input(
 
 def render_hosted_form(cfg: live.LiveConfig, ledger: Any) -> None:
     counter = st.session_state.setdefault("hl_n", 0)
+    scored = (
+        f". A real run is scored by {JUDGE}; this dry run is not scored." if cfg.dry_run
+        else f", scored by {JUDGE}."
+    )
     st.caption(
         f"Settings fixed on this site: OpenAI reasoning effort {live.HOSTED_REASONING_EFFORT}, "
         f"Gemini thinking {live.HOSTED_THINKING_LEVEL}, each reply capped at "
-        f"{live.OUTPUT_CAP} output tokens, scored by {JUDGE}."
+        f"{live.OUTPUT_CAP} output tokens{scored}"
     )
     st.caption(_spend_line(cfg, ledger))
     prompt_file = _editable_input(
@@ -477,22 +497,34 @@ def render_hosted_form(cfg: live.LiveConfig, ledger: Any) -> None:
     if can_run:
         proj = live.project_run(prompt_file, case_file, models, samples)
         remaining = ledger.remaining()
-        st.info(
-            f"This run makes {proj.generation_calls} generation call(s) and up to "
-            f"{proj.judge_calls} judge call(s). Projected maximum cost: "
-            f"{fmt_usd(proj.total_nano)}; budget remaining: {fmt_usd(remaining)}."
-        )
+        if cfg.dry_run:
+            st.info(
+                f"Simulated: a real run would make {proj.generation_calls} generation call(s) "
+                f"and up to {proj.judge_calls} judge call(s), with a projected maximum cost of "
+                f"{fmt_usd(proj.total_nano)}. Simulated budget remaining: {fmt_usd(remaining)}."
+            )
+        else:
+            st.info(
+                f"This run makes {proj.generation_calls} generation call(s) and up to "
+                f"{proj.judge_calls} judge call(s). Projected maximum cost: "
+                f"{fmt_usd(proj.total_nano)}; budget remaining: {fmt_usd(remaining)}."
+            )
         if proj.total_nano > remaining:
             st.error(
                 "This run's projected maximum cost is more than the remaining budget. "
                 "Choose fewer models or samples."
             )
             can_run = False
-    confirmed = st.checkbox(
-        "I understand this run makes paid API calls, counted against the shared cap.",
-        key=f"hl_confirm_{counter}",
-    )
-    if st.button("Generate and score", disabled=not (can_run and confirmed), key="hl_run"):
+    if cfg.dry_run:  # the same flag that makes live.run_fresh build only the offline fakes
+        para(DRY_RUN_NO_CHARGE, weight=600)
+        confirmed = True
+    else:
+        confirmed = st.checkbox(
+            "I understand this run makes paid API calls, counted against the shared cap.",
+            key=f"hl_confirm_{counter}",
+        )
+    label = DRY_RUN_BUTTON if cfg.dry_run else "Generate and score"
+    if st.button(label, disabled=not (can_run and confirmed), key="hl_run"):
         progress = st.empty()
         done: list[str] = []
 
@@ -506,7 +538,7 @@ def render_hosted_form(cfg: live.LiveConfig, ledger: Any) -> None:
             st.session_state["hl_n"] = counter + 1
 
         try:
-            with st.spinner("Generating and scoring..."):
+            with st.spinner("Simulating..." if cfg.dry_run else "Generating and scoring..."):
                 outcome = live.run_fresh(
                     cfg, prompt_file, case_file, models, samples, on_slot=on_slot, on_start=on_start
                 )
@@ -528,9 +560,9 @@ def render_hosted_form(cfg: live.LiveConfig, ledger: Any) -> None:
     if run_id is None:
         return
     st.divider()
-    st.info(f"{FRESH_LABEL} · run {run_id}")
+    st.info(f"{SIMULATED_LABEL if cfg.dry_run else FRESH_LABEL} · run {run_id}")
     if cfg.dry_run:
-        st.caption("Dry run: these replies and scores are placeholders; the spend is simulated.")
+        st.caption(DRY_RUN_RESULT_NOTE)
     for message in st.session_state.get("hl_messages", []):
         st.warning(message)
     view = _scored_view(cfg.runs_dir / run_id, review.scores_path_for(run_id, cfg.scores_dir))
@@ -564,7 +596,14 @@ def render_local_live(cfg: live.LiveConfig) -> None:
             return
     review.load_env()
     st.markdown("### Run an evaluation with your own keys")
-    st.caption("Generation and scoring are paid API calls billed to your keys.")
+    if cfg.dry_run:
+        st.caption(
+            "Dry run: no API calls or charges. Replies are placeholders and are not scored; "
+            "simulated scoring only adds the judge calls to the simulated spend."
+        )
+    else:
+        st.caption("Generation and scoring are paid API calls billed to your keys.")
+    paid = "simulated" if cfg.dry_run else "paid"
     if ledger is not None:
         st.caption(f"{_spend_line(cfg, ledger)} Ledger: {ledger.path.as_posix()}")
     counter = st.session_state.setdefault("live_n", 0)
@@ -642,7 +681,7 @@ def render_local_live(cfg: live.LiveConfig) -> None:
         proj = live.project_run(prompt_file, case_file, models, samples, effort, thinking)
         remaining = ledger.remaining()
         st.info(
-            f"Generating makes {calls} paid call(s), each capped at {live.OUTPUT_CAP} output "
+            f"Generating makes {calls} {paid} call(s), each capped at {live.OUTPUT_CAP} output "
             f"tokens. Scoring afterwards makes up to {calls} judge calls to "
             f"{scoring.JUDGE_MODEL}. Projected maximum cost: {fmt_usd(proj.total_nano)}; "
             f"budget remaining: {fmt_usd(remaining)}."
@@ -650,12 +689,17 @@ def render_local_live(cfg: live.LiveConfig) -> None:
         over_budget = proj.total_nano > remaining
         if over_budget:
             st.error("The projected maximum cost is more than the remaining budget.")
-    confirmed = st.checkbox(
-        f"I understand this makes {calls} paid API call(s) with my own keys.",
-        key=f"live_confirm_gen_{counter}",
-    )
+    if cfg.dry_run:  # the flag that makes live.guarded_clients build only the offline fakes
+        para(DRY_RUN_NO_CHARGE, weight=600)
+        confirmed = True
+    else:
+        confirmed = st.checkbox(
+            f"I understand this makes {calls} paid API call(s) with my own keys.",
+            key=f"live_confirm_gen_{counter}",
+        )
     can_generate = bool(models) and not blocked and not errors and confirmed and not over_budget
-    if st.button("Generate", disabled=not can_generate, key="live_generate"):
+    label = DRY_RUN_BUTTON if cfg.dry_run else "Generate"
+    if st.button(label, disabled=not can_generate, key="live_generate"):
         progress = st.empty()
         done: list[str] = []
 
@@ -699,12 +743,17 @@ def render_local_live(cfg: live.LiveConfig) -> None:
     has_key = cfg.dry_run or review.key_present(openai_responses.PROVIDER)
     if needed and not has_key:
         st.error(f"{review.key_env(openai_responses.PROVIDER)} is not set, so scoring is disabled.")
-    st.info(f"Scoring makes {needed} paid judge call(s) to {scoring.JUDGE_MODEL}.")
-    ok = st.checkbox(
-        f"I understand scoring makes {needed} paid API call(s) with my own key.",
-        key=f"live_confirm_score_{st.session_state['live_n']}",
-    )
-    if st.button(f"Score with {JUDGE}", disabled=not (needed and has_key and ok), key="live_score"):
+    st.info(f"Scoring makes {needed} {paid} judge call(s) to {scoring.JUDGE_MODEL}.")
+    if cfg.dry_run:
+        para(DRY_RUN_NO_CHARGE, weight=600)
+        ok = True
+    else:
+        ok = st.checkbox(
+            f"I understand scoring makes {needed} paid API call(s) with my own key.",
+            key=f"live_confirm_score_{st.session_state['live_n']}",
+        )
+    score_label = "Simulate scoring" if cfg.dry_run else f"Score with {JUDGE}"
+    if st.button(score_label, disabled=not (needed and has_key and ok), key="live_score"):
         try:
             if ledger is None:
                 review.score_run(run_dir, JUDGE)

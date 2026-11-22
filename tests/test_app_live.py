@@ -229,6 +229,10 @@ def test_full_hosted_flow_with_fake_clients(tmp_path: Path, monkeypatch: pytest.
     proj = [i.value for i in at.info if "Projected maximum cost" in i.value]
     assert len(proj) == 1 and "2 generation call(s) and up to 2 judge call(s)" in proj[0]
     assert at.button(key="hl_run").disabled  # not confirmed yet
+    assert at.button(key="hl_run").label == "Generate and score"
+    assert at.checkbox(key="hl_confirm_0").label == (
+        "I understand this run makes paid API calls, counted against the shared cap."
+    )
     at.checkbox(key="hl_confirm_0").set_value(True).run()
     saved_badges = len(badges(at, "judge-v1: acceptable · 8/8"))
     at.button(key="hl_run").click().run()
@@ -241,6 +245,9 @@ def test_full_hosted_flow_with_fake_clients(tmp_path: Path, monkeypatch: pytest.
     assert "Thanks for that. What drew you to nights?" in text and "Got it. How long have you been in the ICU?" in text
     assert len(badges(at, "judge-v1: acceptable · 8/8")) == saved_badges + 2
     assert any(b.startswith(":blue-badge[Saved example · run ") for b in badges(at, "Saved example"))
+    page = everything(at) + "\n".join(b.label for b in at.button)
+    for dry in ("Simulate", "No API calls or charges", "Simulated reply · Unscored", "Dry run"):
+        assert dry not in page, dry
     # files: the tmp data dir only
     assert (data / "runs" / run_id / "manifest.json").is_file()
     assert (data / "scores" / f"{run_id}.jsonl").is_file()
@@ -258,7 +265,6 @@ def test_edited_prompt_is_recorded_as_pasted(tmp_path: Path, monkeypatch: pytest
     at = unlock(run())
     at.text_area(key="hl_prompt_text_prompts/v1.md").set_value("You are Riley. Ask one question.")
     at.run()
-    at.checkbox(key="hl_confirm_0").set_value(True).run()
     at.button(key="hl_run").click().run()
     assert not at.exception
     [run_dir] = list((data / "runs").iterdir())
@@ -271,8 +277,7 @@ def test_projection_over_remaining_budget_refuses_up_front(tmp_path: Path, monke
     hosted_env(monkeypatch, tmp_path, RIGHTONCUE_BUDGET_USD="0.02", RIGHTONCUE_DRY_RUN="1")
     at = unlock(run())
     at.multiselect(key="hl_models").set_value(["gpt-5.4", "gpt-5.4-mini", "gemini-3.5-flash"])
-    at.number_input(key="hl_samples").set_value(2)
-    at.checkbox(key="hl_confirm_0").set_value(True).run()
+    at.number_input(key="hl_samples").set_value(2).run()
     assert any("more than the remaining budget" in e.value for e in at.error)
     assert at.button(key="hl_run").disabled
 
@@ -280,7 +285,6 @@ def test_projection_over_remaining_budget_refuses_up_front(tmp_path: Path, monke
 def test_another_run_in_progress(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     hosted_env(monkeypatch, tmp_path, RIGHTONCUE_DRY_RUN="1")
     at = unlock(run())
-    at.checkbox(key="hl_confirm_0").set_value(True).run()
     lock = live.run_lock()
     assert lock.acquire(blocking=False)
     try:
@@ -295,18 +299,41 @@ def test_another_run_in_progress(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 
 def test_dry_run_banner_and_flow_never_build_real_clients(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     data = hosted_env(monkeypatch, tmp_path, RIGHTONCUE_DRY_RUN="1")  # real-looking keys are set
-    banner = "Dry run: no model was called; replies and scores are placeholders."
+    banner = "Dry run: no API calls or charges. Replies are placeholders and are not scored."
     at = run()
     assert at.warning[0].value == banner
     at = unlock(at)
     assert any(c.value.startswith("Simulated spend (dry run): $0.000000 of the $5.000000 cap.") for c in at.caption)
-    at.checkbox(key="hl_confirm_0").set_value(True).run()
+    # at the click: no paid acknowledgment, a "Simulate run" button, "No API calls or charges"
+    assert not [c for c in at.checkbox if c.key.startswith("hl_confirm")]
+    assert at.button(key="hl_run").label == "Simulate run" and not at.button(key="hl_run").disabled
+    assert "No API calls or charges" in body(at)
+    assert any(i.value.startswith("Simulated: a real run would make 1 generation call(s)") for i in at.info)
+    assert not [i for i in at.info if i.value.startswith("This run makes")]
+    assert any(c.value.endswith("A real run is scored by judge-v1; this dry run is not scored.") for c in at.caption)
+    saved_verdicts = badges(at, "judge-v1:")
     at.button(key="hl_run").click().run()
     assert not at.exception, at.exception
     assert at.warning[0].value == banner
-    assert "Dry run placeholder: no model was called." in body(at)
+    # on the result: a simulated label, and no verdict or numeric score on the fresh card
+    assert any(i.value.startswith("Simulated run: no model was called, not part of the saved evaluation · run ") for i in at.info)
+    assert not [i for i in at.info if i.value.startswith("Fresh run:")]
+    assert any(c.value.startswith("Dry run: these replies are placeholders and are not scored.") for c in at.caption)
+    assert badges(at, "Simulated reply · Unscored") == [":gray-badge[Simulated reply · Unscored]"]
+    assert badges(at, "judge-v1:") == saved_verdicts  # the saved comparison's three only
+    live_tab = at.tabs[2]
+    live_text = "\n".join(m.value for m in live_tab.markdown) + "\n".join(
+        e.proto.body for e in live_tab.get("html")
+    )
+    assert "Dry run placeholder: no model was called." in live_text
+    assert "/8" not in live_text and "judge-v1:" not in live_text and "reasoning" not in live_text
+    assert not [e for e in live_tab.expander if e.label == "Scores, checks and reasoning"]
+    # the simulated spend still covers judging: the placeholder judgment was made and counted
+    rows = [json.loads(x) for x in (data / "ledger.dry-run.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert [(r["type"], r["kind"]) for r in rows] == [
+        ("reserve", "generation"), ("settle", "generation"), ("reserve", "judge"), ("settle", "judge")
+    ]
     assert not (data / "ledger.jsonl").exists()
-    assert (data / "ledger.dry-run.jsonl").stat().st_size > 0
     assert any(c.value.startswith("Simulated spend (dry run): $0.00") and "$0.000000 of" not in c.value for c in at.caption)
 
 
@@ -326,18 +353,27 @@ def committed_listing() -> dict[str, tuple[int, int]]:
     } | {d: (0, 0) for d in ("runs", "scores")}
 
 
-def local_guarded_generate_and_score(at: AppTest, data: Path) -> str:
+def local_guarded_generate_and_score(at: AppTest, data: Path, dry_run: bool = False) -> str:
     """Generate one reply, score it; return the run ID. review.RUNS_DIR / SCORES_DIR are
     deliberately NOT replaced: the committed folders must stay untouched on their own."""
-    at.number_input(key="live_samples").set_value(1)
-    at.checkbox(key="live_confirm_gen_0").set_value(True).run()
+    at.number_input(key="live_samples").set_value(1).run()
+    if dry_run:
+        assert not [c for c in at.checkbox if c.key.startswith("live_confirm")]
+        assert at.button(key="live_generate").label == "Simulate run"
+    else:
+        assert at.button(key="live_generate").label == "Generate"
+        at.checkbox(key="live_confirm_gen_0").set_value(True).run()
     assert any("each capped at 400 output tokens" in i.value and "Projected maximum cost" in i.value for i in at.info)
     at.button(key="live_generate").click().run()
     assert not at.exception, at.exception
     [run_dir] = list((data / "runs").iterdir())
     assert any(c.value == f"Saved to {run_dir.as_posix()}; scores go to "
                f"{(data / 'scores' / (run_dir.name + '.jsonl')).as_posix()}." for c in at.caption)
-    at.checkbox(key="live_confirm_score_1").set_value(True).run()
+    if dry_run:
+        assert at.button(key="live_score").label == "Simulate scoring"
+    else:
+        assert at.button(key="live_score").label == "Score with judge-v1"
+        at.checkbox(key="live_confirm_score_1").set_value(True).run()
     at.button(key="live_score").click().run()
     assert not at.exception, at.exception
     assert (data / "scores" / f"{run_dir.name}.jsonl").is_file()
@@ -371,11 +407,13 @@ def test_local_dry_run_writes_only_to_the_data_dir(tmp_path: Path, monkeypatch: 
     monkeypatch.setenv("RIGHTONCUE_DATA_DIR", str(data))
     before = committed_listing()
     at = AppTest.from_file(APP, default_timeout=60).run()
-    assert at.warning[0].value.startswith("Dry run: no model was called")
-    run_id = local_guarded_generate_and_score(at, data)
+    assert at.warning[0].value.startswith("Dry run: no API calls or charges.")
+    run_id = local_guarded_generate_and_score(at, data, dry_run=True)
     assert committed_listing() == before
     assert not (REPO / "runs" / run_id).exists() and not (REPO / "scores" / f"{run_id}.jsonl").exists()
     assert "Dry run placeholder: no model was called." in body(at)
+    assert badges(at, "Simulated reply · Unscored") == [":gray-badge[Simulated reply · Unscored]"]
+    assert len(badges(at, "judge-v1:")) == 3  # the saved comparison's only
     assert not (data / "ledger.jsonl").exists() and (data / "ledger.dry-run.jsonl").is_file()
 
 
@@ -475,6 +513,5 @@ def test_our_own_input_errors_are_shown(tmp_path: Path, monkeypatch: pytest.Monk
 
     monkeypatch.setattr(live, "run_fresh", run_fresh_with_three_samples)
     at = unlock(run())
-    at.checkbox(key="hl_confirm_0").set_value(True).run()
     at.button(key="hl_run").click().run()
     assert "Samples must be from 1 to 2." in [e.value for e in at.error]
