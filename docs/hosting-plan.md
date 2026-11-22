@@ -49,7 +49,15 @@ The **typical** figures use recorded usage on the holdout transcripts. The **max
 | 3 models × 2 samples (6 replies, 6 judge calls) | about $0.031 | $0.179 |
 
 **How many runs $5.00 covers.**
-- At the maximum, at least 25 three-model, two-sample runs are guaranteed. The maximum is $0.179–$0.199 depending on the committed prompt and transcript.
+- **The maximum depends on what reviewers paste.** A run is reserved from its real request size, so the per-run maximum grows with the prompt and transcript:
+
+  | Input | Maximum for 3 models × 2 samples | Such runs per $5.00 |
+  |---|---|---|
+  | The committed prompts and cases | $0.179–$0.199 | at least 25 |
+  | Pasted text at the length limits (12,000 characters each, 40 turns), plain English | $0.415 | about 12 |
+  | The same, with every character a 4-byte UTF-8 character (the theoretical worst case) | $1.194 | about 4 |
+
+  Lower `RIGHTONCUE_MAX_SAMPLES` or the length limits to shrink the worst case. The cap holds in every case; only the number of runs changes.
 - At typical usage it's about 160.
 - The reservations are freed down to the actual cost after each call. So the run count is set by actual spend, but a new run starts only if its full maximum fits.
 
@@ -92,6 +100,7 @@ Either way the saved comparison stays up.
 | Cap reached | With the allowance below the amount spent, the live tab showed "budget exhausted". The saved H3 comparison, the H4 deep link and the "How it was evaluated" tab all worked at desktop and mobile widths |
 | Invalid allowance (`abc`) | The live tab showed a generic "unavailable" message, and the server log names the variable. Saved comparisons were unaffected |
 | Corrupt ledger (malformed middle line) | Live runs blocked: "spending records can't be read". The server log gives the line number. Saved comparisons were unaffected |
+| Reviewer reloads mid-run | The abandoned run stopped after its in-flight call; a new session could start a run straight away (no stuck "in progress"). Ledger: 14 settled, 0 open |
 | Real ledger untouched by dry run | Only `ledger.dry-run.jsonl` existed on the volume |
 | Saved view, production settings | The replies heading sits at y=599 of 900 on a laptop, with no sideways scroll on desktop or mobile. A refresh keeps the view (3 of 3 reloads, about 1.3 s each) |
 
