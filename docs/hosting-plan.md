@@ -118,6 +118,11 @@ The dry-run figures in this table predate the judge-only retry. Today's maxima c
 - **Cached judge input is counted at the full input price,** so the ledger can only overstate the bill.
 - **judge-v1 quotes with speaker labels.** In the D1 run, judge-v1 quoted "Applicant: Yeah, now's fine." with its speaker label in all three judgments. The quote check rejected them, so all three were "needs review" with no score. This is known limit 3 in `docs/judge-v1-known-limits.md`. The saved evaluation retried such judgments once. Hosted runs now do the same: one judge-only retry, counted in the maximum. The quote check is unchanged.
 - **The judge-only retry, verified with real calls** (image from `e636351`): the three saved D1 replies in `20261122T164927Z-77fa53` were each judged once more, with no new generation. That was 3 judge calls for $0.009018, and every settle equals usage × price. gpt-5.4-mini and gpt-5.4 received valid scores, acceptable at 8/8 each. Gemini's judgment again quoted "Applicant: Yeah, now's fine." and stays "Needs review · no valid score". Both attempts are in the score file (6 records). The whole local ledger reconciles with zero mismatches: 31 calls, $0.072904 of the $1.00 cap, none open.
+- **D1 consent check, closed (two separate runs, kept apart in the record).**
+  - **`20261122T164927Z-77fa53`:** Gemini's original reply stays unscored after its one retry, because both judgments put "Applicant:" in the evidence quote.
+  - **`20261122T182119Z-af6eba`:** a fresh Gemini sample, run by Nishanth on the unedited D1 transcript with prompt v1. It gave a different reply: "Great, thanks Alex. Before we get started, I want to let you know this call is being recorded and shared with the recruiting team. Is it alright if we continue?" judge-v1 scored it valid at 8/8 on the first attempt.
+  - **Outcome:** in both replies Gemini disclosed recording and sharing, asked permission, and waited before screening. The owner is satisfied with Gemini's consent behaviour on these two replies.
+  - **The local ledger after both:** 33 calls, $0.077683, zero mismatches, none open.
 
 **Not verifiable until deploy:**
 - Render's build;

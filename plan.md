@@ -349,8 +349,18 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
 | # | Item | Owner | Status |
 |---|---|---|---|
 | 1 | `live.retry_invalid_judgments` and the retry pass in `run_fresh`. The projection counts 2 judge calls per reply. Card attempt count, badge, headings, v2 default. Offline tests | lead | Verified: verifier PASS on f10c6c4 (582 passed). The local-mode wording it flagged and the two missing tests (several replies in one run; a fatal error on the retry) were fixed in the next commit |
-| 2 | Independent review (money and data consistency) | verifier, Opus, high | Verified: PASS. Open for the owner: a first-pass fatal error or budget stop also skips the retry for replies already marked needs_review |
+| 2 | Independent review (money and data consistency) | verifier, Opus, high | Verified: PASS. The owner kept the rule that a first-pass fatal error or budget stop skips the retry |
 | 3 | Real retry of the three saved D1 judgments (at most 3 judge calls, within the $1 local cap) | lead | Verified: 3 calls, $0.009018. 2 valid scores (Mini 8/8, GPT-5.4 8/8); Gemini still needs review (speaker-label quote) |
 | 4 | Docs: hosting-plan maxima and access-code step, README, report example | lead | Verified: the verifier recomputed every maximum |
 
 **Risk.** A judgment that needs review on both attempts shows no score. That is the intended outcome; it is never counted as a pass or a fail.
+
+**Owner decisions (2026-11-22, later).**
+- **The retry rules stay as built:** one retry per reply, and no retry after a fatal judge error or a budget stop.
+- **The D1 consent check is closed.** The record keeps two runs apart:
+  - `77fa53`: Gemini is unscored after its retry, because of the speaker-label quote.
+  - `af6eba`: a fresh Gemini sample, valid at 8/8.
+- **Deployment handoff:**
+  - push `judge-v3`;
+  - Render serves the branch with interviewer v2 as the default and v1 selectable, scored by judge-v1;
+  - the owner pushes and approves deployment separately.
