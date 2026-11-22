@@ -254,3 +254,15 @@ judge-v4 is deferred until the assessment comparison is complete (Nishanth, 2026
 **Risks.**
 - **Blinding depends on discipline.** The committed run folders (`slots.jsonl`) and the private mapping files hold the identities, so they must not be opened before the labels are committed.
 - **The cost cap holds only between commands.** Generation sends no output cap, so a single generation call has no hard ceiling.
+
+## Submission: app, report, walkthrough, hosting (2026-11-22)
+
+judge work is closed at `632075c`. judge-v1 is the submission default, and judge-v4 is documented as a tested alternative. No paid calls in this stage.
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | Streamlit reviewer app (`app.py`, `src/rightoncue/review.py`). It opens on the saved H3 three-model comparison, with the raw judge-v1 verdict and the human label under each reply and details on demand. Case, prompt and sample are kept in the URL. Methodology is one click away. Hosted no-key replay (`RIGHTONCUE_HOSTED=1`) and local live mode, both reusing the runner and scorer | standard-coder + lead (polish) | Verified: verifier PASS; 443 tests; headless Edge DOM checks at 1440×900 and 390×844 (`docs/screenshots/`) |
+| 2 | Container for the hosted replay (`Dockerfile`, `.dockerignore`) | lead | Verified locally: build, run, health, no secrets in the image |
+| 3 | Hosting plan for `https://rightoncue.nishanthgp.me` on Render (Docker), with DNS in Netlify DNS (`docs/hosting-plan.md`) | lead | Awaiting Nishanth's review. No push, deploy or DNS change |
+| 4 | Submission report (`docs/report.md`) and walkthrough outline (`docs/walkthrough.md`) | lead | Drafted, for Nishanth's review |
+| 5 | Video and OpenAI usage screenshot | Nishanth | Pending |
