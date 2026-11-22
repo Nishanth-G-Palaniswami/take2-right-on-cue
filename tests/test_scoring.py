@@ -423,8 +423,10 @@ def test_diagnostic_flags() -> None:
 STRUCTURE_FAILURE_ALLOWLIST: frozenset[str] = frozenset()
 # Pinned counts of committed `ok` replies: (non-empty, empty). Empty replies fail the
 # single-turn check by definition (shown as "(empty reply)" under option B), so they
-# are counted here and not asserted on. Total as of run 20261121T202643Z-96f2fa: 76.
-COMMITTED_OK_REPLIES = (76, 0)
+# are counted here and not asserted on. Updated once for both holdout runs
+# (20261122T024715Z-182705, 20261122T024845Z-8babdd), combined, so per-run counts
+# stay hidden until the holdout labels are committed.
+COMMITTED_OK_REPLIES = (123, 0)
 
 
 def committed_ok_counts(files: list[Path], allowlist: frozenset[str]) -> tuple[int, int]:
