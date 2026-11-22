@@ -35,10 +35,23 @@ PARAMS_NOTE = (
 )
 
 
+PARAMS_NOTE_CAPPED = (
+    "Only model, instructions, input, reasoning.effort and max_output_tokens are "
+    "sent. max_output_tokens caps the reply including reasoning tokens; a reply "
+    "that reaches it comes back with status incomplete. Every other generation "
+    "parameter (temperature, store, ...) is left to the API defaults."
+)
+
+
 def build_request(
-    prompt_text: str, turns: list[Turn], model: str, reasoning_effort: str
+    prompt_text: str,
+    turns: list[Turn],
+    model: str,
+    reasoning_effort: str,
+    max_output_tokens: int | None = None,
 ) -> dict[str, Any]:
-    return {
+    """The Responses API request. Without a cap it is exactly as before."""
+    request: dict[str, Any] = {
         "model": model,
         "instructions": prompt_text,
         "input": [
@@ -46,6 +59,9 @@ def build_request(
         ],
         "reasoning": {"effort": reasoning_effort},
     }
+    if max_output_tokens is not None:
+        request["max_output_tokens"] = max_output_tokens
+    return request
 
 
 def client_settings(client: Any) -> dict[str, Any]:

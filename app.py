@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import html
+import math
 import os
 from typing import Any
 
 import streamlit as st
 
-from rightoncue import gemini, openai_responses, review, scoring
+from rightoncue import budget, gemini, live, openai_responses, review, scoring
 from rightoncue.transcript import parse_transcript
 
 # The judge prompt paths are relative to the repository root.
@@ -19,6 +20,7 @@ st.set_page_config(page_title="Right on Cue", layout="wide", initial_sidebar_sta
 JUDGE = scoring.DEFAULT_JUDGE_VERSION
 DEFAULT_SELECTION = {"case": "H3", "prompt": "v2", "sample": "1"}
 MUTED = "#6b7280"
+DRY_RUN_BANNER = "Dry run: no model was called; replies and scores are placeholders."
 
 # ------------------------------------------------------------------------- helpers
 
@@ -179,6 +181,7 @@ def render_comparison() -> None:
     case = next(c for c in view.cases if c.case_id == case_id)
 
     render_conversation(case)
+    st.markdown(badge("blue", f"Saved example · run {view.run_id}"))
     st.markdown("##### What each model said next")
     para(
         f"Prompt {prompt} · sample {sample} · run {view.run_id} · verdicts from {JUDGE}",
@@ -311,18 +314,259 @@ def render_method() -> None:
 
 # ----------------------------------------------------------------- view 3: live mode
 
+HOSTED_OFF = (
+    "Live evaluation is not available in this hosted replay. Run the app locally "
+    "with your own API keys to generate and score new replies: `uv sync`, then "
+    "`uv run streamlit run app.py`."
+)
+LIVE_CONFIG_ERROR = (
+    "Live runs are unavailable: this server's live-mode configuration is invalid. "
+    "The saved comparison is unaffected."
+)
+LIVE_LEDGER_ERROR = (
+    "Live runs are unavailable: this server's spending records can't be read or "
+    "written, so no paid call is allowed. The saved comparison is unaffected."
+)
+FRESH_LABEL = "Fresh run: generated just now, not part of the saved evaluation"
+BUSY = "Another run is in progress, try again shortly."
+INTERRUPTED = (
+    "This run was interrupted before it finished (the page was changed while it ran). "
+    "Replies not generated or scored are shown as missing or unscored."
+)
+LIVE_UNEXPECTED_ERROR = (
+    "The run stopped on an unexpected error. Its details are in the server log; any "
+    "call already made is counted against the cap."
+)
+fmt_usd = budget.fmt_usd
+
 
 def render_live() -> None:
-    if review.hosted():
+    """Config is read here, never at the top of the script: a bad live setting must
+    not take the saved comparison down."""
+    if os.environ.get(review.HOSTED_ENV, "") in ("", "0"):
+        review.load_env()  # locally, .env may hold RIGHTONCUE_* too; never in hosted mode
+    try:
+        cfg = live.load_config(os.environ)
+    except live.ConfigError as exc:
+        if os.environ.get(review.HOSTED_ENV, "") in ("", "0"):
+            st.error(f"Live mode configuration error: {exc}")  # local: the owner's machine
+        else:
+            live.log_once(f"live mode unavailable: {exc}")
+            st.error(LIVE_CONFIG_ERROR)
+        return
+    if cfg.hosted:
+        render_hosted_live(cfg)
+    else:
+        render_local_live(cfg)
+
+
+def render_run_cards(view: review.RunView) -> None:
+    for case in view.cases:
+        st.markdown(f"##### Case {case.case_id}")
+        render_conversation(case)
+        cols = st.columns(len(view.models), gap="medium")
+        for col, info in zip(cols, view.models):
+            with col:
+                for card in case.cards[info.requested]:
+                    para(f"Sample {card.sample_index}", size="0.8rem", muted=True)
+                    render_card(card)
+
+
+def _scored_view(run_dir: Any, scores_path: Any) -> review.RunView:
+    has = scores_path.exists() and JUDGE in review.judge_versions_in(
+        scoring.read_score_records(scores_path)
+    )
+    return review.load_run_view(run_dir, scores_path, JUDGE if has else None)
+
+
+def _spend_line(cfg: live.LiveConfig, ledger: Any) -> str:
+    simulated = "Simulated spend (dry run)" if cfg.dry_run else "Spend"
+    return f"{simulated}: {fmt_usd(ledger.spend())} of the {fmt_usd(ledger.limit_nano)} cap."
+
+
+# ------------------------------------------------------------------ hosted live
+
+
+def render_hosted_live(cfg: live.LiveConfig) -> None:
+    problems = live.hosted_problems(cfg, os.environ)
+    if problems:
+        live.log_once("hosted live mode unavailable: " + "; ".join(problems))
+        st.info(HOSTED_OFF)
+        return
+    try:
+        ledger = live.open_ledger(cfg)
+        remaining = ledger.remaining()
+    except (live.LedgerError, live.ConfigError, OSError) as exc:
+        live.log_once(f"hosted live mode unavailable: {exc}")
+        st.error(LIVE_LEDGER_ERROR)
+        return
+    st.markdown("### Run it yourself")
+    if remaining <= 0:
+        st.error("Live runs: budget exhausted. The saved comparison is still open to everyone.")
+        return
+    st.caption("Live runs: budget available.")
+    if not st.session_state.get("hl_unlocked"):
+        render_gate(cfg)
+        return
+    try:
+        render_hosted_form(cfg, ledger)
+    except Exception as exc:  # never let provider text or a traceback reach the page
+        live.log.exception("hosted live run failed: %s", type(exc).__name__)
+        st.error(LIVE_UNEXPECTED_ERROR)
+
+
+def render_gate(cfg: live.LiveConfig) -> None:
+    st.caption("Fresh runs call paid models, so they need the access code from the owner.")
+    wait = live.gate_wait_s()
+    with st.form("hl_gate", clear_on_submit=True):
+        entered = st.text_input("Access code", type="password")
+        submitted = st.form_submit_button("Unlock", disabled=wait > 0)
+    if wait > 0:
+        st.warning(f"Too many wrong codes. Try again in {math.ceil(wait)} seconds.")
+        return
+    if not submitted:
+        return
+    result = live.try_unlock(entered, cfg.access_code)
+    del entered
+    if result == "unlocked":
+        st.session_state["hl_unlocked"] = True
+        st.rerun()
+    elif result == "cooldown":
+        st.warning(f"Too many wrong codes. Try again in {math.ceil(live.gate_wait_s())} seconds.")
+    elif result == "wrong":
+        st.error("That code is not right.")
+
+
+def _editable_input(
+    label: str, files: dict[str, Any], key: str, pasted: Any, height: int
+) -> Any:
+    """Start from a committed file, then edit freely. Unchanged text keeps the file."""
+    picked = st.selectbox(f"{label}: start from", list(files), key=f"{key}_src")
+    original = review.read_input(files[picked])
+    text = st.text_area(
+        f"{label} (edit freely)", value=original.text, key=f"{key}_text_{picked}", height=height
+    )
+    return original if text == original.text else pasted(text)
+
+
+def render_hosted_form(cfg: live.LiveConfig, ledger: Any) -> None:
+    counter = st.session_state.setdefault("hl_n", 0)
+    st.caption(
+        f"Settings fixed on this site: OpenAI reasoning effort {live.HOSTED_REASONING_EFFORT}, "
+        f"Gemini thinking {live.HOSTED_THINKING_LEVEL}, each reply capped at "
+        f"{live.OUTPUT_CAP} output tokens, scored by {JUDGE}."
+    )
+    st.caption(_spend_line(cfg, ledger))
+    prompt_file = _editable_input(
+        "Prompt", {f"prompts/{p.name}": p for p in review.list_prompt_files()}, "hl_prompt",
+        review.pasted_prompt, 200,
+    )
+    case_file = _editable_input(
+        "Transcript", {f"{p.parent.name}/{p.name}": p for p in review.list_case_files()}, "hl_case",
+        review.pasted_case, 160,
+    )
+    c1, c2 = st.columns([3, 1])
+    models = c1.multiselect(
+        "Models", list(review.MODEL_CHOICES), default=["gpt-5.4-mini"], key="hl_models"
+    )
+    samples = int(c2.number_input("Samples per model", 1, cfg.max_samples, 1, key="hl_samples"))
+    errors = live.validate_run(prompt_file.text, case_file.text, models, samples, cfg.max_samples)
+    for e in errors:
+        st.error(e)
+    can_run = not errors
+    if can_run:
+        proj = live.project_run(prompt_file, case_file, models, samples)
+        remaining = ledger.remaining()
         st.info(
-            "Live evaluation is not available in this hosted replay. Run the app locally "
-            "with your own API keys to generate and score new replies: `uv sync`, then "
-            "`uv run streamlit run app.py`."
+            f"This run makes {proj.generation_calls} generation call(s) and up to "
+            f"{proj.judge_calls} judge call(s). Projected maximum cost: "
+            f"{fmt_usd(proj.total_nano)}; budget remaining: {fmt_usd(remaining)}."
+        )
+        if proj.total_nano > remaining:
+            st.error(
+                "This run's projected maximum cost is more than the remaining budget. "
+                "Choose fewer models or samples."
+            )
+            can_run = False
+    confirmed = st.checkbox(
+        "I understand this run makes paid API calls, counted against the shared cap.",
+        key=f"hl_confirm_{counter}",
+    )
+    if st.button("Generate and score", disabled=not (can_run and confirmed), key="hl_run"):
+        progress = st.empty()
+        done: list[str] = []
+
+        def on_slot(rec: dict[str, Any]) -> None:
+            done.append(rec["status"])
+            progress.caption(f"{len(done)} of {len(models) * samples} replies attempted")
+
+        def on_start(run_id: str) -> None:  # before the first paid call
+            st.session_state["hl_run_id"] = run_id
+            st.session_state["hl_messages"] = [INTERRUPTED]
+            st.session_state["hl_n"] = counter + 1
+
+        try:
+            with st.spinner("Generating and scoring..."):
+                outcome = live.run_fresh(
+                    cfg, prompt_file, case_file, models, samples, on_slot=on_slot, on_start=on_start
+                )
+        except live.RunBusy:
+            st.warning(BUSY)
+        except live.BudgetExceeded as exc:
+            st.error(str(exc))
+        except live.LedgerError as exc:
+            live.log_once(f"hosted live run stopped: {exc}")
+            st.error(LIVE_LEDGER_ERROR)
+        except live.RunInputError as exc:  # our own validation only; any other
+            st.error(str(exc))  # ValueError (an SDK ValidationError) gets the generic message
+        else:
+            st.session_state["hl_run_id"] = outcome.run_id
+            st.session_state["hl_messages"] = outcome.messages
+            st.session_state["hl_n"] = counter + 1
+            st.rerun()  # redraw with the settled spend and a fresh confirmation box
+    run_id = st.session_state.get("hl_run_id")
+    if run_id is None:
+        return
+    st.divider()
+    st.info(f"{FRESH_LABEL} · run {run_id}")
+    if cfg.dry_run:
+        st.caption("Dry run: these replies and scores are placeholders; the spend is simulated.")
+    for message in st.session_state.get("hl_messages", []):
+        st.warning(message)
+    view = _scored_view(cfg.runs_dir / run_id, review.scores_path_for(run_id, cfg.scores_dir))
+    review.redact_provider_errors(view)
+    st.caption(
+        f"A reply that reached the {live.OUTPUT_CAP}-token cap is shown as incomplete "
+        "(an operational failure)."
+    )
+    render_run_cards(view)
+
+
+# ------------------------------------------------------------------- local live
+
+
+def render_local_live(cfg: live.LiveConfig) -> None:
+    """Local mode. Without a budget and without dry run: exactly as before. With a
+    budget (or in dry run, which needs one): capped, no-retry, guarded clients."""
+    guarded = cfg.budget_nano is not None or cfg.dry_run
+    if cfg.dry_run and cfg.budget_nano is None:
+        st.error(
+            f"Dry run needs {live.BUDGET_ENV}: simulated spend is counted against it "
+            f"in {live.DRY_RUN_LEDGER_FILE}."
         )
         return
+    ledger = None
+    if guarded:
+        try:
+            ledger = live.open_ledger(cfg)
+        except (live.LedgerError, OSError) as exc:
+            st.error(f"Live runs are disabled: {exc}")
+            return
     review.load_env()
     st.markdown("### Run an evaluation with your own keys")
     st.caption("Generation and scoring are paid API calls billed to your keys.")
+    if ledger is not None:
+        st.caption(f"{_spend_line(cfg, ledger)} Ledger: {ledger.path.as_posix()}")
     counter = st.session_state.setdefault("live_n", 0)
 
     st.markdown("**Prompt**")
@@ -380,7 +624,7 @@ def render_live() -> None:
     for provider in (openai_responses.PROVIDER, gemini.PROVIDER):
         present = "present" if review.key_present(provider) else "not set"
         st.caption(f"{review.key_env(provider)}: {present}")
-    blocked = review.blocked_models(models)
+    blocked = {} if cfg.dry_run else review.blocked_models(models)
     for model, why in blocked.items():
         st.error(
             f"{model}: {why}, so generation is disabled for it. "
@@ -388,15 +632,29 @@ def render_live() -> None:
         )
 
     calls = review.generation_calls(models, samples)
-    st.info(
-        f"Generating makes {calls} paid call(s) to the selected models (no output cap). "
-        f"Scoring afterwards makes up to {calls} judge calls to {scoring.JUDGE_MODEL}."
-    )
+    over_budget = False
+    if ledger is None:
+        st.info(
+            f"Generating makes {calls} paid call(s) to the selected models (no output cap). "
+            f"Scoring afterwards makes up to {calls} judge calls to {scoring.JUDGE_MODEL}."
+        )
+    elif models and not errors:
+        proj = live.project_run(prompt_file, case_file, models, samples, effort, thinking)
+        remaining = ledger.remaining()
+        st.info(
+            f"Generating makes {calls} paid call(s), each capped at {live.OUTPUT_CAP} output "
+            f"tokens. Scoring afterwards makes up to {calls} judge calls to "
+            f"{scoring.JUDGE_MODEL}. Projected maximum cost: {fmt_usd(proj.total_nano)}; "
+            f"budget remaining: {fmt_usd(remaining)}."
+        )
+        over_budget = proj.total_nano > remaining
+        if over_budget:
+            st.error("The projected maximum cost is more than the remaining budget.")
     confirmed = st.checkbox(
         f"I understand this makes {calls} paid API call(s) with my own keys.",
         key=f"live_confirm_gen_{counter}",
     )
-    can_generate = bool(models) and not blocked and not errors and confirmed
+    can_generate = bool(models) and not blocked and not errors and confirmed and not over_budget
     if st.button("Generate", disabled=not can_generate, key="live_generate"):
         progress = st.empty()
         done: list[str] = []
@@ -405,35 +663,40 @@ def render_live() -> None:
             done.append(rec["status"])
             progress.caption(f"{len(done)} of {calls} replies attempted")
 
-        try:
-            run_dir, result = review.generate(
-                prompt_file, case_file, models, samples, effort, thinking, on_slot=on_slot
-            )
-        except ValueError as exc:
-            st.error(str(exc))
+        if ledger is None:
+            try:
+                run_dir, result = review.generate(
+                    prompt_file, case_file, models, samples, effort, thinking, on_slot=on_slot
+                )
+            except ValueError as exc:
+                st.error(str(exc))
+            else:
+                st.session_state["live_run_id"] = run_dir.name
+                st.session_state["live_n"] = counter + 1
+                if result.abort_message:
+                    st.error(result.abort_message)
         else:
-            st.session_state["live_run_id"] = run_dir.name
-            st.session_state["live_n"] = counter + 1
-            if result.abort_message:
-                st.error(result.abort_message)
+            _local_guarded_generate(
+                cfg, ledger, prompt_file, case_file, models, samples, effort, thinking, on_slot, counter
+            )
 
     run_id = st.session_state.get("live_run_id")
     if run_id is None:
         return
     st.divider()
     st.markdown(f"### Run {run_id}")
-    st.caption(f"Saved to runs/{run_id}; scores go to scores/{run_id}.jsonl.")
-    run_dir = review.RUNS_DIR / run_id
-    scores_path = review.scores_path_for(run_id)
+    if ledger is None:  # unguarded: exactly as the CLI
+        st.caption(f"Saved to runs/{run_id}; scores go to scores/{run_id}.jsonl.")
+        run_dir = review.RUNS_DIR / run_id
+        scores_path = review.scores_path_for(run_id)
+    else:  # guarded (budget or dry run): the data directory, never the committed folders
+        run_dir = cfg.runs_dir / run_id
+        scores_path = review.scores_path_for(run_id, cfg.scores_dir)
+        st.caption(f"Saved to {run_dir.as_posix()}; scores go to {scores_path.as_posix()}.")
 
-    def has_scores() -> bool:
-        return scores_path.exists() and JUDGE in review.judge_versions_in(
-            scoring.read_score_records(scores_path)
-        )
-
-    view = review.load_run_view(run_dir, scores_path, JUDGE if has_scores() else None)
+    view = _scored_view(run_dir, scores_path)
     needed = review.judge_calls_needed(view)
-    has_key = review.key_present(openai_responses.PROVIDER)
+    has_key = cfg.dry_run or review.key_present(openai_responses.PROVIDER)
     if needed and not has_key:
         st.error(f"{review.key_env(openai_responses.PROVIDER)} is not set, so scoring is disabled.")
     st.info(f"Scoring makes {needed} paid judge call(s) to {scoring.JUDGE_MODEL}.")
@@ -443,21 +706,60 @@ def render_live() -> None:
     )
     if st.button(f"Score with {JUDGE}", disabled=not (needed and has_key and ok), key="live_score"):
         try:
-            review.score_run(run_dir, JUDGE)
+            if ledger is None:
+                review.score_run(run_dir, JUDGE)
+            else:
+                _local_guarded_score(cfg, ledger, run_dir)
         except ValueError as exc:  # ScoringInputError is a ValueError
+            st.error(str(exc))
+        except (live.BudgetExceeded, live.LedgerError, live.RunBusy) as exc:
             st.error(str(exc))
         else:
             st.session_state["live_n"] += 1
-            view = review.load_run_view(run_dir, scores_path, JUDGE)
-    for case in view.cases:
-        st.markdown(f"##### Case {case.case_id}")
-        render_conversation(case)
-        cols = st.columns(len(view.models), gap="medium")
-        for col, info in zip(cols, view.models):
-            with col:
-                for card in case.cards[info.requested]:
-                    para(f"Sample {card.sample_index}", size="0.8rem", muted=True)
-                    render_card(card)
+        view = _scored_view(run_dir, scores_path)
+    render_run_cards(view)
+
+
+def _local_guarded_generate(
+    cfg: live.LiveConfig, ledger: Any, prompt_file: Any, case_file: Any, models: list[str],
+    samples: int, effort: str, thinking: str, on_slot: Any, counter: int,
+) -> None:
+    lock = live.run_lock()
+    if not lock.acquire(blocking=False):
+        st.warning(BUSY)
+        return
+    run_id = live.new_run_id()
+    try:
+        gen, _ = live.guarded_clients(cfg, ledger, review.providers_for(models))
+        _, result = review.generate(
+            prompt_file, case_file, models, samples, effort, thinking,
+            runs_dir=cfg.runs_dir, on_slot=on_slot,
+            clients=gen, max_output_tokens=live.OUTPUT_CAP,
+            gemini_retry_options=gemini.NO_RETRY_OPTIONS, run_id=run_id,
+        )
+    except live.BudgetExceeded as exc:
+        st.error(f"Generation stopped: {exc}")
+    except (live.LedgerError, ValueError) as exc:
+        st.error(str(exc))
+    else:
+        if result.abort_message:
+            st.error(result.abort_message)
+    finally:
+        lock.release()
+    if (cfg.runs_dir / run_id).is_dir():
+        st.session_state["live_run_id"] = run_id
+        st.session_state["live_n"] = counter + 1
+
+
+def _local_guarded_score(cfg: live.LiveConfig, ledger: Any, run_dir: Any) -> None:
+    lock = live.run_lock()
+    if not lock.acquire(blocking=False):
+        raise live.RunBusy(BUSY)
+    try:
+        _, judge = live.guarded_clients(cfg, ledger, [])
+        review.score_run(run_dir, JUDGE, scores_dir=cfg.scores_dir, client=judge)
+    finally:
+        lock.release()
 
 
 # ---------------------------------------------------------------------------- page
@@ -467,6 +769,8 @@ st.html(
     " h1{font-size:2.1rem !important;padding-bottom:0.25rem !important}</style>"
 )
 st.title("Right on Cue")
+if os.environ.get(live.DRY_RUN_ENV) == "1":
+    st.warning(DRY_RUN_BANNER)
 st.caption(
     "Three AI models answer the same recruiter phone-screen moment. A frozen LLM judge "
     "and a human reviewer each give a verdict."

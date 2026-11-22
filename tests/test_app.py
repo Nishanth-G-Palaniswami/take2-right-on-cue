@@ -27,6 +27,9 @@ def offline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv(review.HOSTED_ENV, raising=False)
+    for name in ("RIGHTONCUE_ACCESS_CODE", "RIGHTONCUE_BUDGET_USD", "RIGHTONCUE_DATA_DIR",
+                 "RIGHTONCUE_MAX_SAMPLES", "RIGHTONCUE_DRY_RUN", "RIGHTONCUE_DRY_RUN_DELAY_S"):
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(review, "load_env", lambda: None)  # never read the real .env
 
     def boom() -> Any:

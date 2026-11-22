@@ -162,6 +162,8 @@ class Card:
     neutral_id: str | None = None  # the holdout review's ID for this reply
     human_accept: bool | None = None  # the owner's accept (True) / reject (False)
     critical_findings: list[CriticalFinding] = field(default_factory=list)
+    error_type: str | None = None  # a failed generation's error type and HTTP status
+    error_status: int | None = None
 
     @property
     def operational_failure(self) -> bool:
@@ -319,7 +321,10 @@ def _build_card(
         err = slot.get("error")
         if err:
             note += f" {err.get('type')}: {err.get('message')}"
-        return Card(case_id, model, idx, status, slot_key, reported_model=reported, note=note)
+        card = Card(case_id, model, idx, status, slot_key, reported_model=reported, note=note)
+        if err:
+            card.error_type, card.error_status = err.get("type"), err.get("status_code")
+        return card
     if status != "ok":
         raise ValueError(f"slot {slot.get('slot_key')} has unknown status {status!r}")
     text = slot.get("output_text")
@@ -465,10 +470,20 @@ def generate(
     thinking_level: str,
     runs_dir: Path | None = None,
     on_slot: Callable[[dict[str, Any]], None] | None = None,
+    *,
+    clients: dict[str, Any] | None = None,
+    max_output_tokens: int | None = None,
+    gemini_retry_options: dict[str, Any] | None = None,
+    run_id: str | None = None,
 ) -> tuple[Path, RunResult]:
     """Create a run under `runs_dir` and generate every reply, with the existing runner.
 
     Raises ValueError for invalid input or a missing key, before any client exists.
+    `clients` (provider -> client) replaces the key check and CLIENT_FACTORIES; the
+    caller is then responsible for them (the spending guard, dry run).
+    `max_output_tokens` caps every reply (recorded in the manifest);
+    `gemini_retry_options` is what the given Gemini client was built with, for the
+    manifest. Without these the run is exactly as before.
     """
     runs_dir = runs_dir or RUNS_DIR
     if not models:
@@ -480,8 +495,13 @@ def generate(
     if (msg := transcript_error(case.text)) is not None:
         raise ValueError(f"transcript {msg}")
     providers = providers_for(models)
-    _require_keys(providers)
-    clients = {p: CLIENT_FACTORIES[p]() for p in providers}
+    if clients is None:
+        _require_keys(providers)
+        clients = {p: CLIENT_FACTORIES[p]() for p in providers}
+    else:
+        missing = [p for p in providers if p not in clients]
+        if missing:
+            raise ValueError(f"no client for provider(s): {', '.join(missing)}")
     specs: list[ModelSpec] = []
     for model in models:
         provider = provider_for(model)
@@ -495,10 +515,13 @@ def generate(
         else:
             specs.append(
                 ModelSpec(
-                    model, provider, {"thinking_level": thinking_level}, gemini.client_settings()
+                    model, provider, {"thinking_level": thinking_level},
+                    gemini.client_settings(gemini_retry_options),
                 )
             )
-    run_dir, manifest = create_run(runs_dir, new_run_id(), prompt, [case], specs, samples)
+    run_dir, manifest = create_run(
+        runs_dir, run_id or new_run_id(), prompt, [case], specs, samples, max_output_tokens
+    )
     result = run_slots(clients, run_dir, manifest, on_slot=on_slot)
     return run_dir, result
 
@@ -518,15 +541,31 @@ def score_run(
     judge_version: str = scoring.DEFAULT_JUDGE_VERSION,
     scores_dir: Path | None = None,
     on_outcome: Callable[[scoring.Outcome], None] | None = None,
+    *,
+    client: Any | None = None,
 ) -> tuple[scoring.ScoringPlan, scoring.ScoringResult]:
-    """Score a run with the existing scorer. Needs OPENAI_API_KEY when a call is needed."""
+    """Score a run with the existing scorer. Needs OPENAI_API_KEY when a call is needed,
+    unless a judge `client` is given (the spending guard, dry run)."""
     judge = scoring.load_judge_prompt(judge_version)
     plan = scoring.plan_scoring(run_dir, scores_dir or SCORES_DIR, NOTES_PATH, judge)
-    client: Any | None = None
-    if plan.calls_needed:
+    if plan.calls_needed and client is None:
         _require_keys([openai_responses.PROVIDER])
         client = CLIENT_FACTORIES[openai_responses.PROVIDER]()
-    return plan, scoring.execute_plan(plan, client, on_outcome=on_outcome)
+    return plan, scoring.execute_plan(plan, client if plan.calls_needed else None, on_outcome=on_outcome)
+
+
+def redact_provider_errors(view: RunView) -> None:
+    """For a public page: keep only the error type and HTTP status on failed cards, and
+    replace judge-failure reasons. Provider error text can echo request details (an
+    OpenAI 401 names a masked key fragment)."""
+    for card in view.all_cards():
+        if card.state in ("generation_failed", "incomplete"):
+            card.note = _STATE_NOTE[card.state]
+            if card.error_type:
+                status = f" (HTTP {card.error_status})" if card.error_status else ""
+                card.note += f" {card.error_type}{status}."
+        if card.decision == "judge failed":
+            card.reasons = ["The judge call failed; the details are in the server's score file."]
 
 
 # ------------------------------------------------------------- holdout human review

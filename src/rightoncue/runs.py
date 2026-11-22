@@ -69,13 +69,15 @@ class ModelSpec:
 
 
 def _build_request(spec: ModelSpec, prompt_text: str, turns: list[Turn]) -> dict[str, Any]:
+    """One model's request; settings["max_output_tokens"], when present, caps it."""
+    cap = spec.settings.get("max_output_tokens")
     if spec.provider == openai_responses.PROVIDER:
         return openai_responses.build_request(
-            prompt_text, turns, spec.model, spec.settings["reasoning_effort"]
+            prompt_text, turns, spec.model, spec.settings["reasoning_effort"], cap
         )
     if spec.provider == gemini.PROVIDER:
         return gemini.build_request(
-            prompt_text, turns, spec.model, spec.settings["thinking_level"]
+            prompt_text, turns, spec.model, spec.settings["thinking_level"], cap
         )
     raise ValueError(f"unknown provider {spec.provider!r}")
 
@@ -135,10 +137,27 @@ def create_run(
     cases: list[InputFile],
     models: list[ModelSpec],
     samples: int,
+    max_output_tokens: int | None = None,
 ) -> tuple[Path, dict[str, Any]]:
-    """Write manifest.json (schema 2, before any API call); return (run_dir, manifest)."""
+    """Write manifest.json (schema 2, before any API call); return (run_dir, manifest).
+
+    `max_output_tokens` (default None: requests and manifest exactly as before) caps
+    every model's reply. It is recorded in each model's settings (and so in every
+    slot record), in every request and in the generation parameters note.
+    """
     if not models:
         raise ValueError("at least one model is required")
+    if max_output_tokens is not None:
+        if type(max_output_tokens) is not int or max_output_tokens <= 0:
+            raise ValueError(
+                f"max_output_tokens must be a positive integer, got {max_output_tokens!r}"
+            )
+        if any("max_output_tokens" in m.settings for m in models):
+            raise ValueError("max_output_tokens is set both as a parameter and in a model's settings")
+        models = [
+            ModelSpec(m.model, m.provider, {**m.settings, "max_output_tokens": max_output_tokens}, m.client)
+            for m in models
+        ]
     names = [m.model for m in models]
     if len(set(names)) != len(names):
         raise ValueError(f"duplicate model in {names}")
@@ -194,7 +213,10 @@ def create_run(
             for m in models
         ],
         "samples_per_case": samples,
-        "generation_params_note": {p: PROVIDERS[p].PARAMS_NOTE for p in providers},
+        "generation_params_note": {
+            p: PROVIDERS[p].PARAMS_NOTE if max_output_tokens is None else PROVIDERS[p].PARAMS_NOTE_CAPPED
+            for p in providers
+        },
     }
     _write_json(run_dir / "manifest.json", manifest)
     return run_dir, manifest

@@ -23,6 +23,9 @@ def offline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv(review.HOSTED_ENV, raising=False)
+    for name in ("RIGHTONCUE_ACCESS_CODE", "RIGHTONCUE_BUDGET_USD", "RIGHTONCUE_DATA_DIR",
+                 "RIGHTONCUE_MAX_SAMPLES", "RIGHTONCUE_DRY_RUN", "RIGHTONCUE_DRY_RUN_DELAY_S"):
+        monkeypatch.delenv(name, raising=False)
 
     def boom() -> Any:
         raise AssertionError("a real client must not be built in an offline test")

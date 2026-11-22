@@ -1,5 +1,9 @@
 # Right on Cue: hosted, no-key replay of the saved runs (Streamlit).
 # Render builds this from the repo and sets PORT. No API key is baked in or needed.
+# Live runs ("Run it yourself") stay off unless the HOST sets all of:
+# RIGHTONCUE_ACCESS_CODE, RIGHTONCUE_BUDGET_USD, RIGHTONCUE_DATA_DIR (a persistent
+# disk), OPENAI_API_KEY and GEMINI_API_KEY. Nothing here sets them, and
+# RIGHTONCUE_DRY_RUN is never set in the image.
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

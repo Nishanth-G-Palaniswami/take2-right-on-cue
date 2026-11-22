@@ -26,9 +26,52 @@ The app opens on `http://localhost:8501` (use `--server.port` to change it). It 
 
 **With your own keys (the "Run it yourself" tab).** You can pick or paste a prompt and a transcript, choose models, samples (1 to 5), OpenAI reasoning effort and Gemini thinking level, generate replies, then score them with judge-v1. Put `OPENAI_API_KEY` and/or `GEMINI_API_KEY` in the environment or in `.env`; the app shows only whether each key is present. **Generation and scoring cost money.** The app shows the number of calls and asks for a confirmation checkbox before each. A model whose key is missing can't be generated.
 
-New runs are written to `runs/<run_id>/` (a pasted prompt or transcript is recorded as `pasted/prompt.md` or `pasted/transcript.jsonl`), and scores to `scores/<run_id>.jsonl`, exactly as the command line does.
+In this plain local mode (no `RIGHTONCUE_BUDGET_USD`, no `RIGHTONCUE_DRY_RUN`), new runs are written to `runs/<run_id>/` and scores to `scores/<run_id>.jsonl`, exactly as the command line does. A pasted prompt or transcript is recorded as `pasted/prompt.md` or `pasted/transcript.jsonl`.
 
-Set `RIGHTONCUE_HOSTED=1` to turn live evaluation off entirely (for a public replay). The theme and the minimal toolbar are in `.streamlit/config.toml`.
+**Local mode with a spending cap.** Set `RIGHTONCUE_BUDGET_USD` locally and every generation and judge call goes through the spending ledger described below: replies are capped at 400 output tokens, clients make no hidden retries, and the projected maximum is shown before generating. Runs and scores then go to `<RIGHTONCUE_DATA_DIR>/runs/` and `<RIGHTONCUE_DATA_DIR>/scores/` (default: the git-ignored `data/`), never to the committed `runs/` and `scores/`. The same applies to a local dry run, which needs the budget too. Without a budget or dry run, local mode is exactly as above.
+
+| Mode | Fresh runs | Scores | Ledger |
+|---|---|---|---|
+| Local, no budget, no dry run | `runs/` | `scores/` | none |
+| Local with a budget | `<data>/runs/` | `<data>/scores/` | `<data>/ledger.jsonl` |
+| Local dry run (needs a budget) | `<data>/runs/` | `<data>/scores/` | `<data>/ledger.dry-run.jsonl` |
+| Hosted (live mode on) | `<data>/runs/` | `<data>/scores/` | `ledger.jsonl`, or `ledger.dry-run.jsonl` in dry run |
+
+`<data>` is `RIGHTONCUE_DATA_DIR`. Locally it defaults to `data/`; hosted mode requires it.
+
+**Hosted mode.** `RIGHTONCUE_HOSTED=1` serves the saved comparison to everyone. "Run it yourself" stays off (with a generic message; the reason goes to the server log) unless the host also sets the access code, the budget, the data directory and both keys. Then a reviewer enters the access code, starts from `prompts/v1.md` or `v2.md` and a case file (both editable in place), picks models and samples, and clicks "Generate and score". Fresh replies are scored by judge-v1 and shown as side-by-side cards labelled "Fresh run: generated just now, not part of the saved evaluation", with the run ID. The saved comparison is labelled "Saved example". The settings are fixed on the hosted site: OpenAI reasoning effort `none` and Gemini thinking `MINIMAL` (the measured settings), and each reply is capped at 400 output tokens. A reply that reaches the cap is shown as an incomplete operational failure. Provider error text is never shown on the public page; only the error type and HTTP status are.
+
+| Variable | Meaning |
+|---|---|
+| `RIGHTONCUE_HOSTED` | `1` hosted, `0` or unset local. Any other value is an error, and live mode stays off. |
+| `RIGHTONCUE_ACCESS_CODE` | The code reviewers enter. Server-side only: never shown, logged or stored in a session, and compared in constant time. Failed attempts are counted process-wide: after 5 wrong codes, nobody can try for 60 seconds. |
+| `RIGHTONCUE_BUDGET_USD` | The shared cap in USD across all reviewers' generation and judging, retries included (for example `5.00`). Required for hosted live runs; there is no default. Must be a positive number. |
+| `RIGHTONCUE_DATA_DIR` | Where fresh runs (`runs/`), their scores (`scores/`) and the ledger live. Required in hosted mode; locally the default is the git-ignored `data/`. It may not be the repository or inside the committed `runs/` or `scores/`. |
+| `RIGHTONCUE_MAX_SAMPLES` | Most samples per model in a hosted run, from 1 to 5. Default 2. |
+| `OPENAI_API_KEY`, `GEMINI_API_KEY` | Both required for hosted live runs. Read from the server environment only. |
+| `RIGHTONCUE_DRY_RUN` | `1` replaces every provider client with offline fakes: placeholder replies and valid judge-v1 judgments, with no network and no key. A banner on every page says "Dry run: no model was called; replies and scores are placeholders." The fakes go through the same guards with realistic token usage, so reservations and settlements are real amounts. They are written to `ledger.dry-run.jsonl`, never to the real ledger, and labelled "simulated". It needs `RIGHTONCUE_BUDGET_USD`. Never set it in the image or on the host. |
+| `RIGHTONCUE_DRY_RUN_DELAY_S` | Test hook, honoured only in dry run: each fake call sleeps this many seconds (0–600), so a container can be killed in the middle of a call. |
+
+**The cap has two layers.**
+1. **The in-app ledger**, `<RIGHTONCUE_DATA_DIR>/ledger.jsonl`. This is an append-only JSONL file, fsynced on every line.
+   - **Reservation.** Before every paid call, under a process-wide lock, the call's maximum cost is computed:
+     - input: the UTF-8 byte length of the request's canonical JSON times the input price;
+     - output: the 400-token cap (1500 for the judge) times the output price.
+
+     A `reserve` entry is appended only if the spend so far plus that maximum is within the budget. Otherwise the call is refused before any request.
+   - **Settlement.** After the call, a `settle` entry records the actual cost from the response's usage. It records the maximum when usage is missing or the call raised.
+   - **Spend.** Spend is the settled costs plus the maximum of every reservation without a settle entry, so a crash or kill mid-call counts the maximum, never $0.
+   - **Integrity.** A torn final line from a crash is ignored safely. Any other malformed line disables live runs with an explicit error.
+   - **Prices.** OpenAI prices are the PRD rates in `budget.py`. `gemini-3.5-flash` is reserved and settled at $1.50/M input and $7.50/M output, Google's 2027 paid-tier rate for `gemini-3.6-flash`, the model every saved Gemini reply reports. Output includes thinking tokens. Any other model is refused.
+   - **Up-front checks.** A run's projected maximum is shown before it starts, and the run is refused if the projection exceeds the remaining budget. One paid run runs at a time per process; a second reviewer is asked to try again shortly.
+   - **One process only.** The lock is in-process, so do not point two app processes at the same ledger.
+2. **Provider-side hard limit:** a dedicated OpenAI project with "Enforce a hard limit" on, as the backstop to the app's own accounting. The Gemini side's provider limit is not decided yet. `plan.md` assumes a key with no billing (free tier, $0), but the ledger prices Gemini as paid.
+
+**The ledger persists only on persistent storage.** Point `RIGHTONCUE_DATA_DIR` at a persistent disk (on Render, a disk mounted at for example `/var/data`; disks need a paid instance). On ephemeral storage, such as a free instance, the ledger, and with it the spend so far, resets on every restart or deploy.
+
+**No hidden retries.** Budgeted clients are built with `max_retries=0` (OpenAI) and one attempt (Gemini `HttpRetryOptions(attempts=1)`; `gemini.RETRY_OPTIONS` otherwise allows 3). Gemini's automatic continuation is turned off in capped requests, because each continuation hop is a separately billed request. The cap, the continuation setting and the retry settings are recorded in the run's manifest and requests. CLI runs and the saved runs are unchanged.
+
+The theme and the minimal toolbar are in `.streamlit/config.toml`.
 
 **Hosted replay in a container.** `docker build -t rightoncue:local .` then `docker run -p 127.0.0.1:3001:10000 -e PORT=10000 rightoncue:local` serves the no-key replay at `http://127.0.0.1:3001/` (the image sets `RIGHTONCUE_HOSTED=1` and excludes `.env` and `holdout-private/`). The deployment plan for `https://rightoncue.nishanthgp.me` is in `docs/hosting-plan.md`.
 
