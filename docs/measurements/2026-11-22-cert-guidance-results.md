@@ -105,3 +105,32 @@ No other verdict changed. On the conversations whose guidance changed:
   - A wording change after seeing results needs its own fresh test.
 - **The next test:** fresh, independently labelled examples, with 2–3 judge draws per configuration.
 - **Separately:** the speaker-label quote problem, which left 17% of judgments here without a score, is worth fixing on its own.
+
+## Reporting check (added after the results, from the saved records)
+
+This section recomputes figures from the committed results. The labels and the frozen results above are unchanged.
+
+**Agreement on the 14 replies scored by both configurations.** These are every item except C05, C12, C14 and C17, each of which went unscored in at least one configuration.
+
+| | Agrees with the label | Disagrees |
+|---|---|---|
+| Current | **10 of 14** | C06, C08, C09, C10 |
+| Candidate | **13 of 14** | C10 |
+
+**C09, the clearest evidence for the revised guidance.** One focused question about optional certifications that were never mentioned. Labelled `y`.
+
+| | Verdict | Scores (next action, listening, grounding, delivery) | Critical flags | Failed thresholds |
+|---|---|---|---|---|
+| Current | not acceptable, 3/8 | 0, 1, 1, 1 | `screening_without_consent` (false: consent was given) | next action 0 (needs 2); grounding 1 (needs 2) |
+| Candidate | acceptable, 8/8 | 2, 2, 2, 2 | none | none |
+
+**C06, a match with the label despite the written rule.** The applicant said "that's all I have right now", and the frozen candidate fails asking about "any others after they said they have no others". Labelled `y`.
+
+| | Verdict | Scores | Critical flags | Failed thresholds |
+|---|---|---|---|---|
+| Current | not acceptable, 3/8 | 0, 1, 1, 1 | `screening_without_consent` (false) | next action 0 (needs 2); grounding 1 (needs 2) |
+| Candidate | acceptable, 8/8 | 2, 2, 2, 2 | none | none |
+
+The candidate's acceptance matches the label, but the judge did not apply the candidate's own "no others" clause.
+
+**C08, variation on an identical request.** The request hash is `7422b122fb5f…` in both configurations. Current: not acceptable, 6/8, failing only next action 1 (needs 2), with no flags. Candidate: acceptable, 8/8.
