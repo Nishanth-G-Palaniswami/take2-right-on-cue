@@ -126,6 +126,29 @@ It ends with a summary per model and the judge calls and tokens used.
 - An invalid key, model or request (HTTP 400, 401, 403 or 404) stops scoring.
 - `score` exits 0 when every eligible reply has a valid score. It exits 1 if any reply needs review, a judge call failed, a slot has duplicate records, a saved record matches no expected slot, or scoring stopped. It exits 2 for input or configuration errors, and then no call is made.
 
+## Holdout blind review
+
+Offline tooling for the H1–H4 holdout (see `plan.md`, "Holdout evaluation"). No command calls an API. Every file is created once (write-once, LF, UTF-8 without BOM) and never rewritten; a command whose target exists refuses and changes nothing. No file is written inside a run folder or a directory of runs, and a `--json-out` report is refused inside `--scores-dir`. Before reveal, commands print only paths, counts and commitment hashes.
+
+Order of use:
+
+1. **Before generation:** `uv run next-turn pair-plan --case H1 --case H2 --case H3 --case H4 --model gpt-5.4 --model gpt-5.4-mini --model gemini-3.5-flash --prompt-version v2 --private-out <private plan> --commitment-out <commitment>`. It fixes the 12 v2 pairs (per case: M1 s1 vs M2 s1, M1 s2 vs M3 s1, M2 s2 vs M3 s2; each pairing's first model on the left in half the cases, drawn from OS randomness).
+   - The private plan holds the salt and the mapping.
+   - The commitment holds only the salted SHA-256, the formula, the models, the cases and the pair rule. Commit the commitment. The private plan may not sit in the same folder as the commitment.
+2. **After both runs are generated:** `uv run next-turn review-sheet --run <v1 run> --run <v2 run> --out <dir> --private-key <private key>`. It refuses unless both runs have the same cases and transcripts and every reply is complete, non-empty and saved exactly once.
+   - `<dir>/review_sheet.md` shows all 12 replies per case under neutral IDs (`H1-01` …), with no model, run, prompt or sample. Write `y` or `n` on each `Accept <ID>? (y/n):` line.
+   - The private key maps each neutral ID to its run, slot, prompt version, model, sample and text SHA-256, with its salt. It is refused inside `--out`.
+   - `<dir>/review_key_commitment.json` holds the salted hash, run IDs, case IDs and reply count, and no mapping.
+3. **After the review labels are committed:** `uv run next-turn pair-sheet --plan-private <private plan> --commitment <commitment> --run <v2 run> --out <dir> --review-sheet <dir>/review_sheet.md --review-commitment <dir>/review_key_commitment.json`. It verifies the plan against its commitment and the published pair rule, and checks the run's prompt version, models and cases. It refuses unless the review sheet carries the review commitment's hash, the review commitment covers the run, the sheet has one Accept line per committed reply, and every one is exactly `y` or `n`. If a pair's reply is unusable it reports only counts. `<dir>/pair_sheet.md` shows each pair's replies between `<<<<<<<< A >>>>>>>>` and `<<<<<<<< B >>>>>>>>` delimiters, with no model or sample, and a `Fingerprint:` line that ties the pair to the run's words. Write `A`, `B` or `tie` on the Choice line and a reason after `Reason:`; leave the delimiters and fingerprints unchanged.
+4. **After the pair choices are committed (reveal):**
+   - `uv run next-turn verify-commitment --private <private file> --commitment <commitment>` checks a plan or a key against its commitment (exit 0 verified, 1 not).
+   - `uv run next-turn pair-compare --plan <private plan> --commitment <commitment> --run <v2 run> --pair-sheet <pair sheet> [--json-out <path>]` compares the human A/B/tie with the raw judge-v1 verdicts, ranked by (clean, acceptable, total).
+   - `uv run next-turn review-compare --key <private key> --commitment <review commitment> --sheet <review sheet> [--json-out <path>]` compares the accept/reject labels with the judge per prompt and model, and per case.
+
+Both sheets carry their commitment hash, so the compare commands refuse a sheet made for a different plan or key. `pair-compare` also refuses a pair sheet whose fingerprints don't match the run's replies, or whose choices are all blank. It reports each pair's reason and how many chosen pairs have none. Both compare commands count a judge score only if it was made for the same words (the reply's text SHA-256). A sheet is refused at creation, with counts only, if any reply contains a line that looks like that sheet's reply delimiters.
+
+**Do not open the private plan or the private review key, or the run folders, before the labels they would reveal are committed.** Write the private files to `holdout-private/` (git-ignored), never to the review directory you open, and commit them only at reveal.
+
 ## Layout
 
 - `prompts/`: call prompts. `v1.md` is the starter prompt and is never edited. `v2.md` is the working prompt: v1 with one line changed (see `docs/measurements/2026-11-20-v2-d1-d4.md`).
