@@ -243,8 +243,8 @@ judge-v4 is deferred until the assessment comparison is complete (Nishanth, 2026
 | 1 | Blank case template for Nishanth | lead | Verified (sent 2026-11-21) |
 | 2 | Offline holdout tooling: pair plan with salted commitment, combined review sheet, pair sheet, commitment verification, automated A/B/tie and agreement, all tested with fixtures | complex-coder | Verified. Six commands in `src/rightoncue/holdout.py`; 353 tests |
 | 3 | Independent verification of item 2 | verifier | Verified. The first Opus pass FAILED: B1, a pre-reveal error that leaked a pair's side by inference; B2, a pair sheet not tied to its run; N1–N8. All were fixed. The second pass gave PASS: 28 mutations, all relevant ones killed. Open, non-blocking: N-new-1 (label IDs not matched to the committed neutral IDs) and N-new-2 (`pair-sheet --out` allowed in the private folder), to be fixed with D1. Owner decision pending, D1: how empty or failed replies are handled (currently refused). The delimiter look-alike refusal is decided with it |
-| 4 | H1–H4 transcripts and criteria | Nishanth | Pending |
-| 5 | Format checks (parse, notes load, offline suite), pre-registration and pair-plan commitment, committed before generation | lead | Pending |
+| 4 | H1–H4 transcripts and criteria | Nishanth | Verified. Committed in `b6166cf`: all four parse, the notes load, and D1–D4 are unchanged |
+| 5 | Format checks (parse, notes load, offline suite), pre-registration and pair-plan commitment, committed before generation | lead | Verified. 353 tests pass. Pre-registration in `docs/measurements/2026-11-21-holdout-preregistration.md`; pair-plan commitment `holdout/pair_plan_commitment.json` (sha256 `42e945ab…ec19`, verified). Still open before the go-ahead: D1, the cost-cap option, and fixes N-new-1 and N-new-2 |
 | 6 | Generation, v2 and v1 runs (only on Nishanth's go-ahead) | lead | Pending |
 | 7 | Labels: 48 individual, then 12 pairs | Nishanth | Pending |
 | 8 | Scoring, reveal and verification, report | lead | Pending |

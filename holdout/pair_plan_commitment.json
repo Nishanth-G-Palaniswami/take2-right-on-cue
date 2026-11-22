@@ -1,0 +1,19 @@
+{
+  "schema": "pair-plan-commitment-1",
+  "algorithm": "sha256((salt + \"\\n\" + canonical_json(plan)).encode(\"utf-8\")).hexdigest(), where canonical_json(obj) = json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(\",\", \":\"))",
+  "sha256": "42e945ab157d946dd48ff5679fbdea8e114d01b45f91fcba61a3bf5c0ebaec19",
+  "prompt_version": "v2",
+  "models": [
+    "gpt-5.4",
+    "gpt-5.4-mini",
+    "gemini-3.5-flash"
+  ],
+  "cases": [
+    "H1",
+    "H2",
+    "H3",
+    "H4"
+  ],
+  "pair_rule": "Per case, three pairs: (M1 sample 1 vs M2 sample 1), (M1 sample 2 vs M3 sample 1), (M2 sample 2 vs M3 sample 2), where M1, M2, M3 are the models in the order listed. Balance: for each pairing, the first-named model is on the left in exactly half of the cases, chosen with secrets.SystemRandom(), and on the right in the others. The order of the three pairs within a case is shuffled with secrets.SystemRandom(); pair IDs P01, P02, ... follow case order, then the shuffled pair order.",
+  "created_at": "2026-11-22T00:36:30.966899+00:00"
+}
