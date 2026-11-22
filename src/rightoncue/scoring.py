@@ -53,6 +53,11 @@ JUDGE_PROMPTS: dict[str, tuple[Path, str]] = {
         Path("prompts/judge-v3.md"),
         "f7128d53ee7fbd3c700a69869e1d581dbfecf323adaf467e8be165c35016850d",
     ),
+    # Experimental (2026-11-21): judge-v3 plus targeted next_action and consent wording.
+    "judge-v4": (
+        Path("prompts/judge-v4.md"),
+        "aa97b5c87d5b325b5870181222576798488aadbb31e651eb5d60d7539f00ad1c",
+    ),
 }
 # Judge prompt version -> scorer version: the output contract (schema, validation,
 # decision) a judge version is scored under. The scorer version is part of the
@@ -65,6 +70,7 @@ SCORER_VERSIONS: dict[str, str] = {
     "judge-v2a": "scorer-1",
     "judge-v2b": "scorer-1",
     "judge-v3": "scorer-2",
+    "judge-v4": "scorer-2",
 }
 if set(SCORER_VERSIONS) != set(JUDGE_PROMPTS):
     raise RuntimeError("every registered judge prompt version needs a scorer version")

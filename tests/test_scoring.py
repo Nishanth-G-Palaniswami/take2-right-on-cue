@@ -720,6 +720,7 @@ def test_registry_hashes_match_files_and_default_is_v1() -> None:
         "judge-v2a": "prompts/judge-v2a.md",
         "judge-v2b": "prompts/judge-v2b.md",
         "judge-v3": "prompts/judge-v3.md",
+        "judge-v4": "prompts/judge-v4.md",
     }
     assert REGISTRY["judge-v1"][1] == JUDGE_V1_SHA256
     assert REGISTRY["judge-v3"][1] == JUDGE_V3_SHA256
@@ -728,7 +729,10 @@ def test_registry_hashes_match_files_and_default_is_v1() -> None:
         "judge-v2a": "scorer-1",
         "judge-v2b": "scorer-1",
         "judge-v3": "scorer-2",
+        "judge-v4": "scorer-2",
     }
+    assert REGISTRY["judge-v4"][1] == "aa97b5c87d5b325b5870181222576798488aadbb31e651eb5d60d7539f00ad1c"
+    assert scoring.load_judge_prompt("judge-v4").scorer_version == "scorer-2"
     assert scoring.load_judge_prompt("judge-v1").scorer_version == "scorer-1"
     assert scoring.load_judge_prompt("judge-v3").scorer_version == "scorer-2"
     for version, (path, sha) in REGISTRY.items():
