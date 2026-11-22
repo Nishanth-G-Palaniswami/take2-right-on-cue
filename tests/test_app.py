@@ -202,7 +202,12 @@ def test_live_generate_and_score_with_fake_clients(tmp_path: Path, monkeypatch: 
     at = AppTest.from_file(APP, default_timeout=60)
     at.run()  # the holdout tab can't load from the empty tmp runs dir; live mode is what's tested
     at.multiselect(key="live_models").set_value(["gpt-5.4-mini", "gemini-3.5-flash"])
-    at.number_input(key="live_samples").set_value(1)
+    at.number_input(key="live_samples").set_value(1).run()
+    # keys present and input valid: only the unticked paid box keeps Generate disabled
+    assert not at.tabs[2].error
+    assert at.button(key="live_generate").label == "Generate"
+    assert at.button(key="live_generate").disabled
+    assert at.checkbox(key="live_confirm_gen_0").label == "I understand this makes 2 paid API call(s) with my own keys."
     at.checkbox(key="live_confirm_gen_0").set_value(True).run()
     assert not at.button(key="live_generate").disabled
     assert any("Generating makes 2 paid call(s)" in i.value for i in at.info)

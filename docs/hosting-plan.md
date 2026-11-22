@@ -103,6 +103,8 @@ Either way the saved comparison stays up.
 | Reviewer reloads mid-run | The abandoned run stopped after its in-flight call; a new session could start a run straight away (no stuck "in progress"). Ledger: 14 settled, 0 open |
 | Real ledger untouched by dry run | Only `ledger.dry-run.jsonl` existed on the volume |
 | Saved view, production settings | The replies heading sits at y=599 of 900 on a laptop, with no sideways scroll on desktop or mobile. A refresh keeps the view (3 of 3 reloads, about 1.3 s each) |
+| Dry-run labels (image from commit `2a14ae7`) | One three-model simulated run at desktop and mobile widths: no checkbox, "No API calls or charges", a "Simulate run" button, the result labelled "Simulated run", 3 cards reading "Simulated reply · Unscored", and no "judge-v1:" verdict or "/8" anywhere in the live tab. The workflow screenshots were retaken; the two cap-reached screenshots predate this and show the earlier banner wording |
+| Real mode keeps the paid wording (same image, real keys, nothing pressed) | The form shows "I understand this run makes paid API calls, counted against the shared cap." unticked and "Generate and score" disabled; the ledger file stayed empty |
 
 **Tests.** The offline suite passes (`uv run pytest -q`).
 

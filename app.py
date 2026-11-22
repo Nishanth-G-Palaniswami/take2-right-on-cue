@@ -680,11 +680,12 @@ def render_local_live(cfg: live.LiveConfig) -> None:
     elif models and not errors:
         proj = live.project_run(prompt_file, case_file, models, samples, effort, thinking)
         remaining = ledger.remaining()
+        simulated = "simulated " if cfg.dry_run else ""
         st.info(
             f"Generating makes {calls} {paid} call(s), each capped at {live.OUTPUT_CAP} output "
-            f"tokens. Scoring afterwards makes up to {calls} judge calls to "
+            f"tokens. Scoring afterwards makes up to {calls} {simulated}judge calls to "
             f"{scoring.JUDGE_MODEL}. Projected maximum cost: {fmt_usd(proj.total_nano)}; "
-            f"budget remaining: {fmt_usd(remaining)}."
+            f"{simulated}budget remaining: {fmt_usd(remaining)}."
         )
         over_budget = proj.total_nano > remaining
         if over_budget:
