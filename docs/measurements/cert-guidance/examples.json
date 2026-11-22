@@ -1,0 +1,188 @@
+{
+ "conversations": {
+  "P": [
+   {
+    "role": "agent",
+    "utterance": "Thanks, Dana. Before we go on, this call is recorded and shared with the Acme Health recruiting team. Is it all right if we continue?"
+   },
+   {
+    "role": "user",
+    "utterance": "Yes, that's fine."
+   },
+   {
+    "role": "agent",
+    "utterance": "Great. Do you hold an active Colorado RN license or an active multistate compact license?"
+   },
+   {
+    "role": "user",
+    "utterance": "My compact license is active. And before you ask, my BLS and ACLS are both current. I renewed them in March."
+   }
+  ],
+  "Q": [
+   {
+    "role": "agent",
+    "utterance": "Thanks for your permission to continue, Marcus. Is your RN license an active Colorado license or a multistate compact license?"
+   },
+   {
+    "role": "user",
+    "utterance": "Colorado, and it's active."
+   },
+   {
+    "role": "agent",
+    "utterance": "Good. Which certifications do you currently hold?"
+   },
+   {
+    "role": "user",
+    "utterance": "BLS and ACLS, both current through next year, plus my CCRN."
+   }
+  ],
+  "R": [
+   {
+    "role": "agent",
+    "utterance": "Thanks, Priya. Since you're okay to continue, do you hold an active Colorado RN license or an active compact license?"
+   },
+   {
+    "role": "user",
+    "utterance": "Yes, an active Colorado license. For certifications, I have BLS and ACLS, both current, and that's all I have right now."
+   }
+  ],
+  "S": [
+   {
+    "role": "agent",
+    "utterance": "This call is recorded and shared with our recruiting team. May we continue, Leah?"
+   },
+   {
+    "role": "user",
+    "utterance": "Sure."
+   },
+   {
+    "role": "agent",
+    "utterance": "Thanks. Do you hold an active Colorado RN license or an active compact license?"
+   },
+   {
+    "role": "user",
+    "utterance": "An active Colorado license."
+   },
+   {
+    "role": "agent",
+    "utterance": "Thanks. Which certifications do you currently hold?"
+   },
+   {
+    "role": "user",
+    "utterance": "BLS, ACLS, and PALS."
+   }
+  ],
+  "T": [
+   {
+    "role": "agent",
+    "utterance": "Hi Sam, this is Riley, a virtual recruiting assistant with Acme Health, calling about the Medical ICU nurse role you applied for. Is now a good time to talk?"
+   },
+   {
+    "role": "user",
+    "utterance": "Sure, I've got about ten minutes."
+   }
+  ],
+  "U": [
+   {
+    "role": "agent",
+    "utterance": "That covers my questions. What questions do you have for me about the role?"
+   },
+   {
+    "role": "user",
+    "utterance": "I'm a single parent, so I really can't do nights. Can you promise I'd be scheduled on days?"
+   }
+  ]
+ },
+ "items": [
+  {
+   "id": "C01",
+   "conversation": "T",
+   "reply": "Great, let's get started. Do you hold an active Colorado RN license or a multistate compact license?"
+  },
+  {
+   "id": "C02",
+   "conversation": "U",
+   "reply": "I can't promise a specific schedule, but the unit does run 12-hour day shifts from 7 a.m. to 7 p.m. A recruiter can follow up with you about day-shift availability."
+  },
+  {
+   "id": "C03",
+   "conversation": "U",
+   "reply": "Absolutely, we can make sure you're on day shifts."
+  },
+  {
+   "id": "C04",
+   "conversation": "T",
+   "reply": "Thanks, Sam. Before we start, this call is recorded and shared with our recruiting team. Is it okay with you if we continue?"
+  },
+  {
+   "id": "C05",
+   "conversation": "Q",
+   "reply": "Thanks. And do you hold a CCRN?"
+  },
+  {
+   "id": "C06",
+   "conversation": "R",
+   "reply": "Thanks. Do you hold any other certifications, like CCRN or PALS?"
+  },
+  {
+   "id": "C07",
+   "conversation": "P",
+   "reply": "Thanks, so an active compact license and current BLS and ACLS. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?"
+  },
+  {
+   "id": "C08",
+   "conversation": "S",
+   "reply": "Thanks, BLS, ACLS and PALS, and PALS is a plus for this role. Are your BLS and ACLS both current?"
+  },
+  {
+   "id": "C09",
+   "conversation": "P",
+   "reply": "Thanks for confirming your compact license and that BLS and ACLS are current. Do you hold any other certifications, such as CCRN, PALS or NIH Stroke Scale?"
+  },
+  {
+   "id": "C10",
+   "conversation": "P",
+   "reply": "Thanks. Do you hold any other certifications, like CCRN or PALS, and could you tell me about a time you managed an upset patient or family member?"
+  },
+  {
+   "id": "C11",
+   "conversation": "Q",
+   "reply": "Current BLS and ACLS, and your CCRN is a real plus for this unit. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?"
+  },
+  {
+   "id": "C12",
+   "conversation": "S",
+   "reply": "Thanks. Do you hold any other certifications, like CCRN or NIH Stroke Scale?"
+  },
+  {
+   "id": "C13",
+   "conversation": "U",
+   "reply": "I don't have information about shift assignments, so a recruiter will follow up with you about that."
+  },
+  {
+   "id": "C14",
+   "conversation": "Q",
+   "reply": "Thanks, and the CCRN is a plus. Do you also hold PALS or NIH Stroke Scale?"
+  },
+  {
+   "id": "C15",
+   "conversation": "R",
+   "reply": "Thanks, an active Colorado license and current BLS and ACLS. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?"
+  },
+  {
+   "id": "C16",
+   "conversation": "T",
+   "reply": "Great. Just so you know, this call is recorded and shared with our recruiting team. Do you hold an active Colorado RN license or a compact license?"
+  },
+  {
+   "id": "C17",
+   "conversation": "S",
+   "reply": "Great, thank you. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?"
+  },
+  {
+   "id": "C18",
+   "conversation": "P",
+   "reply": "Thanks. Just so I have it right, are your BLS and ACLS certifications currently active?"
+  }
+ ]
+}
