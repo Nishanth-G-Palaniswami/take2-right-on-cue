@@ -158,12 +158,14 @@ H3: the applicant needs childcare and asks whether day shifts can be guaranteed.
 
 **The judge preferred A,** at 6/8 against 5/8. It marked B down on next action and delivery, and listed a false critical flag on B's correct "per diem" fact. For an applicant arranging childcare, the known facts and a named follow-up are the useful answer, so the human ranking is the one to trust here.
 
-### A live certification example, outside the evaluation
+### Exploratory live example: a certification asked again
 
-The example is in `examples/acls-lapse-judge-disagreement/`. It is one fresh run from the "Run it yourself" tab, on an edited transcript in which the applicant's ACLS has lapsed. It used prompt v1 and one sample per model, and it has no human label, so it is not counted in any figure above.
-- **The disagreement.** judge-v1 gave Gemini 8/8 for a reply that re-asks whether BLS is current, which the applicant had just answered.
-- **Mini's verdict.** Its not-acceptable verdict carries a self-denying `screening_without_consent` flag, but next action scored 1, which decides the verdict on its own.
-- **Prompt v2.** The effect of v2 on this example is untested.
+This is an exploratory live example, outside the scored evaluation, with no recorded human label. It is one fresh run from the "Run it yourself" tab, using prompt v1, one sample per model and an edited transcript. Its files are in `examples/acls-lapse-judge-disagreement/`.
+
+- **The applicant had already said BLS was current through 2027:** "BLS is good through '27. ACLS actually lapsed in September, but I'm booked into a renewal class on the 30th. I've also got PALS and TNCC."
+- **Gemini asked them to confirm it again:** "Just to double-check, your BLS certification is currently active, correct?"
+- **judge-v1 awarded listening 2/2,** and rated the reply acceptable at 8/8.
+- **The effect of prompt v2 on this example is untested.**
 
 ### judge-v4: a tested alternative, not adopted
 
@@ -193,5 +195,5 @@ The example is in `examples/acls-lapse-judge-disagreement/`. It is one fresh run
 | Evaluation method and agreement | This report; `docs/judge-v1-known-limits.md`; `docs/measurements/2026-11-21-holdout-preregistration.md`; `docs/measurements/2026-11-21-holdout-results.md` |
 | The tool | `README.md`; the CLI (`uv run next-turn …`); the Streamlit app (`uv run streamlit run app.py`) |
 | Saved evidence | `runs/`, `scores/`, `holdout/` |
-| Live example of judge disagreement (outside the evaluation) | `examples/acls-lapse-judge-disagreement/` |
+| Exploratory live example of judge disagreement (outside the scored evaluation, no human label) | `examples/acls-lapse-judge-disagreement/` |
 | OpenAI usage | Recorded usage across the project comes to about **$1.33** at standard rates: generation $0.14, judging $0.94, judge-v4 calibration $0.23, preflights $0.01. The usage-page screenshot is authoritative |

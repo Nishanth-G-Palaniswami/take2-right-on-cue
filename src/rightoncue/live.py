@@ -51,6 +51,12 @@ OUTPUT_CAP = 400
 HOSTED_REASONING_EFFORT = "none"
 HOSTED_THINKING_LEVEL = "MINIMAL"
 JUDGE_VERSION = scoring.DEFAULT_JUDGE_VERSION
+# A fresh run's judging: one first attempt per reply, then one judge-only retry for a
+# reply whose judgment came back invalid (needs_review) or failed (judge_failed). The
+# retry reuses the saved reply; a valid verdict, acceptable or not, is final. The
+# projection counts both attempts, and every call reserves under the cap first.
+JUDGE_ATTEMPTS = 2
+RETRYABLE_JUDGE_STATUSES = ("needs_review", "judge_failed")
 # Per-run limits, checked before any call.
 MAX_PROMPT_CHARS = 12_000
 MAX_TRANSCRIPT_CHARS = 12_000
@@ -330,7 +336,8 @@ def project_run(
 
     Generation requests are built exactly as the runner builds them. Judge requests
     are built with a placeholder reply of OUTPUT_CAP x PROJECTED_REPLY_BYTES_PER_TOKEN
-    bytes (see that constant).
+    bytes (see that constant), and counted JUDGE_ATTEMPTS times per reply: the first
+    attempt and the possible retry (the retry sends the same request).
     """
     turns = parse_transcript(case.text)
     gen = 0
@@ -345,8 +352,9 @@ def project_run(
         judge.text, turns, placeholder, criteria, scorer_version=judge.scorer_version
     )
     replies = len(models) * samples
+    judge_calls = replies * JUDGE_ATTEMPTS
     per_judge = max_call_cost(jreq, jreq["model"], jreq["max_output_tokens"])
-    return Projection(gen, per_judge * replies, replies, replies)
+    return Projection(gen, per_judge * judge_calls, replies, judge_calls)
 
 
 # --------------------------------------------------------------------- clients
@@ -416,6 +424,49 @@ def _safe_abort(result: RunResult) -> str | None:
     )
 
 
+def retry_invalid_judgments(
+    cfg: LiveConfig, run_dir: Path, judge_client: Any
+) -> scoring.ScoringResult | None:
+    """The one judge-only retry, for a run already generated and scored once.
+
+    Re-judges each saved reply whose only judgment so far is a single needs_review or
+    judge_failed record: the exact saved reply, the same request. The new record is
+    appended after the first, so both attempts stay in the score file. A valid verdict,
+    acceptable or not, is reused and never re-judged. Every call goes through
+    `judge_client` (the ledger guard reserves before the request; BudgetExceeded
+    propagates with no request made). The caller holds the run lock.
+
+    Returns None when no reply needs a retry. Raises RuntimeError, before any call, if
+    a reply that still needs a judge call has never been judged or was already retried.
+    """
+    judge = scoring.load_judge_prompt(JUDGE_VERSION)
+    plan = scoring.plan_scoring(run_dir, cfg.scores_dir, review.NOTES_PATH, judge)
+    pending = [s for s in plan.slots if s.action == "judge"]
+    if not pending:
+        return None
+    records = scoring.read_score_records(plan.score_path)
+    for sp in pending:
+        assert sp.text is not None  # action "judge" means a non-empty saved reply
+        failed = review.failed_judge_attempts(records, sp.slot_key, sp.text, judge.version)
+        if failed != JUDGE_ATTEMPTS - 1:
+            raise RuntimeError(
+                f"{sp.slot_key}: {failed} failed judge attempt(s) on record; a judge-only "
+                f"retry needs exactly {JUDGE_ATTEMPTS - 1}. No call was made."
+            )
+    return scoring.execute_plan(plan, judge_client)
+
+
+def _fatal_judge_message(result: scoring.ScoringResult, what: str) -> str:
+    err = next(
+        (o.record.get("error") for o in reversed(result.outcomes) if o.record and o.record.get("error")),
+        None,
+    ) or {}
+    return (
+        f"{what} stopped after a fatal judge error ({err.get('type')}, HTTP "
+        f"{err.get('status_code')}); no further judge calls were made."
+    )
+
+
 def run_fresh(
     cfg: LiveConfig,
     prompt: InputFile,
@@ -434,6 +485,9 @@ def run_fresh(
     and LedgerError when the ledger can't be used. A budget refusal in the middle of
     the run stops it and is reported in the outcome's messages. `on_start(run_id)`
     is called before the first paid call, so an interrupted run can still be shown.
+    After the first scoring pass, a reply whose judgment needs review or failed gets
+    one judge-only retry (retry_invalid_judgments), unless that pass stopped on the
+    budget or on a fatal judge error.
     """
     errors = validate_run(prompt.text, case.text, models, samples, cfg.max_samples)
     if errors:
@@ -475,16 +529,21 @@ def run_fresh(
             )
         except BudgetExceeded as exc:
             outcome.messages.append(f"Scoring stopped: {exc}. Replies not scored are shown as unscored.")
-        else:
-            if scored.fatal_message is not None:
-                err = next(
-                    (o.record.get("error") for o in reversed(scored.outcomes) if o.record and o.record.get("error")),
-                    None,
-                ) or {}
+            return outcome
+        if scored.fatal_message is not None:
+            outcome.messages.append(_fatal_judge_message(scored, "Scoring"))
+            return outcome
+        if any(o.kind in RETRYABLE_JUDGE_STATUSES for o in scored.outcomes):
+            try:
+                retried = retry_invalid_judgments(cfg, outcome.run_dir, judge_client)
+            except BudgetExceeded as exc:
                 outcome.messages.append(
-                    f"Scoring stopped after a fatal judge error ({err.get('type')}, HTTP "
-                    f"{err.get('status_code')}); no further judge calls were made."
+                    f"The judge retry stopped: {exc}. A judgment that needs review is shown "
+                    "without a valid score."
                 )
+            else:
+                if retried is not None and retried.fatal_message is not None:
+                    outcome.messages.append(_fatal_judge_message(retried, "The judge retry"))
         return outcome
     finally:
         _RUN_LOCK.release()

@@ -224,8 +224,9 @@ def test_projection_is_the_sum_of_per_call_maxima() -> None:
     criteria = scoring.load_criteria(review.NOTES_PATH)["H3"]
     jreq = scoring.build_judge_request(j.text, turns, "x" * 6_400, criteria, scorer_version=j.scorer_version)
     assert proj.generation_nano == gen
-    assert proj.judge_nano == 6 * ledger.max_call_cost(jreq, "gpt-5.4-mini", 1500)
-    assert (proj.generation_calls, proj.judge_calls) == (6, 6)
+    # 6 replies, each judged at most twice: the first attempt and one judge-only retry
+    assert proj.judge_nano == 12 * ledger.max_call_cost(jreq, "gpt-5.4-mini", 1500)
+    assert (proj.generation_calls, proj.judge_calls) == (6, 12)
     assert proj.total_nano < USD // 2  # well inside the $5.00 allowance
 
 
@@ -496,3 +497,142 @@ def test_incomplete_capped_reply_is_an_operational_failure_with_no_judge_call(
     [card] = view.all_cards()
     assert card.state == "incomplete" and card.operational_failure and card.reply is None
     assert len(o.calls) == 1
+
+
+# ------------------------------------------------------- one judge-only retry
+
+SPEAKER_LABEL_QUOTE = "Applicant: not a turn in this transcript"  # fails judge-v1's quote check
+
+
+def invalid_judge() -> str:
+    """A judge-v1 judgment the quote check rejects: the scorer records it as needs_review."""
+    from test_scoring import judge_dict
+
+    d = judge_dict()
+    d["listening_context"]["evidence"] = [{"source": "transcript", "quote": SPEAKER_LABEL_QUOTE}]
+    return json.dumps(d)
+
+
+def server_error() -> Exception:
+    import httpx2
+
+    req = httpx2.Request("POST", "https://x")
+    return openai.InternalServerError("boom", response=httpx2.Response(500, request=req), body=None)
+
+
+REPLY_WITH_QUOTE = "Thanks. Are your BLS and ACLS both current?"  # holds test_scoring.QUOTE
+
+
+def score_rows(tmp_path: Path, run_id: str) -> list[dict[str, Any]]:
+    return entries(tmp_path / "data" / "scores" / f"{run_id}.jsonl")
+
+
+def judge_ledger_rows(tmp_path: Path) -> list[tuple[str, str]]:
+    return [(e["type"], e["kind"]) for e in entries(tmp_path / "data" / "ledger.jsonl") if e["kind"] == "judge"]
+
+
+def one_reply_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, judge_outputs: list[Any],
+                  reply: str = REPLY_WITH_QUOTE) -> tuple[live.FreshOutcome, Any]:
+    o, _ = fake_factories(monkeypatch, [reply, *judge_outputs], [])
+    out = live.run_fresh(cfg_for(tmp_path), *prompt_and_case(), ["gpt-5.4-mini"], 1)
+    return out, o
+
+
+def test_needs_review_gets_one_judge_only_retry_with_the_saved_reply(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    out, o = one_reply_run(tmp_path, monkeypatch, [invalid_judge(), judge()])
+    assert out.messages == []
+    assert len(o.calls) == 3  # one generation, two judge calls; no second generation
+    first, retry = o.calls[1], o.calls[2]
+    assert first == retry  # the same judge request: the exact saved reply, the same transcript
+    rows = score_rows(tmp_path, out.run_id)
+    assert [r["status"] for r in rows] == ["needs_review", "scored"]  # both attempts kept
+    assert rows[0]["slot_key"] == rows[1]["slot_key"] and rows[0]["text_sha256"] == rows[1]["text_sha256"]
+    assert judge_ledger_rows(tmp_path) == [("reserve", "judge"), ("settle", "judge")] * 2
+    [card] = review.load_run_view(out.run_dir, tmp_path / "data" / "scores" / f"{out.run_id}.jsonl", "judge-v1").all_cards()
+    assert (card.decision, card.total, card.failed_judge_attempts) == ("acceptable", 8, 1)
+
+
+def test_judge_failed_is_retried_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    out, o = one_reply_run(tmp_path, monkeypatch, [server_error(), judge()])
+    assert [r["status"] for r in score_rows(tmp_path, out.run_id)] == ["judge_failed", "scored"]
+    assert len(o.calls) == 3 and out.messages == []
+
+
+def test_a_valid_rejection_is_final(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    out, o = one_reply_run(tmp_path, monkeypatch, [judge(next_action=1), "never sent"])
+    assert len(o.calls) == 2  # no retry for a valid "not acceptable"
+    rows = score_rows(tmp_path, out.run_id)
+    assert [r["status"] for r in rows] == ["scored"] and rows[0]["decision"]["acceptable"] is False
+    assert judge_ledger_rows(tmp_path) == [("reserve", "judge"), ("settle", "judge")]
+
+
+def test_two_invalid_judgments_stop_after_the_retry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    out, o = one_reply_run(tmp_path, monkeypatch, [invalid_judge(), invalid_judge(), "never sent"])
+    assert len(o.calls) == 3  # never a third judge call
+    assert [r["status"] for r in score_rows(tmp_path, out.run_id)] == ["needs_review", "needs_review"]
+    [card] = review.load_run_view(out.run_dir, tmp_path / "data" / "scores" / f"{out.run_id}.jsonl", "judge-v1").all_cards()
+    assert (card.decision, card.total, card.failed_judge_attempts) == ("needs review", None, 2)
+
+
+def test_a_fatal_judge_error_is_not_retried(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx2
+
+    req = httpx2.Request("POST", "https://x")
+    fatal = openai.AuthenticationError("bad key", response=httpx2.Response(401, request=req), body=None)
+    out, o = one_reply_run(tmp_path, monkeypatch, [fatal, "never sent"])
+    assert len(o.calls) == 2
+    assert out.messages == [
+        "Scoring stopped after a fatal judge error (AuthenticationError, HTTP 401); no further judge calls were made."
+    ]
+
+
+def test_retry_is_refused_by_the_cap_before_any_request(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    real_retry = live.retry_invalid_judgments
+    monkeypatch.setattr(live, "retry_invalid_judgments", lambda *a, **k: None)  # leave one failed attempt
+    out, o = one_reply_run(tmp_path, monkeypatch, [invalid_judge()])
+    assert [r["status"] for r in score_rows(tmp_path, out.run_id)] == ["needs_review"]
+    cfg = cfg_for(tmp_path)
+    led = live.open_ledger(cfg)
+    room = led.remaining()
+    filler = led.reserve("judge", "gpt-5.4-mini", room - 1)  # another reviewer's spend
+    led.settle(filler, "judge", "gpt-5.4-mini", room - 1, "usage")
+    late = FakeClient(["never sent"])
+    late.max_retries = 0
+    _, guarded_judge = ledger.guard_clients({}, late, led)
+    rows_before = score_rows(tmp_path, out.run_id)
+    with pytest.raises(BudgetExceeded):
+        real_retry(cfg, out.run_dir, guarded_judge)
+    assert late.calls == []
+    assert score_rows(tmp_path, out.run_id) == rows_before
+    assert led.state().open_reservations == 0
+
+
+def test_a_budget_refusal_of_the_retry_is_reported_not_raised(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def refuse(*a: Any, **k: Any) -> Any:
+        raise BudgetExceeded("budget reached: the remaining allowance can't cover this call")
+
+    monkeypatch.setattr(live, "retry_invalid_judgments", refuse)
+    out, _ = one_reply_run(tmp_path, monkeypatch, [invalid_judge()])
+    assert out.messages == [
+        "The judge retry stopped: budget reached: the remaining allowance can't cover this call. "
+        "A judgment that needs review is shown without a valid score."
+    ]
+    assert live.run_lock().acquire(blocking=False)
+    live.run_lock().release()
+
+
+def test_retry_refuses_a_reply_never_judged_or_already_retried(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    out, _ = one_reply_run(tmp_path, monkeypatch, [invalid_judge(), invalid_judge()])
+    cfg = cfg_for(tmp_path)
+    untouched = FakeClient(["never sent"])
+    with pytest.raises(RuntimeError, match="2 failed judge attempt"):
+        live.retry_invalid_judgments(cfg, out.run_dir, untouched)
+    (tmp_path / "data" / "scores" / f"{out.run_id}.jsonl").unlink()  # as if never scored
+    with pytest.raises(RuntimeError, match="0 failed judge attempt"):
+        live.retry_invalid_judgments(cfg, out.run_dir, untouched)
+    assert untouched.calls == []
+
+
+def test_no_retry_needed_returns_none(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    out, _ = one_reply_run(tmp_path, monkeypatch, [judge()])
+    assert live.retry_invalid_judgments(cfg_for(tmp_path), out.run_dir, FakeClient([])) is None

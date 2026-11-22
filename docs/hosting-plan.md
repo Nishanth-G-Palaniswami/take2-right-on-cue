@@ -1,13 +1,13 @@
 # Hosting plan: https://rightoncue.nishanthgp.me
 
-Prepared on 2026-11-22. **Nothing has been pushed, deployed or changed in DNS, and no paid model call has been made.** Each step below waits for Nishanth's go-ahead.
+Prepared on 2026-11-22. **Nothing has been pushed, deployed or changed in DNS.** The only paid calls so far were local test runs, recorded under "Real paid runs, locally". Each step below waits for Nishanth's go-ahead.
 
 **Goal.**
 - **The saved three-model comparison is open to everyone,** at the root of `https://rightoncue.nishanthgp.me`. It opens on H3, prompt v2, sample 1.
 - **Reviewers with the access code can run the tool live** on "Run it yourself":
-  - edit or load a prompt and transcript;
+  - edit or load a prompt and transcript (the form starts from prompt v2, with v1 available for comparison);
   - choose models and a sample count;
-  - generate fresh replies, scored by judge-v1.
+  - generate fresh replies, scored by judge-v1, with one judge-only retry for a judgment that needs review.
 - **A shared $5.00 allowance** covers all reviewers' generation and judging, retries included.
 
 ## Monthly cost (Render pricing page, read 2026-11-22)
@@ -41,24 +41,24 @@ Sources:
 
 ## Cost of one reviewer run (API spend, counted against the $5.00)
 
-The **typical** figures use recorded usage on the holdout transcripts. The **maximum** is what the app reserves before the calls, with each reply capped at 400 output tokens and the judge at 1,500.
+The **typical** figures use recorded usage on the holdout transcripts. The **maximum** is what the app reserves before the calls, with each reply capped at 400 output tokens and the judge at 1,500. It counts two judge calls per reply: the first attempt and the one judge-only retry. The retry runs only when the first judgment needs review (an invalid quote) or the judge call failed. A valid verdict, acceptable or not, is final.
 
 | Run | Typical | Maximum reserved |
 |---|---|---|
-| 3 models × 1 sample (3 replies, 3 judge calls) | about $0.016 | $0.0895 |
-| 3 models × 2 samples (6 replies, 6 judge calls) | about $0.031 | $0.179 |
+| 3 models × 1 sample (3 replies, up to 6 judge calls) | about $0.016, plus about $0.003 per retried judgment | $0.150–$0.163 (D1: $0.150) |
+| 3 models × 2 samples (6 replies, up to 12 judge calls) | about $0.031, plus about $0.003 per retried judgment | $0.300–$0.325 |
 
 **How many runs $5.00 covers.**
 - **The maximum depends on what reviewers paste.** A run is reserved from its real request size, so the per-run maximum grows with the prompt and transcript:
 
   | Input | Maximum for 3 models × 2 samples | Such runs per $5.00 |
   |---|---|---|
-  | The committed prompts and cases | $0.179–$0.199 | at least 25 |
-  | Pasted text at the length limits (12,000 characters each, 40 turns), plain English | $0.415 | about 12 |
-  | The same, with every character a 4-byte UTF-8 character (the theoretical worst case) | $1.194 | about 4 |
+  | The committed prompts and cases | $0.300–$0.325 | at least 15 |
+  | Pasted text at the length limits (12,000 characters each, 40 turns), plain English | $0.586 | about 8 |
+  | The same, with every character a 4-byte UTF-8 character (the theoretical worst case) | $1.516 | about 3 |
 
   Lower `RIGHTONCUE_MAX_SAMPLES` or the length limits to shrink the worst case. The cap holds in every case; only the number of runs changes.
-- At typical usage it's about 160.
+- At typical usage it's about 160, fewer when judgments need a retry.
 - The reservations are freed down to the actual cost after each call. So the run count is set by actual spend, but a new run starts only if its full maximum fits.
 
 **Rates used.**
@@ -69,7 +69,7 @@ The **typical** figures use recorded usage on the holdout transcripts. The **max
 ## How the allowance is enforced
 
 1. **In-app ledger** (`/var/data/ledger.jsonl`, on the disk).
-   - **Reserve before every call.** Every paid call reserves its maximum cost under a process-wide lock before any request is sent. This covers generation, judging and app-level retries; SDK retries are off.
+   - **Reserve before every call.** Every paid call reserves its maximum cost under a process-wide lock before any request is sent. This covers generation, judging and the one judge-only retry; SDK retries are off.
    - **Settle after.** Each call settles at its actual cost afterwards.
    - **Crashes.** A crash mid-call counts the full maximum, never $0.
    - **Refusals.** A call that would exceed the allowance is refused before it's sent. A run whose projected maximum doesn't fit is refused up front.
@@ -114,7 +114,7 @@ Either way the saved comparison stays up.
 - **Gemini at `MINIMAL`** reported no thinking tokens.
 - **Spend survived a container recreation** on the same volume.
 - **Cached judge input is counted at the full input price,** so the ledger can only overstate the bill.
-- **judge-v1 quotes with speaker labels.** In the D1 run, judge-v1 quoted "Applicant: Yeah, now's fine." with its speaker label in all three judgments. The quote check rejected them, so all three are "needs review" with no score. This is known limit 3 in `docs/judge-v1-known-limits.md`. The saved evaluation retried such judgments once; hosted runs make no retries.
+- **judge-v1 quotes with speaker labels.** In the D1 run, judge-v1 quoted "Applicant: Yeah, now's fine." with its speaker label in all three judgments. The quote check rejected them, so all three were "needs review" with no score. This is known limit 3 in `docs/judge-v1-known-limits.md`. The saved evaluation retried such judgments once. Hosted runs now do the same: one judge-only retry, counted in the maximum. The quote check is unchanged.
 
 **Not verifiable until deploy:**
 - Render's build;
@@ -135,7 +135,8 @@ The Render paid run is step 8 below, and needs your go-ahead.
    - Instance `0.5c-512mb` (Starter), with health check path `/_stcore/health`.
    - **Disk:** Settings → Disks → add a disk, mount path `/var/data`, size 1 GB.
    - **Environment variables** (set as secrets in Render, never in the repo):
-     - `RIGHTONCUE_ACCESS_CODE`: a long random code you give to Take2 reviewers;
+     - `RIGHTONCUE_ACCESS_CODE`: a fresh code, never one used locally, and never pasted into a chat. This PowerShell line makes a random code and puts it straight on the clipboard without displaying it; paste it into Render's secret field, then give it to Take2 reviewers yourself:
+       `$b = New-Object byte[] 24; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b).TrimEnd('=').Replace('+','-').Replace('/','_') | Set-Clipboard`
      - `RIGHTONCUE_BUDGET_USD=5.00`;
      - `RIGHTONCUE_DATA_DIR=/var/data`;
      - `RIGHTONCUE_MAX_SAMPLES=2`;
@@ -155,7 +156,7 @@ The Render paid run is step 8 below, and needs your go-ahead.
    - mobile width works;
    - `http://` redirects to `https://`;
    - a wrong code is refused.
-8. **One paid smoke test** (your go-ahead): unlock, then run 1 model × 1 sample (`gpt-5.4-mini`, maximum about $0.025). Then:
+8. **One paid smoke test** (your go-ahead): unlock, then run 1 model × 1 sample (`gpt-5.4-mini`; the form shows the maximum, about $0.045 with the retry counted). Then:
    - check the spend line;
    - redeploy, and check the spend line again (persistence on the real disk);
    - check the OpenAI usage page.

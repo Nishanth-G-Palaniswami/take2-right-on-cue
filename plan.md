@@ -335,3 +335,22 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
 - Two simultaneous sessions near the cap stay within it.
 - Saved comparisons stay available when the budget is exhausted, invalid, or the ledger is corrupt.
 - Peak memory, to size the instance.
+
+## Hosted judge-only retry (2026-11-22)
+
+**Objective.** In the approved real D1 run (`20261122T164927Z-77fa53`), judge-v1 quoted "Applicant: Yeah, now's fine." with its speaker label, so all three judgments were rejected as `needs_review`. Hosted runs made no retries.
+
+**Owner decisions.**
+- **Retry rule.** One judge-only retry for a `needs_review` or `judge_failed` result, reusing the exact saved reply. A valid "not acceptable" is final.
+- **Record and cost.** Both attempts stay in the record. The maximum shown before Generate includes the possible retries, and the shared cap is enforced before each call.
+- **Display.** If the retry also fails, the card shows "Needs review · no valid score". The expanded heading is "Why this judgment needs review"; "Why it was not acceptable" is kept for a valid rejection.
+- **Unchanged rules.** judge-v1's quote check stays. The form defaults to interviewer v2, with v1 available for comparison, and the saved comparison still opens on H3.
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | `live.retry_invalid_judgments` and the retry pass in `run_fresh`. The projection counts 2 judge calls per reply. Card attempt count, badge, headings, v2 default. Offline tests | lead | Implemented, awaiting verification |
+| 2 | Independent review (money and data consistency) | verifier, Opus, high | Pending |
+| 3 | Real retry of the three saved D1 judgments (at most 3 judge calls, within the $1 local cap) | lead | Pending (approved) |
+| 4 | Docs: hosting-plan maxima and access-code step, README, report example | lead | Implemented, awaiting verification |
+
+**Risk.** A judgment that needs review on both attempts shows no score. That is the intended outcome; it is never counted as a pass or a fail.

@@ -164,6 +164,7 @@ class Card:
     critical_findings: list[CriticalFinding] = field(default_factory=list)
     error_type: str | None = None  # a failed generation's error type and HTTP status
     error_status: int | None = None
+    failed_judge_attempts: int = 0  # needs_review / judge_failed records for this reply
 
     @property
     def operational_failure(self) -> bool:
@@ -255,6 +256,21 @@ def pick_score_record(
     return failed[-1] if failed else None
 
 
+def failed_judge_attempts(
+    records: list[dict[str, Any]], slot_key: str, text: str, judge_version: str
+) -> int:
+    """Judge attempts for a slot, judge version and exact reply text that produced no
+    valid judgment (`needs_review` or `judge_failed`). `budget_stopped` made no call."""
+    return sum(
+        1
+        for r in records
+        if r.get("slot_key") == slot_key
+        and r.get("judge_prompt_version") == judge_version
+        and r.get("text_sha256") == _sha(text)
+        and r.get("status") in ("needs_review", "judge_failed")
+    )
+
+
 def _violations(record: dict[str, Any]) -> list[ViolationView]:
     judgment = record.get("judgment")
     if judgment is None:
@@ -335,6 +351,7 @@ def _build_card(
         record = pick_score_record(scores, slot_key, text, judge_version)
         if record is not None:
             _apply_record(card, record)
+        card.failed_judge_attempts = failed_judge_attempts(scores, slot_key, text, judge_version)
     return card
 
 

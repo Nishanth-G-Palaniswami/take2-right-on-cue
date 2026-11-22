@@ -26,6 +26,8 @@ DRY_RUN_BANNER = "Dry run: no API calls or charges. Replies are placeholders and
 DRY_RUN_BUTTON = "Simulate run"
 DRY_RUN_NO_CHARGE = "No API calls or charges"
 SIMULATED_BADGE = "Simulated reply · Unscored"
+# A reply whose first judgment and its one retry both came back invalid or failed.
+NO_VALID_SCORE = "Needs review · no valid score"
 
 # ------------------------------------------------------------------------- helpers
 
@@ -88,7 +90,10 @@ def render_card(card: review.Card) -> None:
             return
         total = f" · {card.total}/8" if card.total is not None else ""
         decision = card.decision or "unscored"
-        st.markdown(badge(_VERDICT_COLOR[decision], f"{JUDGE}: {decision}{total}"))
+        if decision in ("needs review", "judge failed") and card.failed_judge_attempts >= live.JUDGE_ATTEMPTS:
+            st.markdown(badge(_VERDICT_COLOR["needs review"], NO_VALID_SCORE))
+        else:
+            st.markdown(badge(_VERDICT_COLOR[decision], f"{JUDGE}: {decision}{total}"))
         if card.human_accept is not None:
             st.markdown(
                 badge(
@@ -131,7 +136,13 @@ def render_details(card: review.Card) -> None:
             para("Single-turn check: FAIL. " + "; ".join(card.single_turn_failures))
         para("Diagnostic flags: " + (", ".join(card.flags) or "none"))
     if card.reasons:
-        para("Why it was not acceptable", weight=600)
+        if card.decision == "not acceptable":  # a valid rejection only
+            heading = "Why it was not acceptable"
+        elif card.decision in ("needs review", "judge failed"):
+            heading = "Why this judgment needs review"
+        else:  # unscored: no judge call was made (e.g. the budget stopped scoring)
+            heading = "Why it was not scored"
+        para(heading, weight=600)
         for reason in card.reasons:
             para("- " + reason, size="0.9rem")
     if card.violations:
@@ -336,6 +347,8 @@ LIVE_LEDGER_ERROR = (
     "written, so no paid call is allowed. The saved comparison is unaffected."
 )
 FRESH_LABEL = "Fresh run: generated just now, not part of the saved evaluation"
+HOSTED_DEFAULT_PROMPT = f"prompts/{DEFAULT_SELECTION['prompt']}.md"  # as the saved comparison
+RETRY_NOTE = "one per reply, plus one retry for a judgment that needs review"
 SIMULATED_LABEL = "Simulated run: no model was called, not part of the saved evaluation"
 DRY_RUN_RESULT_NOTE = (
     "Dry run: these replies are placeholders and are not scored. The simulated spend "
@@ -454,10 +467,13 @@ def render_gate(cfg: live.LiveConfig) -> None:
 
 
 def _editable_input(
-    label: str, files: dict[str, Any], key: str, pasted: Any, height: int
+    label: str, files: dict[str, Any], key: str, pasted: Any, height: int,
+    default: str | None = None,
 ) -> Any:
     """Start from a committed file, then edit freely. Unchanged text keeps the file."""
-    picked = st.selectbox(f"{label}: start from", list(files), key=f"{key}_src")
+    options = list(files)
+    index = options.index(default) if default is not None else 0  # ValueError if it's gone
+    picked = st.selectbox(f"{label}: start from", options, index=index, key=f"{key}_src")
     original = review.read_input(files[picked])
     text = st.text_area(
         f"{label} (edit freely)", value=original.text, key=f"{key}_text_{picked}", height=height
@@ -477,9 +493,9 @@ def render_hosted_form(cfg: live.LiveConfig, ledger: Any) -> None:
         f"{live.OUTPUT_CAP} output tokens{scored}"
     )
     st.caption(_spend_line(cfg, ledger))
-    prompt_file = _editable_input(
+    prompt_file = _editable_input(  # v2 (the recommended prompt) by default; v1 to compare
         "Prompt", {f"prompts/{p.name}": p for p in review.list_prompt_files()}, "hl_prompt",
-        review.pasted_prompt, 200,
+        review.pasted_prompt, 200, default=HOSTED_DEFAULT_PROMPT,
     )
     case_file = _editable_input(
         "Transcript", {f"{p.parent.name}/{p.name}": p for p in review.list_case_files()}, "hl_case",
@@ -500,13 +516,14 @@ def render_hosted_form(cfg: live.LiveConfig, ledger: Any) -> None:
         if cfg.dry_run:
             st.info(
                 f"Simulated: a real run would make {proj.generation_calls} generation call(s) "
-                f"and up to {proj.judge_calls} judge call(s), with a projected maximum cost of "
-                f"{fmt_usd(proj.total_nano)}. Simulated budget remaining: {fmt_usd(remaining)}."
+                f"and up to {proj.judge_calls} judge call(s) ({RETRY_NOTE}), with a projected "
+                f"maximum cost of {fmt_usd(proj.total_nano)}. Simulated budget remaining: "
+                f"{fmt_usd(remaining)}."
             )
         else:
             st.info(
                 f"This run makes {proj.generation_calls} generation call(s) and up to "
-                f"{proj.judge_calls} judge call(s). Projected maximum cost: "
+                f"{proj.judge_calls} judge call(s) ({RETRY_NOTE}). Projected maximum cost: "
                 f"{fmt_usd(proj.total_nano)}; budget remaining: {fmt_usd(remaining)}."
             )
         if proj.total_nano > remaining:
@@ -684,7 +701,8 @@ def render_local_live(cfg: live.LiveConfig) -> None:
         st.info(
             f"Generating makes {calls} {paid} call(s), each capped at {live.OUTPUT_CAP} output "
             f"tokens. Scoring afterwards makes up to {calls} {simulated}judge calls to "
-            f"{scoring.JUDGE_MODEL}. Projected maximum cost: {fmt_usd(proj.total_nano)}; "
+            f"{scoring.JUDGE_MODEL}, plus up to one retry each (Score again) for a judgment "
+            f"that needs review. Projected maximum cost, retries included: {fmt_usd(proj.total_nano)}; "
             f"{simulated}budget remaining: {fmt_usd(remaining)}."
         )
         over_budget = proj.total_nano > remaining

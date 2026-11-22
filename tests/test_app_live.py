@@ -5,8 +5,10 @@ All usage and amounts below are SYNTHETIC TEST DATA.
 
 from __future__ import annotations
 
+import html
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +18,7 @@ from streamlit.testing.v1 import AppTest
 from test_app import badges, body
 from test_gemini import FakeGeminiClient
 from test_run import FakeClient
+from test_live import REPLY_WITH_QUOTE, invalid_judge
 from test_scoring import judge
 
 from rightoncue import gemini, live, review
@@ -227,7 +230,10 @@ def test_full_hosted_flow_with_fake_clients(tmp_path: Path, monkeypatch: pytest.
     at.run()
     assert at.number_input(key="hl_samples").max == 2
     proj = [i.value for i in at.info if "Projected maximum cost" in i.value]
-    assert len(proj) == 1 and "2 generation call(s) and up to 2 judge call(s)" in proj[0]
+    assert len(proj) == 1 and (
+        "2 generation call(s) and up to 4 judge call(s) (one per reply, plus one retry for a "
+        "judgment that needs review)" in proj[0]
+    )
     assert at.button(key="hl_run").disabled  # not confirmed yet
     assert at.button(key="hl_run").label == "Generate and score"
     assert at.checkbox(key="hl_confirm_0").label == (
@@ -263,7 +269,7 @@ def test_full_hosted_flow_with_fake_clients(tmp_path: Path, monkeypatch: pytest.
 def test_edited_prompt_is_recorded_as_pasted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     data = hosted_env(monkeypatch, tmp_path, RIGHTONCUE_DRY_RUN="1")
     at = unlock(run())
-    at.text_area(key="hl_prompt_text_prompts/v1.md").set_value("You are Riley. Ask one question.")
+    at.text_area(key="hl_prompt_text_prompts/v2.md").set_value("You are Riley. Ask one question.")
     at.run()
     at.button(key="hl_run").click().run()
     assert not at.exception
@@ -523,3 +529,57 @@ def test_badges_wrap_instead_of_clipping() -> None:
     css = "\n".join(e.proto.body for e in at.get("html") if "<style>" in e.proto.body)
     assert "span.stMarkdownBadge{white-space:normal !important;overflow:visible !important;" in css
     assert "text-overflow:clip !important" in css
+
+
+# -------------------------------------------------- judge retry, as reviewers see it
+
+
+def hosted_one_reply(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, judge_outputs: list[Any], reply: str) -> AppTest:
+    hosted_env(monkeypatch, tmp_path)
+    o = FakeClient([reply, *judge_outputs])
+    o.max_retries = 0
+    monkeypatch.setattr(live, "GENERATION_FACTORIES", {"openai": lambda: o, "gemini": boom})
+    at = unlock(run())
+    at.checkbox(key="hl_confirm_0").set_value(True).run()
+    at.button(key="hl_run").click().run()
+    assert not at.exception, at.exception
+    return at
+
+
+def live_tab_text(at: AppTest) -> str:
+    tab = at.tabs[2]
+    return "\n".join(m.value for m in tab.markdown) + "\n" + "\n".join(
+        html.unescape(re.sub(r"<[^>]+>", "", e.proto.body)) for e in tab.get("html")
+    )
+
+
+def test_hosted_form_starts_from_prompt_v2_with_v1_available(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    hosted_env(monkeypatch, tmp_path, RIGHTONCUE_DRY_RUN="1")
+    at = unlock(run())
+    src = at.selectbox(key="hl_prompt_src")
+    assert src.value == "prompts/v2.md" and "prompts/v1.md" in src.options
+    assert at.text_area(key="hl_prompt_text_prompts/v2.md").value == (REPO / "prompts" / "v2.md").read_text(encoding="utf-8").lstrip("﻿")
+    # the saved comparison still opens on H3 with prompt v2
+    assert at.radio(key="sel_case").value == "H3" and at.radio(key="sel_prompt").value == "v2"
+
+
+def test_two_invalid_judgments_show_needs_review_with_no_valid_score(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    at = hosted_one_reply(tmp_path, monkeypatch, [invalid_judge(), invalid_judge()], REPLY_WITH_QUOTE)
+    assert badges(at, "Needs review · no valid score") == [":orange-badge[Needs review · no valid score]"]
+    text = live_tab_text(at)
+    assert "Why this judgment needs review" in text and "Why it was not acceptable" not in text
+    assert "judge-v1: needs review" not in text and "/8" not in text
+
+
+def test_retry_that_succeeds_shows_its_valid_verdict(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    at = hosted_one_reply(tmp_path, monkeypatch, [invalid_judge(), judge()], REPLY_WITH_QUOTE)
+    text = live_tab_text(at)
+    assert "Needs review" not in text and "Why this judgment needs review" not in text
+    assert ":green-badge[judge-v1: acceptable · 8/8]" in [m.value for m in at.tabs[2].markdown]
+
+
+def test_a_valid_rejection_keeps_its_heading(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    at = hosted_one_reply(tmp_path, monkeypatch, [judge(next_action=1)], REPLY_WITH_QUOTE)
+    text = live_tab_text(at)
+    assert "judge-v1: not acceptable · 7/8" in text
+    assert "Why it was not acceptable" in text and "Why this judgment needs review" not in text
