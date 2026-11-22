@@ -515,3 +515,11 @@ def test_our_own_input_errors_are_shown(tmp_path: Path, monkeypatch: pytest.Monk
     at = unlock(run())
     at.button(key="hl_run").click().run()
     assert "Samples must be from 1 to 2." in [e.value for e in at.error]
+
+
+def test_badges_wrap_instead_of_clipping() -> None:
+    """The verdict badge carries the score; a narrow card or an A4 print must not cut it to "…"."""
+    at = run()
+    css = "\n".join(e.proto.body for e in at.get("html") if "<style>" in e.proto.body)
+    assert "span.stMarkdownBadge{white-space:normal !important;overflow:visible !important;" in css
+    assert "text-overflow:clip !important" in css

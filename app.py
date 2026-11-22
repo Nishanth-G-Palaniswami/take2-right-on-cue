@@ -816,7 +816,11 @@ def _local_guarded_score(cfg: live.LiveConfig, ledger: Any, run_dir: Any) -> Non
 
 st.html(
     "<style>[data-testid='stMainBlockContainer']{padding-top:2.5rem}"
-    " h1{font-size:2.1rem !important;padding-bottom:0.25rem !important}</style>"
+    " h1{font-size:2.1rem !important;padding-bottom:0.25rem !important}"
+    # Badges carry the verdict and score: wrap them, never clip to "…" in a narrow card
+    # (Streamlit's badge is nowrap + overflow hidden + ellipsis; A4 print truncated "5/8").
+    " span.stMarkdownBadge{white-space:normal !important;overflow:visible !important;"
+    "text-overflow:clip !important;max-width:100%}</style>"
 )
 st.title("Right on Cue")
 if os.environ.get(live.DRY_RUN_ENV) == "1":
