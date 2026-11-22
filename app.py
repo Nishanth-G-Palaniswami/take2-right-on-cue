@@ -274,11 +274,84 @@ HISTORY: list[tuple[str, str, str | None]] = [
         "docs/measurements/2026-11-21-holdout-results.md",
     ),
 ]
+# Plain-language notes beside the two agreement metrics. Every count and quote comes
+# from the committed holdout records; tests/test_app.py checks them against those records.
+LABEL_AGREEMENT_NOTE = (
+    "**The 16 disagreements come from two cases.**\n"
+    "- **H2, 12.** The reviewer accepted all 12 replies and the judge rejected all 12. "
+    "Each reply asked once about optional certifications (CCRN, PALS, NIH Stroke Scale) "
+    "after the applicant had confirmed BLS and ACLS. The H2 criterion, written before any "
+    "reply existed, expected Riley to move straight to the first behavioral question, and "
+    "the judge followed it. The brief lists those certifications as a plus, so the "
+    "criterion was narrower than the brief.\n"
+    "- **H3, 4.** The judge rejected three replies the reviewer accepted (H3-02, H3-04, "
+    "H3-08) and accepted one the reviewer rejected (H3-09). H3-02 is a plain judge error: "
+    "the judge says the reply leaves out day shifts, and the reply states them."
+)
+H3_02_REPLY = (
+    "I can’t guarantee shift assignment, and I don’t have scheduling details beyond the "
+    "standard shift times. The unit uses 12-hour day shifts from 7 a.m. to 7 p.m. and night "
+    "shifts from 7 p.m. to 7 a.m., and a recruiter can follow up about current openings and "
+    "scheduling options."
+)
+H3_02_JUDGE = (  # (dimension and score, an exact excerpt of judge-v1's rationale)
+    ("Next action, scored 1", "it fails to clearly answer the known fact that day shifts are offered in the unit"),
+    ("Grounding, scored 1", "it omits the available fact that day shifts are offered"),
+)
+H3_02_TWIN = "A nearly identical reply, H3-06, scored 8/8 from the same judge."
+PAIR_AGREEMENT_NOTE = (
+    "**Why exact pair agreement is low.** The judge never compares two replies. Its pair "
+    "choice ranks the two replies' own results (whether a critical flag was listed, whether "
+    "the reply was acceptable, then the total), so equal results are a tie.\n"
+    "- **The judge tied 9 of 12 pairs:** every H1, H2 and H4 pair. Both replies passed at "
+    "8/8 on H1 and H4, and both failed at 3/8 on H2.\n"
+    "- **The reviewer tied once** (P06, an H2 pair) and chose a reply in the other 11.\n"
+    "- **The 2 exact matches** are that shared tie (P06) and one H3 pair (P09). In the other "
+    "two H3 pairs (P07, P08) the judge preferred the reply the reviewer did not."
+)
+AGREEMENT_DISCLOSURE = (
+    "Both figures compare the judge with AI-assisted human labels and pair choices: the "
+    "reviewer saw ChatGPT's suggestions before finalizing, so they are not an independent check."
+)
+CHANGE_NEXT = (
+    "When the applicant has already confirmed the required certifications, a future rubric "
+    "should accept either moving on to the behavioral questions or asking once about "
+    "optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant "
+    "has explicitly settled should still fail. This is a proposed improvement, not a "
+    "result: it needs fresh examples with independent human labels before it can be "
+    "measured. The published measurements stay at 31 of 47 and 2 of 12."
+)
 DOCS = [
     ("Report", "docs/report.md"),
     ("Holdout results", "docs/measurements/2026-11-21-holdout-results.md"),
     ("judge-v1 known limits", "docs/judge-v1-known-limits.md"),
 ]
+
+
+def render_agreement(h: review.Headline) -> None:
+    """Each agreement metric with its plain-language explanation beside it."""
+    metric_col, note_col = st.columns([1, 2], gap="large")
+    metric_col.metric(
+        "Judge agrees with the human label (accept/reject)",
+        f"{h.individual_agree} of {h.individual_evaluable}",
+    )
+    with note_col:
+        st.markdown(LABEL_AGREEMENT_NOTE)
+        with st.container(border=True):
+            reply_col, judge_col = st.columns(2)
+            with reply_col:
+                para("H3-02, what the reply says", size="0.78rem", muted=True)
+                para(f"“{H3_02_REPLY}”", size="0.92rem")
+            with judge_col:
+                para("judge-v1, on the same reply", size="0.78rem", muted=True)
+                for label, quote in H3_02_JUDGE:
+                    para(f"{label}: “…{quote}…”", size="0.92rem")
+        st.caption(H3_02_TWIN)
+    metric_col, note_col = st.columns([1, 2], gap="large")
+    metric_col.metric("Exact pair agreement (A/B/tie)", f"{h.pair_exact} of {h.pair_evaluable}")
+    with note_col:
+        st.markdown(PAIR_AGREEMENT_NOTE)
+    st.caption(AGREEMENT_DISCLOSURE)
 
 
 def render_method() -> None:
@@ -294,12 +367,7 @@ def render_method() -> None:
     except (OSError, ValueError, KeyError) as exc:
         st.error(f"Headline results could not be loaded: {exc}")
     else:
-        m1, m2 = st.columns(2)
-        m1.metric(
-            "Judge agrees with the human label (accept/reject)",
-            f"{h.individual_agree} of {h.individual_evaluable}",
-        )
-        m2.metric("Exact pair agreement (A/B/tie)", f"{h.pair_exact} of {h.pair_evaluable}")
+        render_agreement(h)
     st.markdown(
         "- **Cases.** Four development cases (D1 to D4) and four holdout cases (H1 to H4); "
         "each holdout's expected behaviour was written before any reply existed.\n"
@@ -313,6 +381,8 @@ def render_method() -> None:
         "- **AI-assisted labels.** The reviewer saw ChatGPT's suggested labels before "
         "finalizing, so agreement is with AI-assisted labels, not an independent check."
     )
+    st.markdown("#### What I would change next")
+    st.markdown(CHANGE_NEXT)
     st.markdown("#### Experiment history")
     for title, text, doc in HISTORY:
         st.markdown(f"- **{title}.** {text}" + (f" (`{doc}`)" if doc else ""))
