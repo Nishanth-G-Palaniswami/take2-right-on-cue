@@ -636,3 +636,28 @@ def test_retry_refuses_a_reply_never_judged_or_already_retried(tmp_path: Path, m
 def test_no_retry_needed_returns_none(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     out, _ = one_reply_run(tmp_path, monkeypatch, [judge()])
     assert live.retry_invalid_judgments(cfg_for(tmp_path), out.run_dir, FakeClient([])) is None
+
+
+def test_only_the_reply_that_needs_review_is_retried(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    o, g = fake_factories(monkeypatch, [REPLY_WITH_QUOTE, judge(next_action=1), invalid_judge(), judge(), "never sent"],
+                          ["Got it. How long have you been on nights?"])
+    out = live.run_fresh(cfg_for(tmp_path), *prompt_and_case(), ["gpt-5.4-mini", "gemini-3.5-flash"], 1)
+    assert out.messages == [] and len(o.calls) == 4  # 1 generation + 2 first judgments + 1 retry
+    rows = score_rows(tmp_path, out.run_id)
+    assert [(r["requested_model"], r["status"]) for r in rows] == [
+        ("gpt-5.4-mini", "scored"), ("gemini-3.5-flash", "needs_review"), ("gemini-3.5-flash", "scored"),
+    ]
+    assert o.calls[2] == o.calls[3]  # the retry repeats Gemini's judge request exactly
+
+
+def test_a_fatal_error_on_the_retry_is_reported(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx2
+
+    req = httpx2.Request("POST", "https://x")
+    fatal = openai.AuthenticationError("bad key", response=httpx2.Response(401, request=req), body=None)
+    out, o = one_reply_run(tmp_path, monkeypatch, [invalid_judge(), fatal, "never sent"])
+    assert len(o.calls) == 3
+    assert out.messages == [
+        "The judge retry stopped after a fatal judge error (AuthenticationError, HTTP 401); no further judge calls were made."
+    ]
+    assert [r["status"] for r in score_rows(tmp_path, out.run_id)] == ["needs_review", "judge_failed"]

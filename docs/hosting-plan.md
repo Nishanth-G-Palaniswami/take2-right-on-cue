@@ -45,8 +45,8 @@ The **typical** figures use recorded usage on the holdout transcripts. The **max
 
 | Run | Typical | Maximum reserved |
 |---|---|---|
-| 3 models × 1 sample (3 replies, up to 6 judge calls) | about $0.016, plus about $0.003 per retried judgment | $0.150–$0.163 (D1: $0.150) |
-| 3 models × 2 samples (6 replies, up to 12 judge calls) | about $0.031, plus about $0.003 per retried judgment | $0.300–$0.325 |
+| 3 models × 1 sample (3 replies, up to 6 judge calls) | about $0.016, plus about $0.003–$0.004 per retried judgment | $0.150–$0.163 (D1: $0.150 under v1, $0.151 under v2) |
+| 3 models × 2 samples (6 replies, up to 12 judge calls) | about $0.031, plus about $0.003–$0.004 per retried judgment | $0.300–$0.325 |
 
 **How many runs $5.00 covers.**
 - **The maximum depends on what reviewers paste.** A run is reserved from its real request size, so the per-run maximum grows with the prompt and transcript:
@@ -87,6 +87,8 @@ The **typical** figures use recorded usage on the holdout transcripts. The **max
 Either way the saved comparison stays up.
 
 ## Verified locally (2026-11-22, Docker image built from this branch, dry run, no paid calls)
+
+The dry-run figures in this table predate the judge-only retry. Today's maxima count two judge calls per reply (see the cost table above).
 
 **What dry run does.** Dry run swaps every provider for offline fakes that return realistic token usage. The fakes go through the same guarded clients and ledger code, writing to a separate `ledger.dry-run.jsonl`. Its placeholder judgments count toward the simulated spend but are never shown: the button reads "Simulate run", "No API calls or charges" replaces the paid-call acknowledgment, and each card reads "Simulated reply · Unscored". Headless Edge drove the real UI using mouse and keyboard events. The rows below up to "Saved view" ran on earlier images of this branch, from before commit `2a14ae7`, when dry run still showed the paid confirmation and the "Generate and score" button. The two rows after that used the image from `2a14ae7`, with access code, model picker and "Simulate run".
 

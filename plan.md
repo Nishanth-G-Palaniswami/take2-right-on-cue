@@ -348,9 +348,9 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
 
 | # | Item | Owner | Status |
 |---|---|---|---|
-| 1 | `live.retry_invalid_judgments` and the retry pass in `run_fresh`. The projection counts 2 judge calls per reply. Card attempt count, badge, headings, v2 default. Offline tests | lead | Implemented, awaiting verification |
-| 2 | Independent review (money and data consistency) | verifier, Opus, high | Pending |
+| 1 | `live.retry_invalid_judgments` and the retry pass in `run_fresh`. The projection counts 2 judge calls per reply. Card attempt count, badge, headings, v2 default. Offline tests | lead | Verified: verifier PASS on f10c6c4 (582 passed). The local-mode wording it flagged and the two missing tests (several replies in one run; a fatal error on the retry) were fixed in the next commit |
+| 2 | Independent review (money and data consistency) | verifier, Opus, high | Verified: PASS. Open for the owner: a first-pass fatal error or budget stop also skips the retry for replies already marked needs_review |
 | 3 | Real retry of the three saved D1 judgments (at most 3 judge calls, within the $1 local cap) | lead | Pending (approved) |
-| 4 | Docs: hosting-plan maxima and access-code step, README, report example | lead | Implemented, awaiting verification |
+| 4 | Docs: hosting-plan maxima and access-code step, README, report example | lead | Verified: the verifier recomputed every maximum |
 
 **Risk.** A judgment that needs review on both attempts shows no score. That is the intended outcome; it is never counted as a pass or a fail.

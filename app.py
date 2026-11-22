@@ -701,8 +701,9 @@ def render_local_live(cfg: live.LiveConfig) -> None:
         st.info(
             f"Generating makes {calls} {paid} call(s), each capped at {live.OUTPUT_CAP} output "
             f"tokens. Scoring afterwards makes up to {calls} {simulated}judge calls to "
-            f"{scoring.JUDGE_MODEL}, plus up to one retry each (Score again) for a judgment "
-            f"that needs review. Projected maximum cost, retries included: {fmt_usd(proj.total_nano)}; "
+            f"{scoring.JUDGE_MODEL}; scoring again re-judges any judgment that needs review, "
+            f"each call checked against the cap. Projected maximum cost, counting one "
+            f"retry per reply as hosted runs do: {fmt_usd(proj.total_nano)}; "
             f"{simulated}budget remaining: {fmt_usd(remaining)}."
         )
         over_budget = proj.total_nano > remaining
