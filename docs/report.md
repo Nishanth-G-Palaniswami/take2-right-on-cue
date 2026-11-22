@@ -131,10 +131,23 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 - **The review was blind.** Replies were shuffled under neutral IDs, with model and prompt hidden, and the mappings were committed as salted hashes before generation and verified at reveal.
 - **The labels are AI-assisted.** The reviewer formed initial judgments, read ChatGPT's suggested labels, and discussed the differences before finalizing. ChatGPT also suggested pair choices and helped review the critical flags.
 
-**Agreement on the holdout** (`docs/measurements/2026-11-21-holdout-results.md`):
-- **Accept/reject:** the judge agreed with the reviewer on **31 of 47** replies.
-- **Exact A/B/tie on 12 pre-selected v2 pairs:** **2 of 12**, all 12 evaluable. The judge tied 9 pairs, where both replies scored the same, while the reviewer had a preference in 8 of those 9.
+**Agreement on the holdout,** measured against the AI-assisted labels above (`docs/measurements/2026-11-21-holdout-results.md`):
+- **Accept/reject:** the judge agreed with the reviewer on **31 of 47** replies. In plain terms, the 16 disagreements come from two cases:
+  - **H2, 12:** the reviewer accepted every reply and the judge rejected every one. Each reply asked once about optional certifications, and the H2 criterion expected Riley to move straight on; see the H2 section below.
+  - **H3, 4:** the judge rejected three replies the reviewer accepted (H3-02, H3-04, H3-08) and accepted one the reviewer rejected (H3-09). H3-02 is a plain judge error, shown after this list.
+- **Exact A/B/tie on 12 pre-selected v2 pairs:** **2 of 12**, all 12 evaluable. In plain terms, the judge never compares two replies. Its pair choice ranks the two replies' own results (whether a critical flag was listed, whether the reply was acceptable, then the total), so equal results are a tie.
+  - **The judge tied 9 of 12:** every H1, H2 and H4 pair. Both replies passed at 8/8 on H1 and H4, and both failed at 3/8 on H2.
+  - **The reviewer tied once** (P06, an H2 pair) and chose a reply in the other 11, including 8 of the judge's 9 ties.
+  - **The 2 exact matches** are that shared tie (P06) and one H3 pair (P09). On P07 and P08 the judge preferred the reply the reviewer did not; P08 is shown below.
 - **Accounting:** all 48 planned holdout replies are covered: 47 scored, 1 generation failure.
+
+**H3-02, a plain judge error: the reply and the judge's rationale side by side.**
+
+| H3-02, what the reply says | judge-v1, on the same reply |
+|---|---|
+| "I can’t guarantee shift assignment, and I don’t have scheduling details beyond the standard shift times. The unit uses 12-hour day shifts from 7 a.m. to 7 p.m. and night shifts from 7 p.m. to 7 a.m., and a recruiter can follow up about current openings and scheduling options." | **Next action, scored 1:** "…it fails to clearly answer the known fact that day shifts are offered in the unit…" **Grounding, scored 1:** "…it omits the available fact that day shifts are offered…" |
+
+The reply states the day-shift hours that the judge says it leaves out. A nearly identical reply, H3-06, scored 8/8 from the same judge.
 
 ### H2: the written criterion versus what the reviewer accepted
 
@@ -175,6 +188,10 @@ This is an exploratory live example, outside the scored evaluation, with no reco
   - it raised no false flags on clean replies, which fixes judge-v1's self-denying flags;
   - it separated "asks for the outcome" from "asks what you did" (14/14), which earlier attempts had missed.
 - **Why it wasn't adopted.** It still marked down D1 permission requests that mention "a few screening questions", following the frozen criterion's "as its own question". That missed one pre-registered criterion (1/4), so judge-v1 stays the submission default (`docs/measurements/2026-11-21-judge-v4-plan.md`).
+
+### What I would change next
+
+When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. This is a proposed improvement, not a result: it needs fresh examples with independent human labels before it can be measured. The published measurements stay at 31 of 47 and 2 of 12.
 
 ## Limits
 
