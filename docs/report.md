@@ -276,6 +276,23 @@ This is an exploratory live example, outside the scored evaluation, with no reco
   - it separated "asks for the outcome" from "asks what you did" (14/14), which earlier attempts had missed.
 - **Why it wasn't adopted.** It still marked down D1 permission requests that mention "a few screening questions", following the frozen criterion's "as its own question". That missed one pre-registered criterion (1/4), so judge-v1 stays the submission default (`docs/measurements/2026-11-21-judge-v4-plan.md`).
 
+### judge-v5: a tested alternative, not adopted
+
+- **The candidate.** judge-v1 with three changes:
+  - accept either move once the applicant has confirmed the license and current BLS and ACLS;
+  - judge consent on the new reply in context;
+  - invalidate a flagged violation that the judge's own rationale denies.
+- **The test.** A pre-registered fresh check: 18 new items labelled by Nishanth, with AI assistance, before any score existed, plus the known H2, D1 and Maya cases.
+- **What improved:**
+  - the Maya live case (8/8, no consent flag, in its scored draw);
+  - D1 permission requests, 8 of 8;
+  - H1, 6 of 6.
+- **Why it wasn't adopted.** It missed all six criteria:
+  - the certification rule didn't override one-move case criteria, so H2 went 0 of 6;
+  - a new `committed` field led the judge to list violations it then marked absent, leaving 8 of 54 judgments unscored;
+  - "I have BLS and ACLS" was read as current.
+  - judge-v1 stays live (`docs/measurements/2026-11-22-judge-v5-results.md`).
+
 ### What I would change next
 
 When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. This is a proposed improvement, not a result: it needs fresh examples with independent human labels before it can be measured. The published measurements stay at 31 of 47 and 2 of 12.

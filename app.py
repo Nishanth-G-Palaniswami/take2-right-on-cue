@@ -301,6 +301,12 @@ HISTORY: list[tuple[str, str, str | None]] = [
         "is the recommended setup and the default in Run it yourself.",
         "docs/measurements/2026-11-22-prompt-v3-results.md",
     ),
+    (
+        "judge-v5",
+        "judge-v1 plus certification and consent changes. Tested on a fresh blind sheet; it "
+        "missed all six pre-registered criteria and was not adopted. judge-v1 stays live.",
+        "docs/measurements/2026-11-22-judge-v5-results.md",
+    ),
 ]
 # Plain-language notes beside the two agreement metrics. Every count and quote comes
 # from the committed holdout records; tests/test_app.py checks them against those records.

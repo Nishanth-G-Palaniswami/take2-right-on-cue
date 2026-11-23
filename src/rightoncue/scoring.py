@@ -58,7 +58,8 @@ JUDGE_PROMPTS: dict[str, tuple[Path, str]] = {
         Path("prompts/judge-v4.md"),
         "aa97b5c87d5b325b5870181222576798488aadbb31e651eb5d60d7539f00ad1c",
     ),
-    # Candidate (2026-11-22): judge-v1 plus the certification and consent changes.
+    # Tested 2026-11-22 and not adopted (missed all six pre-registered criteria):
+    # judge-v1 plus the certification and consent changes.
     "judge-v5": (
         Path("prompts/judge-v5.md"),
         "0046e009f9059c2f93fe932dcb1be82d34f360792cbf521476cd0a11e1f02519",
