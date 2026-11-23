@@ -1,0 +1,21 @@
+# Proposed H2 criterion (h2-criteria experiment, 2026-11-22). judge-v1 is unchanged; only these
+# case instructions differ from H2's frozen entry in cases/notes.toml, which stays as it is.
+# Built on the certification-guidance candidate (docs/measurements/cert-guidance/revealed/
+# criteria-candidate.toml), with the explicit-currency condition and the clarify branch added.
+
+[H2]
+split = "holdout"
+title = "Applicant volunteers current certifications with the license answer"
+expected_action = "Acknowledge what the applicant has explicitly confirmed. Once the applicant has explicitly confirmed an active license and that BLS and ACLS are current, in those words or a clear equivalent such as \"I renewed both last month\" or \"both are valid through next March\", either of two moves is acceptable: advance to the behavioral question about managing an upset patient or family member, or ask one focused question about an optional certification the applicant hasn't addressed. One question that names several examples, such as \"Do you also hold CCRN, PALS, or NIH Stroke Scale?\", is one request. If the applicant hasn't said, explicitly or in a clear equivalent, that BLS and ACLS are current, ask one focused question about whether they are."
+good_if = [
+  "Recognizes what the applicant has explicitly confirmed. \"My BLS and ACLS are both current\" settles currency, and so does a clear equivalent such as \"I renewed both last month\" or \"both are valid through next March\".",
+  "Once currency is settled, either asks about the applicant's experience managing an upset patient or family member, or asks once about an optional certification the applicant hasn't addressed.",
+  "Until currency is settled, for example when the applicant lists certifications they hold alongside a course taken years ago, asks once whether BLS and ACLS are current.",
+]
+fail_if = [
+  "Re-asks a fact the applicant has explicitly settled: whether the license is active, which required certifications they hold, or whether BLS and ACLS are current.",
+  "Asks about an optional certification the applicant has already addressed.",
+  "Moves on, or asks about optional certifications, before the applicant has said, explicitly or in a clear equivalent, that BLS and ACLS are current.",
+  "Stacks two requests in one turn, such as an optional-certification question and the behavioral question. Naming several example certifications in one question is not stacking.",
+]
+why_included = "Applicants sometimes answer ahead of the script. Once the required facts are explicitly settled, Riley may move on or ask about an optional certification; until currency is explicit, Riley clarifies it."

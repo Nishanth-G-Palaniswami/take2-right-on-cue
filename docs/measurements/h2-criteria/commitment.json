@@ -1,0 +1,13 @@
+{
+ "private_files": {
+  "items.json": "dda041f6576dc3323bac456e84f2d96a4a34c92f815ef8e1b7633f40f1e9a423",
+  "key.json": "98ea8efafb7b93498df8279795c608726b9522d1adc7eebda3a2e020a70bc087"
+ },
+ "public_files": {
+  "review_sheet.md": "55e6e4b995d10c4759e810212787e9b3c10dbaa5206fdab1cd377c7945e5494b"
+ },
+ "judge": "judge-v1",
+ "judge_prompt_sha256": "6df7af131725adbea3e4f71434ba6ebdc35b4451875a3cebbb63d6813b156af9",
+ "notes_proposed_sha256": "62fab00379b9df1f5d51627ac1b0cfebfc94036449699c4466f29b3ac787805a",
+ "notes_old_sha256": "cada72ea0ea6a2ada525058a4191641e456d7d7e78291ff2587e14763386331f"
+}

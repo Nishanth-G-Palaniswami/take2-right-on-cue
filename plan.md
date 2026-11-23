@@ -365,6 +365,20 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
   - Render serves the branch with interviewer v2 as the default and v1 selectable, scored by judge-v1;
   - the owner pushes and approves deployment separately.
 
+## H2 criteria: a narrower fix on judge-v1 (2026-11-22)
+
+**Objective.** Keep judge-v1 and change only H2's case instructions, so that once currency is explicit, moving on and one focused optional-certification question are both accepted, and a Tobias-like answer gets a currency question.
+
+**Plan:** `docs/measurements/2026-11-22-h2-criteria-plan.md`.
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | Proposed text (`docs/measurements/h2-criteria/notes-proposed.toml`); old and proposed side by side; the request the judge receives, verified with `plan_scoring` | lead | Done; offline |
+| 2 | 19 fresh items from a separate author; blind sheet; commitment | item author, then lead | Done |
+| 3 | Nishanth labels the 19 items and approves the run (cap $0.65) | Nishanth | Pending |
+| 4 | Score fresh (new/old/general), known (new/old), and the H2 regression (new); report H1–H6 | lead | Pending |
+| 5 | Adoption (`cases/notes.toml` or otherwise) is a separate decision | Nishanth | Not started |
+
 ## judge-v5: certification and consent fixes (2026-11-22)
 
 **Objective.**
