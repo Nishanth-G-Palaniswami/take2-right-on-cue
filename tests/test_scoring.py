@@ -1869,3 +1869,32 @@ def test_v3_record_with_v1_shaped_judgment_is_corrupt(
     err = capsys.readouterr().err
     assert "judgment does not match the schema" in err and "The score file is corrupt" in err
     assert score.factory_calls == 0
+
+
+# --- --case: score only some of a run's cases ------------------------------------------
+
+
+def test_case_option_limits_scoring_to_the_named_cases(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    slots = [slot("RID", "C1", 1, REPLY), slot("RID", "C2", 1, REPLY)]
+    run_dir = make_run(tmp_path, slots, cases=("C1", "C2"))
+    notes = write_notes(tmp_path, NOTES + NOTES.replace("[C1]", "[C2]"))
+    judge_ = FakeJudge([judge()])
+    code = cli.main(
+        ["score", str(run_dir), "--scores-dir", str(tmp_path / "scores"), "--notes", str(notes), "--case", "C2"],
+        client_factories={"openai": lambda: judge_},
+    )
+    assert code == 0 and len(judge_.calls) == 1
+    records = scoring.read_score_records(tmp_path / "scores" / "RID.jsonl")
+    assert {r["case_id"] for r in records} == {"C2"}
+    out = capsys.readouterr().out
+    assert "1 eligible reply" in out and "unknown" not in out
+
+
+def test_case_option_refuses_a_case_the_run_does_not_have(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    scorer = setup(tmp_path, [slot("RID", "C1", 1, REPLY)])
+    code = cli.main(
+        ["score", str(scorer.run_dir), "--scores-dir", str(scorer.scores_dir), "--notes", str(scorer.notes), "--case", "H9"],
+        client_factories={"openai": lambda: FakeJudge([])},
+    )
+    assert code == 2
+    assert "--case H9: not a case in this run (C1)" in capsys.readouterr().err

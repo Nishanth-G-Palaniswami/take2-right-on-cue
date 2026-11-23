@@ -75,6 +75,12 @@ def _build_parser() -> argparse.ArgumentParser:
     score.add_argument("--scores-dir", type=Path, default=Path("scores"))
     score.add_argument("--notes", type=Path, default=Path("cases/notes.toml"))
     score.add_argument(
+        "--case",
+        action="append",
+        default=None,
+        help="score only this case ID; repeat for several (default: every case in the run)",
+    )
+    score.add_argument(
         "--judge-version",
         choices=list(scoring.JUDGE_PROMPTS),
         default=scoring.DEFAULT_JUDGE_VERSION,
@@ -538,7 +544,13 @@ def _cmd_score(
         return 2
     try:
         judge = scoring.load_judge_prompt(args.judge_version)
-        plan = scoring.plan_scoring(args.run_dir, args.scores_dir, args.notes, judge)
+        plan = scoring.plan_scoring(
+            args.run_dir,
+            args.scores_dir,
+            args.notes,
+            judge,
+            only_cases=frozenset(args.case) if args.case else None,
+        )
     except (scoring.ScoringInputError, ManifestError) as exc:
         print(str(exc), file=sys.stderr)
         print("No judge call was made.", file=sys.stderr)

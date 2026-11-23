@@ -866,6 +866,12 @@ def test_machine_result_keys_in_order() -> None:
     assert holdout.machine_result(empty, other) == ("B", "total", False)
 
 
+def test_rank_reads_scorer_3_records_like_scorer_1() -> None:
+    r = rec(RUN_V2, "H1", M1, 1, acceptable=True, total=8)
+    r["scorer_version"] = "scorer-3"
+    assert holdout.rank_of(r).as_tuple() == (1, 1, 8)
+
+
 def test_rank_rejects_scorer_2_and_malformed_records() -> None:
     r = rec(RUN_V2, "H1", M1, 1, acceptable=True, total=8)
     r["scorer_version"] = "scorer-2"

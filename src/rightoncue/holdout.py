@@ -1415,12 +1415,13 @@ class Rank:
 
 
 def rank_of(record: dict[str, Any]) -> Rank:
-    """The rank tuple from a raw scorer-1 record (listed criticals count as-is)."""
+    """The rank tuple from a raw scorer-1 or scorer-3 record (listed criticals count as-is;
+    scorer-3 lists only entries the judge marked committed)."""
     where = f"score record for {record.get('slot_key')}"
-    if record.get("scorer_version") != "scorer-1":
+    if record.get("scorer_version") not in ("scorer-1", "scorer-3"):
         raise HoldoutInputError(
             f"{where}: scorer version {record.get('scorer_version')!r}; the pair "
-            "comparison reads scorer-1 critical-violation lists only"
+            "comparison reads scorer-1 or scorer-3 critical-violation lists only"
         )
     acceptable = _acceptable(record)
     total = record["decision"].get("total")

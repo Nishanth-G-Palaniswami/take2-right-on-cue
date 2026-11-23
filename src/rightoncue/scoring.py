@@ -1260,10 +1260,17 @@ def _manifest_fields(
 
 
 def plan_scoring(
-    run_dir: Path, scores_dir: Path, notes_path: Path, judge: JudgePrompt
+    run_dir: Path,
+    scores_dir: Path,
+    notes_path: Path,
+    judge: JudgePrompt,
+    *,
+    only_cases: frozenset[str] | None = None,
 ) -> ScoringPlan:
     """Read the run and the score file; decide reuse / judge / skip per slot.
 
+    `only_cases`, when given, limits the plan to those case IDs; the run's other
+    slots are left out of the plan entirely (not judged, not reported as missing).
     Writes nothing and makes no call. Raises ScoringInputError or ManifestError.
     """
     try:
@@ -1290,9 +1297,22 @@ def plan_scoring(
     by_key: dict[str, list[dict[str, Any]]] = {}
     for _, r in records:
         by_key.setdefault(r["slot_key"], []).append(r)
+    if only_cases is not None:
+        unknown_cases = sorted(only_cases - {case_id for case_id, _ in cases})
+        if unknown_cases:
+            raise ScoringInputError(
+                f"--case {', '.join(unknown_cases)}: not a case in this run "
+                f"({', '.join(c for c, _ in cases)})"
+            )
     expected: set[str] = set()
     slots: list[SlotPlan] = []
     for case_id, raw_turns in cases:
+        if only_cases is not None and case_id not in only_cases:
+            # left out on purpose: its slots belong to the run, so they are not "unknown"
+            for model in models:
+                for idx in range(1, samples + 1):
+                    expected.add(make_slot_key(run_id, case_id, version, model, idx))
+            continue
         try:
             turns = [Turn.model_validate(t) for t in raw_turns]
         except ValidationError as exc:
