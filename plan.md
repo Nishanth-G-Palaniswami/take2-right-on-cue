@@ -485,6 +485,14 @@ The existing evaluator keeps working exactly as before. Branch `practice-call` f
 **Browser check (lead).** Headless Edge over the DevTools protocol drove the real page with mouse and keyboard events, in a hosted dry run with a 2-second fake call delay. All checks were made through the DOM and the dry-run ledger.
 - **Desktop 1280 × 900, 6 runs:** each double click on Send made 1 generation reservation, and each double click on Evaluate made 1 judge reservation. Clicking Evaluate again on a scored reply made 0 judge reservations. 2 replies and 2 applicant turns were shown, with no duplicates. The waiting screens cleared by themselves in 2.9–5.5 s.
   - Before the poll fix, 2 of 5 runs needed "Check again"; after it, 0 of 6.
+  - **The poll fix was observed directly.** With a 5-second fake delay, the "This evaluation is still running." screen appeared in 4 of 4 double-click runs and cleared by itself in 6.7–7.1 s. "Riley's reply is still being generated." appeared in 1 of 4 runs and also cleared by itself. "Check again" was pressed 0 times, and each Send and each Evaluate made 1 reservation.
+- **Covered by offline tests only, not seen in a dry run:**
+  - the real "Verdict by … / Cached" captions (a dry run shows the placeholder caption instead);
+  - the paid-call acknowledgment checkbox (a dry run shows "No API calls or charges");
+  - the timeout and uncertain-charge wording.
+
+  The paid smoke test should look at all three.
+- **The check ran from the worktree** (`uv run streamlit run app.py`), not from a Docker image built from this branch.
 - **Mobile 390 × 844:** the same results, with no horizontal overflow.
 - **Short-message rule at a $0.0165 cap:**
   - a 600-character message was refused at its real maximum of $0.017172, with 0 reservations, the draft kept and no turn appended;
