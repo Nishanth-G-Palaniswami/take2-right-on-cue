@@ -182,7 +182,7 @@ Most of the 16 disagreements between the ChatGPT labels and judge-v1 in the pair
 
 We observed no regression for GPT-5.4 in this check. With two samples, we can't establish what caused every difference.
 
-**In the app,** "Run it yourself" defaults to GPT-5.4 with v3 and shows the projected maximum cost before anything is generated; v1 and v2 stay selectable. The saved comparison still opens on the H3 holdout run with prompt v2. The published 31 of 47 and 2 of 12 come from the original holdout across v1 and v2.
+**In the app,** "Run it yourself" defaults to GPT-5.4 with v3 and shows the projected maximum cost before anything is generated; v1 and v2 stay selectable. The saved comparison opens on H3 with v3, from the retest of v3 on the original holdout cases, and v2 is one click away on the same case and sample. On those cases, judge-v1 accepted 14 of 24 v2 replies and 16 of 24 v3 replies. Every change is on H3, where the reviewer had accepted both GPT-5.4 v2 replies that judge-v1 rejected, so this is not a measured improvement. A blind review sheet for the 24 v3 replies is in `docs/measurements/v3-retest-review/`. The published 31 of 47 and 2 of 12 come from the original holdout across v1 and v2.
 
 ## How quality was measured
 

@@ -12,7 +12,7 @@ import json
 import os
 import re
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal
 
@@ -698,6 +698,73 @@ def annotate_holdout(view: RunView, holdout: HoldoutData) -> None:
         card.human_accept = holdout.accept_by_slot[card.slot_key]
         by_type = {f.type: f for f in holdout.findings.get(card.neutral_id, [])}
         card.critical_findings = [by_type[v.type] for v in card.violations if v.type in by_type]
+
+
+# Prompt v3, the final prompt, retested on the original holdout cases. This is run A of the v3
+# regression check (all three models, 2 samples, the holdout settings), scored by judge-v1 with
+# the same case criteria. Its replies have no human labels.
+V3_RETEST_RUN_ID = "20261123T004511Z-b08ea8"
+V3_RETEST_DIR = REPO_ROOT / "docs" / "measurements" / "prompt-v3" / "regression"
+HOLDOUT_CASES = ("H1", "H2", "H3", "H4")
+
+
+def saved_runs(holdout: HoldoutData) -> dict[str, tuple[Path, Path]]:
+    """Prompt version -> (run dir, score file) for the saved comparison: v1 and v2 from the
+    holdout's revealed key, v3 from the retest on the same cases."""
+    out = {p: (RUNS_DIR / rid, scores_path_for(rid)) for p, rid in holdout.run_by_prompt.items()}
+    out["v3"] = (V3_RETEST_DIR / "runs" / V3_RETEST_RUN_ID, V3_RETEST_DIR / "scores" / f"{V3_RETEST_RUN_ID}.jsonl")
+    return dict(sorted(out.items()))
+
+
+def restrict_cases(view: RunView, case_ids: tuple[str, ...]) -> RunView:
+    """The same view with only the given cases, in their run order."""
+    return replace(
+        view,
+        case_ids=[c for c in view.case_ids if c in case_ids],
+        cases=[c for c in view.cases if c.case_id in case_ids],
+    )
+
+
+@dataclass
+class RetestCell:
+    """judge-v1 acceptable replies (of `samples`) for one model and case, v2 and v3."""
+
+    v2: int
+    v3: int
+    v2_unscored: int
+    v3_unscored: int
+
+
+def v3_retest(holdout: HoldoutData, judge_version: str) -> dict[str, dict[str, RetestCell]]:
+    """model -> case -> acceptable counts on H1–H4: the v2 holdout run against the v3 retest,
+    both from the saved judge records."""
+    runs = saved_runs(holdout)
+    views = {
+        p: restrict_cases(load_run_view(runs[p][0], runs[p][1], judge_version), HOLDOUT_CASES)
+        for p in ("v2", "v3")
+    }
+    out: dict[str, dict[str, RetestCell]] = {}
+    for info in views["v2"].models:
+        m = info.requested
+        out[m] = {}
+        for case_id in HOLDOUT_CASES:
+            cards = {
+                p: next(c for c in views[p].cases if c.case_id == case_id).cards[m] for p in ("v2", "v3")
+            }
+            acc = {p: sum(c.decision == "acceptable" for c in cards[p]) for p in cards}
+            uns = {p: sum(c.state == "reply" and c.scores is None for c in cards[p]) for p in cards}
+            out[m][case_id] = RetestCell(acc["v2"], acc["v3"], uns["v2"], uns["v3"])
+    return out
+
+
+V3_FRESH_REPORT = REPO_ROOT / "docs" / "measurements" / "prompt-v3" / "report.json"
+
+
+def v3_fresh_pairs() -> dict[str, tuple[int, int]]:
+    """model -> (v2, v3) pair-conversation replies accepted by the ChatGPT labels, from the
+    fresh behavioral follow-up experiment's committed report."""
+    report = json.loads(V3_FRESH_REPORT.read_text(encoding="utf-8"))["labels"]
+    return {m: (report[m]["v2"]["pair_cases"], report[m]["v3"]["pair_cases"]) for m in MODEL_CHOICES}
 
 
 def pairs_for(holdout: HoldoutData, case: str) -> list[PairChoice]:

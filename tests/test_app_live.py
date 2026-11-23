@@ -250,7 +250,7 @@ def test_full_hosted_flow_with_fake_clients(tmp_path: Path, monkeypatch: pytest.
     text = body(at)
     assert "Thanks for that. What drew you to nights?" in text and "Got it. How long have you been in the ICU?" in text
     assert len(badges(at, "judge-v1: acceptable · 8/8")) == saved_badges + 2
-    assert any(b.startswith(":blue-badge[Saved example · run ") for b in badges(at, "Saved example"))
+    assert any(b.startswith(":blue-badge[Saved example · ") for b in badges(at, "Saved example"))
     page = everything(at) + "\n".join(b.label for b in at.button)
     for dry in ("Simulate", "No API calls or charges", "Simulated reply · Unscored", "Dry run"):
         assert dry not in page, dry
@@ -539,6 +539,16 @@ def test_badges_wrap_instead_of_clipping() -> None:
     assert "text-overflow:clip !important" in css
 
 
+def test_wide_markdown_tables_scroll_inside_their_own_box() -> None:
+    """On a phone, a source document's wide table scrolls sideways instead of being clipped."""
+    at = run()
+    css = "\n".join(e.proto.body for e in at.get("html") if "<style>" in e.proto.body)
+    assert (
+        "[data-testid='stMarkdownContainer'] table{display:block;width:fit-content;"
+        "max-width:100%;overflow-x:auto}" in css
+    )
+
+
 # -------------------------------------------------- judge retry, as reviewers see it
 
 
@@ -570,8 +580,8 @@ def test_hosted_form_starts_from_gpt54_with_prompt_v3_and_v1_v2_available(tmp_pa
     assert at.multiselect(key="hl_models").value == ["gpt-5.4"]
     # the projected maximum cost is visible before anything is generated
     assert any("projected maximum cost" in i.value.lower() and "$" in i.value for i in at.info)
-    # the saved comparison still opens on the H3 holdout run with prompt v2, and the published figures stand
-    assert at.radio(key="sel_case").value == "H3" and at.radio(key="sel_prompt").value == "v2"
+    # the saved comparison opens on H3 with the final prompt v3, and the published figures stand
+    assert at.radio(key="sel_case").value == "H3" and at.radio(key="sel_prompt").value == "v3"
     assert [m.value for m in at.metric] == ["31 of 47", "2 of 12"]
 
 

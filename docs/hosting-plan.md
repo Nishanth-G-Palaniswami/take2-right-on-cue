@@ -3,7 +3,7 @@
 Prepared on 2026-11-22. **Nothing has been pushed, deployed or changed in DNS.** The only paid calls so far were local test runs, recorded under "Real paid runs, locally". Each step below waits for Nishanth's go-ahead.
 
 **Goal.**
-- **The saved three-model comparison is open to everyone,** at the root of `https://rightoncue.nishanthgp.me`. It opens on H3, prompt v2, sample 1.
+- **The saved three-model comparison is open to everyone,** at the root of `https://rightoncue.nishanthgp.me`. It opens on H3, prompt v3, sample 1, the retest of the final prompt on the original cases. v1 and v2 links such as `?case=H3&prompt=v2&sample=1` keep working.
 - **Reviewers with the access code can run the tool live** on "Run it yourself":
   - edit or load a prompt and transcript (the form starts from GPT-5.4 with prompt v3, the recommended setup, with v1 and v2 available for comparison);
   - choose models and a sample count;
