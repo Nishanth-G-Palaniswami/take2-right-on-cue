@@ -1,0 +1,185 @@
+{
+ "salt": "14c5df9a1beab21dbfae85c7a39b794e",
+ "items": {
+  "P01": {
+   "index": 19,
+   "frame": "F4",
+   "version": "C",
+   "reply_key": "opt"
+  },
+  "P02": {
+   "index": 11,
+   "frame": "F2",
+   "version": "U",
+   "reply_key": "clarify_both"
+  },
+  "P03": {
+   "index": 4,
+   "frame": "F1",
+   "version": "U",
+   "reply_key": "opt"
+  },
+  "P04": {
+   "index": 12,
+   "frame": "F3",
+   "version": "C",
+   "reply_key": "move"
+  },
+  "P05": {
+   "index": 6,
+   "frame": "F2",
+   "version": "C",
+   "reply_key": "move"
+  },
+  "P06": {
+   "index": 25,
+   "frame": "F5",
+   "version": "C",
+   "reply_key": "opt"
+  },
+  "P07": {
+   "index": 0,
+   "frame": "F1",
+   "version": "C",
+   "reply_key": "move"
+  },
+  "P08": {
+   "index": 18,
+   "frame": "F4",
+   "version": "C",
+   "reply_key": "move"
+  },
+  "P09": {
+   "index": 16,
+   "frame": "F3",
+   "version": "U",
+   "reply_key": "opt"
+  },
+  "P10": {
+   "index": 10,
+   "frame": "F2",
+   "version": "U",
+   "reply_key": "opt"
+  },
+  "P11": {
+   "index": 2,
+   "frame": "F1",
+   "version": "C",
+   "reply_key": "clarify_both"
+  },
+  "P12": {
+   "index": 20,
+   "frame": "F4",
+   "version": "C",
+   "reply_key": "clarify_other"
+  },
+  "P13": {
+   "index": 9,
+   "frame": "F2",
+   "version": "U",
+   "reply_key": "move"
+  },
+  "P14": {
+   "index": 24,
+   "frame": "F5",
+   "version": "C",
+   "reply_key": "move"
+  },
+  "P15": {
+   "index": 3,
+   "frame": "F1",
+   "version": "U",
+   "reply_key": "move"
+  },
+  "P16": {
+   "index": 28,
+   "frame": "F5",
+   "version": "P",
+   "reply_key": "opt"
+  },
+  "P17": {
+   "index": 5,
+   "frame": "F1",
+   "version": "U",
+   "reply_key": "clarify_both"
+  },
+  "P18": {
+   "index": 22,
+   "frame": "F4",
+   "version": "P",
+   "reply_key": "opt"
+  },
+  "P19": {
+   "index": 27,
+   "frame": "F5",
+   "version": "P",
+   "reply_key": "move"
+  },
+  "P20": {
+   "index": 29,
+   "frame": "F5",
+   "version": "P",
+   "reply_key": "clarify_other"
+  },
+  "P21": {
+   "index": 14,
+   "frame": "F3",
+   "version": "C",
+   "reply_key": "clarify_both"
+  },
+  "P22": {
+   "index": 1,
+   "frame": "F1",
+   "version": "C",
+   "reply_key": "opt"
+  },
+  "P23": {
+   "index": 23,
+   "frame": "F4",
+   "version": "P",
+   "reply_key": "clarify_other"
+  },
+  "P24": {
+   "index": 8,
+   "frame": "F2",
+   "version": "C",
+   "reply_key": "clarify_both"
+  },
+  "P25": {
+   "index": 13,
+   "frame": "F3",
+   "version": "C",
+   "reply_key": "opt"
+  },
+  "P26": {
+   "index": 21,
+   "frame": "F4",
+   "version": "P",
+   "reply_key": "move"
+  },
+  "P27": {
+   "index": 15,
+   "frame": "F3",
+   "version": "U",
+   "reply_key": "move"
+  },
+  "P28": {
+   "index": 7,
+   "frame": "F2",
+   "version": "C",
+   "reply_key": "opt"
+  },
+  "P29": {
+   "index": 17,
+   "frame": "F3",
+   "version": "U",
+   "reply_key": "clarify_both"
+  },
+  "P30": {
+   "index": 26,
+   "frame": "F5",
+   "version": "C",
+   "reply_key": "clarify_other"
+  }
+ }
+}

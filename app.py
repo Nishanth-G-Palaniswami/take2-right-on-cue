@@ -315,6 +315,14 @@ HISTORY: list[tuple[str, str, str | None]] = [
         "Not adopted.",
         "docs/measurements/2026-11-22-h2-criteria-results.md",
     ),
+    (
+        "H2 criteria, round 2",
+        "A stricter H2 text (a closed list of confirmations, each credential judged on its own), "
+        "tested on fresh pairs where only the applicant's wording changes. Six of ten "
+        "pre-registered checks passed; it fixed most of round 1's Tobias failures, but judge-v1 "
+        "still let Riley move on when currency was unconfirmed. Not adopted.",
+        "docs/measurements/2026-11-22-h2-criteria-2-results.md",
+    ),
 ]
 # Plain-language notes beside the two agreement metrics. Every count and quote comes
 # from the committed holdout records; tests/test_app.py checks them against those records.

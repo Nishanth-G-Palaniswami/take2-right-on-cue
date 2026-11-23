@@ -1,0 +1,105 @@
+{
+  "author_note": "Five paired frames where only the applicant's last turn changes and all Riley replies are neutral acknowledgments that read naturally after either version.",
+  "frames": {
+    "F1": {
+      "confirmation_form": "both_current",
+      "other_version": "U",
+      "shared_turns": [
+        {"role": "agent", "utterance": "Hi Brooke, this is Riley, a virtual recruiting assistant calling for Acme Health in Denver about the Registered Nurse role in our Medical ICU. Before we start, I want to let you know this call is recorded and the notes may be shared with our hiring team. Is that okay with you?"},
+        {"role": "user", "utterance": "Yes, that's fine."},
+        {"role": "agent", "utterance": "Thanks. First, do you hold an active Colorado RN license or an active multistate compact license?"},
+        {"role": "user", "utterance": "Yes, I have an active Colorado RN license."},
+        {"role": "agent", "utterance": "Great. Which certifications do you currently hold?"}
+      ],
+      "versions": {
+        "C": "I have BLS and ACLS, and both are current.",
+        "U": "I have BLS and ACLS. I took the ACLS course years ago at the hospital where I started out."
+      },
+      "replies": {
+        "move": "Got it. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+        "opt": "Thanks. Do you hold any of the optional certifications, such as CCRN, PALS, or NIH Stroke Scale?",
+        "clarify_both": "Thanks. Are your BLS and ACLS both current right now?"
+      }
+    },
+    "F2": {
+      "confirmation_form": "both_up_to_date",
+      "other_version": "U",
+      "shared_turns": [
+        {"role": "agent", "utterance": "Hello Teresa, this is Riley, a virtual recruiting assistant with Acme Health in Denver, calling about the Medical ICU Registered Nurse opening. Just so you know, this conversation is recorded and may be shared with the hiring team. Are you comfortable continuing?"},
+        {"role": "user", "utterance": "Sure, go ahead."},
+        {"role": "agent", "utterance": "Thank you. Do you have an active Colorado RN license, or an active multistate compact license?"},
+        {"role": "user", "utterance": "I do, my license is active and in good standing."},
+        {"role": "agent", "utterance": "Okay. Which certifications do you hold?"}
+      ],
+      "versions": {
+        "C": "I hold BLS and ACLS, and both are up to date.",
+        "U": "BLS and ACLS. I did the classroom portion for both during my first job out of nursing school."
+      },
+      "replies": {
+        "move": "Thanks. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+        "opt": "Got it. Do you also have any of CCRN, PALS, or NIH Stroke Scale?",
+        "clarify_both": "Got it. Just to be sure, are your BLS and ACLS both current?"
+      }
+    },
+    "F3": {
+      "confirmation_form": "direct_yes",
+      "other_version": "U",
+      "shared_turns": [
+        {"role": "agent", "utterance": "Hi Devon, this is Riley, a virtual recruiting assistant calling for Acme Health in Denver about our Registered Nurse position in the Medical ICU. This call is recorded, and what we discuss may be shared with the hiring team. Is it all right if we go ahead?"},
+        {"role": "user", "utterance": "Yes, that works for me."},
+        {"role": "agent", "utterance": "Thanks. Do you currently hold an active Colorado RN license or an active multistate compact license?"},
+        {"role": "user", "utterance": "Yes, I have an active multistate license."},
+        {"role": "agent", "utterance": "Okay. Are your BLS and ACLS certifications current?"}
+      ],
+      "versions": {
+        "C": "Yes, they are.",
+        "U": "I have both BLS and ACLS. I took them through the program at the hospital where I trained."
+      },
+      "replies": {
+        "move": "Got it. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+        "opt": "Thanks. Do you hold any optional certifications, like CCRN, PALS, or NIH Stroke Scale?",
+        "clarify_both": "Thanks. Can you confirm that your BLS and ACLS are both current?"
+      }
+    },
+    "F4": {
+      "confirmation_form": "recent_renewal",
+      "other_version": "P",
+      "shared_turns": [
+        {"role": "agent", "utterance": "Hi Rosalind, I'm Riley, a virtual recruiting assistant calling on behalf of Acme Health in Denver about the Registered Nurse role in the Medical ICU. I should mention the call is recorded and may be shared with the hiring team. Is that all right?"},
+        {"role": "user", "utterance": "That's all right."},
+        {"role": "agent", "utterance": "Thank you. Do you have an active Colorado RN license or an active multistate compact license?"},
+        {"role": "user", "utterance": "Yes, my Colorado license is active."},
+        {"role": "agent", "utterance": "Okay. Which certifications do you hold?"}
+      ],
+      "versions": {
+        "C": "I have BLS and ACLS, and I renewed both within the last two months.",
+        "P": "I have BLS and ACLS. I renewed my BLS about two months ago, and I got my ACLS back when I was in nursing school."
+      },
+      "replies": {
+        "move": "Got it. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+        "opt": "Thanks. Do you hold any of CCRN, PALS, or NIH Stroke Scale?",
+        "clarify_other": "Thanks. Is your ACLS current?"
+      }
+    },
+    "F5": {
+      "confirmation_form": "future_expiration",
+      "other_version": "P",
+      "shared_turns": [
+        {"role": "agent", "utterance": "Hello Ingrid, this is Riley, a virtual recruiting assistant for Acme Health in Denver, calling about the Medical ICU Registered Nurse opening. Please note this call is recorded and may be shared with our hiring team. Do you agree to continue?"},
+        {"role": "user", "utterance": "Yes, I agree."},
+        {"role": "agent", "utterance": "Thanks. Do you hold an active Colorado RN license, or an active multistate compact license?"},
+        {"role": "user", "utterance": "Yes, I hold an active compact license."},
+        {"role": "agent", "utterance": "Okay. Which certifications do you hold?"}
+      ],
+      "versions": {
+        "C": "BLS and ACLS. Both of them are good until April of 2028.",
+        "P": "BLS and ACLS. My ACLS is good until April of 2028, and I first took the BLS class during nursing school."
+      },
+      "replies": {
+        "move": "Thanks. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+        "opt": "Got it. Do you have any of CCRN, PALS, or NIH Stroke Scale?",
+        "clarify_other": "Got it. Is your BLS current?"
+      }
+    }
+  }
+}

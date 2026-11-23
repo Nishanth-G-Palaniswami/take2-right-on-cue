@@ -381,8 +381,8 @@ Test it on fresh pairs in which only the applicant's wording changes.
 | 1 | Round-2 text (`docs/measurements/h2-criteria-2/notes-proposed.toml`); checked to reach the judge via `plan_scoring` | lead | Done; offline |
 | 2 | 5 frames (15 pairs, 30 items) by a separate author; built in code with the pairing asserted; blind sheet and commitment | item author, then lead | Done |
 | 3 | Independent check of the script against the plan before any paid call | verifier | Verified (PASS; minor findings recorded in the plan) |
-| 4 | Nishanth labels the 30 items himself, blind, and approves the spend (cap $0.65) | Nishanth | Pending |
-| 5 | `run-all`, then the report against A1–A7, R1, R2 and C1 | lead | Pending |
+| 4 | Labels (Nishanth reviewed all 30 himself and dictated his judgments) and approval (cap $0.65); A7 amended before scoring | Nishanth | Done (`8511de2`, `ca945c4`) |
+| 5 | `run-all`, then the report against A1–A7, R1, R2 and C1 | lead | Done ($0.503692): **A2, A4, A6 and R2 missed**; not adopted. See `docs/measurements/2026-11-22-h2-criteria-2-results.md` |
 
 ## H2 criteria: a narrower fix on judge-v1 (2026-11-22)
 

@@ -306,6 +306,26 @@ This is an exploratory live example, outside the scored evaluation, with no reco
 - **Failed (1 of 6), the Tobias boundary.** When the applicant only named BLS and ACLS and mentioned past training, replies that moved on or asked about extras were accepted in 7 of 8 judgments, because the judge read "I hold BLS and ACLS" as current.
 - **Not adopted.** judge-v1 and `cases/notes.toml` are unchanged (`docs/measurements/2026-11-22-h2-criteria-results.md`).
 
+### H2 criteria, round 2: six checks passed, four missed
+
+- **The change.** A stricter H2 text, with judge-v1 and Riley's prompt fixed:
+  - naming a credential or past training does not confirm it is current;
+  - only a closed list of statements confirms it;
+  - each credential is judged on its own, and Riley asks about the other when only one is confirmed.
+- **The test.** 15 fresh pairs, in which the same reply follows two versions of the applicant's wording, labelled by Nishanth, who "reviewed all 30 replies himself and dictated his judgments without reading ChatGPT's draft".
+- **Passed (6 of 10):**
+  - every confirmation form recognized (20 of 20);
+  - clarifying accepted (10 of 10);
+  - no re-asks of a confirmed status (10 of 10);
+  - the six saved H2 replies, 10 of 12 accepted;
+  - slightly fewer wrongly allowed replies than round 1's text (25% against 30%);
+  - unscored judgments (4 of 60).
+- **Missed (4 of 10).**
+  - "Moves on" after an unconfirmed status was still allowed in 4 of 7 scored judgments.
+  - 9 of 15 pairs were fully right.
+  - Round 1's Tobias failures fell from 11 wrong to 1, with 2 unscored, which is still over the frozen limit.
+- **Not adopted** (`docs/measurements/2026-11-22-h2-criteria-2-results.md`).
+
 ### What I would change next
 
 When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. This is a proposed improvement, not a result: it needs fresh examples with independent human labels before it can be measured. The published measurements stay at 31 of 47 and 2 of 12.

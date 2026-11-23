@@ -1,0 +1,517 @@
+{
+ "criteria": {
+  "A1": true,
+  "A2": false,
+  "A3": true,
+  "A4": false,
+  "A5": true,
+  "A6": false,
+  "A7": true,
+  "R1": true,
+  "R2": false,
+  "C1": true
+ },
+ "pass": false,
+ "readout_new": {
+  "A1_C_y": {
+   "right": 20,
+   "wrong": 0,
+   "unscored": 0
+  },
+  "A2_U_n": {
+   "right": 8,
+   "wrong": 2,
+   "unscored": 2
+  },
+  "A3_UP_y": {
+   "right": 10,
+   "wrong": 0,
+   "unscored": 0
+  },
+  "A4_P_n": {
+   "right": 3,
+   "wrong": 3,
+   "unscored": 2
+  },
+  "A5_C_n": {
+   "right": 10,
+   "wrong": 0,
+   "unscored": 0
+  }
+ },
+ "pairs_all_right": [
+  9,
+  15
+ ],
+ "n_items_next_action_2": {
+  "new": [
+   5,
+   20
+  ],
+  "prev": [
+   3,
+   10
+  ]
+ },
+ "regression_readout": {
+  "right": 15,
+  "wrong": 1,
+  "unscored": 2,
+  "n_at_2_in_both_draws": []
+ },
+ "pairs": [
+  {
+   "frame": "F1",
+   "reply": "clarify_both",
+   "ids": {
+    "C": "P11",
+    "U": "P17"
+   },
+   "labels": {
+    "C": "n",
+    "U": "y"
+   },
+   "new_next_action": {
+    "C": [
+     0,
+     0
+    ],
+    "U": [
+     2,
+     2
+    ]
+   },
+   "prev_next_action": {
+    "C": 0,
+    "U": 2
+   },
+   "all_right": true
+  },
+  {
+   "frame": "F1",
+   "reply": "move",
+   "ids": {
+    "C": "P07",
+    "U": "P15"
+   },
+   "labels": {
+    "C": "y",
+    "U": "n"
+   },
+   "new_next_action": {
+    "C": [
+     2,
+     2
+    ],
+    "U": [
+     null,
+     0
+    ]
+   },
+   "prev_next_action": {
+    "C": 2,
+    "U": 2
+   },
+   "all_right": false
+  },
+  {
+   "frame": "F1",
+   "reply": "opt",
+   "ids": {
+    "U": "P03",
+    "C": "P22"
+   },
+   "labels": {
+    "U": "n",
+    "C": "y"
+   },
+   "new_next_action": {
+    "U": [
+     0,
+     0
+    ],
+    "C": [
+     2,
+     2
+    ]
+   },
+   "prev_next_action": {
+    "U": 2,
+    "C": 2
+   },
+   "all_right": true
+  },
+  {
+   "frame": "F2",
+   "reply": "clarify_both",
+   "ids": {
+    "U": "P02",
+    "C": "P24"
+   },
+   "labels": {
+    "U": "y",
+    "C": "n"
+   },
+   "new_next_action": {
+    "U": [
+     2,
+     2
+    ],
+    "C": [
+     0,
+     0
+    ]
+   },
+   "prev_next_action": {
+    "U": 2,
+    "C": 0
+   },
+   "all_right": true
+  },
+  {
+   "frame": "F2",
+   "reply": "move",
+   "ids": {
+    "C": "P05",
+    "U": "P13"
+   },
+   "labels": {
+    "C": "y",
+    "U": "n"
+   },
+   "new_next_action": {
+    "C": [
+     2,
+     2
+    ],
+    "U": [
+     2,
+     2
+    ]
+   },
+   "prev_next_action": {
+    "C": 2,
+    "U": 0
+   },
+   "all_right": false
+  },
+  {
+   "frame": "F2",
+   "reply": "opt",
+   "ids": {
+    "U": "P10",
+    "C": "P28"
+   },
+   "labels": {
+    "U": "n",
+    "C": "y"
+   },
+   "new_next_action": {
+    "U": [
+     0,
+     null
+    ],
+    "C": [
+     2,
+     2
+    ]
+   },
+   "prev_next_action": {
+    "U": 0,
+    "C": 2
+   },
+   "all_right": false
+  },
+  {
+   "frame": "F3",
+   "reply": "clarify_both",
+   "ids": {
+    "C": "P21",
+    "U": "P29"
+   },
+   "labels": {
+    "C": "n",
+    "U": "y"
+   },
+   "new_next_action": {
+    "C": [
+     0,
+     0
+    ],
+    "U": [
+     2,
+     2
+    ]
+   },
+   "prev_next_action": {
+    "C": 0,
+    "U": 2
+   },
+   "all_right": true
+  },
+  {
+   "frame": "F3",
+   "reply": "move",
+   "ids": {
+    "C": "P04",
+    "U": "P27"
+   },
+   "labels": {
+    "C": "y",
+    "U": "n"
+   },
+   "new_next_action": {
+    "C": [
+     2,
+     2
+    ],
+    "U": [
+     0,
+     0
+    ]
+   },
+   "prev_next_action": {
+    "C": 2,
+    "U": 0
+   },
+   "all_right": true
+  },
+  {
+   "frame": "F3",
+   "reply": "opt",
+   "ids": {
+    "U": "P09",
+    "C": "P25"
+   },
+   "labels": {
+    "U": "n",
+    "C": "y"
+   },
+   "new_next_action": {
+    "U": [
+     0,
+     0
+    ],
+    "C": [
+     2,
+     2
+    ]
+   },
+   "prev_next_action": {
+    "U": 0,
+    "C": 2
+   },
+   "all_right": true
+  },
+  {
+   "frame": "F4",
+   "reply": "clarify_other",
+   "ids": {
+    "C": "P12",
+    "P": "P23"
+   },
+   "labels": {
+    "C": "n",
+    "P": "y"
+   },
+   "new_next_action": {
+    "C": [
+     0,
+     0
+    ],
+    "P": [
+     2,
+     2
+    ]
+   },
+   "prev_next_action": {
+    "C": 0,
+    "P": 2
+   },
+   "all_right": true
+  },
+  {
+   "frame": "F4",
+   "reply": "move",
+   "ids": {
+    "C": "P08",
+    "P": "P26"
+   },
+   "labels": {
+    "C": "y",
+    "P": "n"
+   },
+   "new_next_action": {
+    "C": [
+     2,
+     2
+    ],
+    "P": [
+     2,
+     null
+    ]
+   },
+   "prev_next_action": {
+    "C": 2,
+    "P": 2
+   },
+   "all_right": false
+  },
+  {
+   "frame": "F4",
+   "reply": "opt",
+   "ids": {
+    "C": "P01",
+    "P": "P18"
+   },
+   "labels": {
+    "C": "y",
+    "P": "n"
+   },
+   "new_next_action": {
+    "C": [
+     2,
+     2
+    ],
+    "P": [
+     0,
+     0
+    ]
+   },
+   "prev_next_action": {
+    "C": 2,
+    "P": 1
+   },
+   "all_right": true
+  },
+  {
+   "frame": "F5",
+   "reply": "clarify_other",
+   "ids": {
+    "P": "P20",
+    "C": "P30"
+   },
+   "labels": {
+    "P": "y",
+    "C": "n"
+   },
+   "new_next_action": {
+    "P": [
+     2,
+     2
+    ],
+    "C": [
+     0,
+     0
+    ]
+   },
+   "prev_next_action": {
+    "P": 2,
+    "C": 0
+   },
+   "all_right": true
+  },
+  {
+   "frame": "F5",
+   "reply": "move",
+   "ids": {
+    "C": "P14",
+    "P": "P19"
+   },
+   "labels": {
+    "C": "y",
+    "P": "n"
+   },
+   "new_next_action": {
+    "C": [
+     2,
+     2
+    ],
+    "P": [
+     null,
+     2
+    ]
+   },
+   "prev_next_action": {
+    "C": 2,
+    "P": 0
+   },
+   "all_right": false
+  },
+  {
+   "frame": "F5",
+   "reply": "opt",
+   "ids": {
+    "C": "P06",
+    "P": "P16"
+   },
+   "labels": {
+    "C": "y",
+    "P": "n"
+   },
+   "new_next_action": {
+    "C": [
+     2,
+     2
+    ],
+    "P": [
+     0,
+     2
+    ]
+   },
+   "prev_next_action": {
+    "C": 2,
+    "P": 0
+   },
+   "all_right": false
+  }
+ ],
+ "verdicts": {
+  "fresh/new": {
+   "accepted": 35,
+   "rejected": 21,
+   "unscored": 4
+  },
+  "fresh/prev": {
+   "accepted": 18,
+   "rejected": 12,
+   "unscored": 0
+  },
+  "h2/new": {
+   "accepted": 10,
+   "rejected": 2,
+   "unscored": 0
+  },
+  "h2/prev (round 1 records)": {
+   "accepted": 12,
+   "rejected": 0,
+   "unscored": 0
+  },
+  "h2/old (saved judge-v1 records)": {
+   "accepted": 0,
+   "rejected": 6,
+   "unscored": 0
+  },
+  "tobias/new": {
+   "accepted": 2,
+   "rejected": 3,
+   "unscored": 1
+  },
+  "round1/new": {
+   "accepted": 5,
+   "rejected": 6,
+   "unscored": 1
+  },
+  "tobias/prev (round 1 records)": {
+   "accepted": 6,
+   "rejected": 0,
+   "unscored": 0
+  },
+  "round1/prev (round 1 records)": {
+   "accepted": 11,
+   "rejected": 1,
+   "unscored": 0
+  }
+ },
+ "spend_usd": 0.503692
+}
