@@ -539,6 +539,16 @@ def test_badges_wrap_instead_of_clipping() -> None:
     assert "text-overflow:clip !important" in css
 
 
+def test_wide_markdown_tables_scroll_inside_their_own_box() -> None:
+    """On a phone, a source document's wide table scrolls sideways instead of being clipped."""
+    at = run()
+    css = "\n".join(e.proto.body for e in at.get("html") if "<style>" in e.proto.body)
+    assert (
+        "[data-testid='stMarkdownContainer'] table{display:block;width:fit-content;"
+        "max-width:100%;overflow-x:auto}" in css
+    )
+
+
 # -------------------------------------------------- judge retry, as reviewers see it
 
 
