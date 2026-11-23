@@ -3,7 +3,7 @@
 Nishanth G Palaniswami, for Take2's Forward Deployed Engineer take-home. Riley is a virtual recruiting assistant for Acme Health's Medical ICU RN role. The question is what Riley should say next, and which model and interviewer prompt to pilot.
 
 **At a glance**
-- **The models agree on safety.** None of the three committed a genuine critical violation in the 92 replies scored under prompts v1 and v2 (45 development, 47 holdout). That covers screening without consent, invented facts, promises, and clinical or legal advice. The judge flagged 17 of those replies, with 23 flag entries, and every one was reviewed and found absent. The judge's flags on the v3 replies (8 of the 45 scored in the regression check) have not been reviewed.
+- **The models agree on safety.** None of the three committed a genuine critical violation in the 92 replies scored under prompts v1 and v2 (45 development, 47 holdout). That covers screening without consent, invented facts, promises, and clinical or legal advice. The judge flagged 17 of those replies, with 23 flag entries, and every one was reviewed and found absent. The judge's flags on the v3 replies (8 of the 45 scored in the regression check) have not been reviewed yet; their review sheet is `docs/measurements/prompt-v3/regression/critical_review.md`.
 - **They differ on next-move quality and completeness:**
   - **GPT-5.4** gives the most complete answers, but it stacks follow-up questions.
   - **GPT-5.4 Mini** is concise, and the reviewer preferred its tone, but it sometimes asks about actions instead of outcomes, and it once left out a known fact.
@@ -97,7 +97,7 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 
 The reasons, in the order the plan set them:
 
-1. **Safety (consent, grounding, commitments): no difference.** No model committed a genuine critical violation in the 92 development and holdout replies scored under v1 and v2. The judge's flags on v3 replies have not been reviewed.
+1. **Safety (consent, grounding, commitments): no difference.** No model committed a genuine critical violation in the 92 development and holdout replies scored under v1 and v2. The judge's flags on v3 replies have not been reviewed yet (`docs/measurements/prompt-v3/regression/critical_review.md`).
 2. **Held-out quality: GPT-5.4 is ahead on human labels.** It is the only model whose v2 holdout replies the reviewer accepted in full (8/8, against 7/8 for Gemini and 6/8 for Mini). It also won the one pair that turned on factual completeness (P08, below).
 3. **Consistency: no human-label splits on the holdout** for GPT-5.4.
 4. **Cost is small at this scale:** about **$0.003 per GPT-5.4 reply**, against about **$0.0008 for Mini**, from recorded tokens at standard rates. A 15-turn screening call is a few cents either way.
@@ -281,7 +281,7 @@ Three later pre-registered experiments tried to fix the H2 boundary (judge-v5 al
 
 ### What I would change next
 
-When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. The two H2 rounds showed that case wording alone doesn't get judge-v1 there: at temperature 1.0 with no reasoning effort, it doesn't reliably refuse to move on when currency is unconfirmed. A further attempt needs a change outside the wording, such as judge reasoning effort or a deterministic currency check, and a new fresh sheet.
+When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. Two rounds of revised H2 criteria showed that case wording alone doesn't get judge-v1 there: at temperature 1.0 with no reasoning effort, it doesn't reliably refuse to move on when currency is unconfirmed. A further attempt needs a change outside the wording, such as judge reasoning effort or a deterministic currency check, and a new fresh sheet. The published measurements stay at 31 of 47 and 2 of 12.
 
 ## Limits
 
