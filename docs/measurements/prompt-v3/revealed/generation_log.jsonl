@@ -1,0 +1,19 @@
+{"step": "openai-v2", "prompt": "v2", "models": ["gpt-5.4", "gpt-5.4-mini"], "cases": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"], "run_id": "20261122T232736Z-383e96", "statuses": ["ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"], "complete": true}
+{"step": "openai-v3", "prompt": "v3", "models": ["gpt-5.4", "gpt-5.4-mini"], "cases": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"], "run_id": "20261122T232819Z-9cd285", "statuses": ["ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"], "complete": true}
+{"step": "gemini-F1-v2", "prompt": "v2", "models": ["gemini-3.5-flash"], "cases": ["F1"], "run_id": "20261122T232857Z-c60df7", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F1-v3", "prompt": "v3", "models": ["gemini-3.5-flash"], "cases": ["F1"], "run_id": "20261122T232911Z-4a65e1", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F2-v3", "prompt": "v3", "models": ["gemini-3.5-flash"], "cases": ["F2"], "run_id": "20261122T232933Z-fd65e8", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F2-v2", "prompt": "v2", "models": ["gemini-3.5-flash"], "cases": ["F2"], "run_id": "20261122T232943Z-c27e7a", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F3-v2", "prompt": "v2", "models": ["gemini-3.5-flash"], "cases": ["F3"], "run_id": "20261122T232958Z-0bf8a5", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F3-v3", "prompt": "v3", "models": ["gemini-3.5-flash"], "cases": ["F3"], "run_id": "20261122T233016Z-d43d50", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F4-v3", "prompt": "v3", "models": ["gemini-3.5-flash"], "cases": ["F4"], "run_id": "20261122T233032Z-79998e", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F4-v2", "prompt": "v2", "models": ["gemini-3.5-flash"], "cases": ["F4"], "run_id": "20261122T233044Z-a9a208", "statuses": ["ok", "generation_failed"], "complete": false, "note": "Sample 2: ClientError 429 RESOURCE_EXHAUSTED (Gemini daily quota). Recorded by hand: the script stopped on the CLI's non-zero exit before logging this step."}
+{"step": "gemini-F4-v2", "prompt": "v2", "models": ["gemini-3.5-flash"], "cases": ["F4"], "run_id": "20261122T234543Z-71423a", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F5-v2", "prompt": "v2", "models": ["gemini-3.5-flash"], "cases": ["F5"], "run_id": "20261122T234547Z-86571c", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F5-v3", "prompt": "v3", "models": ["gemini-3.5-flash"], "cases": ["F5"], "run_id": "20261122T234552Z-4ccba8", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F6-v3", "prompt": "v3", "models": ["gemini-3.5-flash"], "cases": ["F6"], "run_id": "20261122T234556Z-22deb2", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F6-v2", "prompt": "v2", "models": ["gemini-3.5-flash"], "cases": ["F6"], "run_id": "20261122T234602Z-5836e1", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F7-v2", "prompt": "v2", "models": ["gemini-3.5-flash"], "cases": ["F7"], "run_id": "20261122T234607Z-c1eb8c", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F7-v3", "prompt": "v3", "models": ["gemini-3.5-flash"], "cases": ["F7"], "run_id": "20261122T234612Z-0be068", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F8-v3", "prompt": "v3", "models": ["gemini-3.5-flash"], "cases": ["F8"], "run_id": "20261122T234616Z-980644", "statuses": ["ok", "ok"], "complete": true}
+{"step": "gemini-F8-v2", "prompt": "v2", "models": ["gemini-3.5-flash"], "cases": ["F8"], "run_id": "20261122T234620Z-5f01ad", "statuses": ["ok", "ok"], "complete": true}

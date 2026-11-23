@@ -1,0 +1,773 @@
+{
+ "salt": "1e0d7bc1026d7e61f0b93a25dbb6f0ec",
+ "items": {
+  "R01": {
+   "slot_key": "20261122T232736Z-383e96|F4|v2|gpt-5.4|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F4",
+   "sample": 2
+  },
+  "R02": {
+   "slot_key": "20261122T232736Z-383e96|F2|v2|gpt-5.4-mini|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F2",
+   "sample": 2
+  },
+  "R03": {
+   "slot_key": "20261122T234616Z-980644|F8|v3|gemini-3.5-flash|2",
+   "run_id": "20261122T234616Z-980644",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F8",
+   "sample": 2
+  },
+  "R04": {
+   "slot_key": "20261122T233016Z-d43d50|F3|v3|gemini-3.5-flash|2",
+   "run_id": "20261122T233016Z-d43d50",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F3",
+   "sample": 2
+  },
+  "R05": {
+   "slot_key": "20261122T232819Z-9cd285|F1|v3|gpt-5.4-mini|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F1",
+   "sample": 2
+  },
+  "R06": {
+   "slot_key": "20261122T232736Z-383e96|F7|v2|gpt-5.4-mini|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F7",
+   "sample": 2
+  },
+  "R07": {
+   "slot_key": "20261122T232736Z-383e96|F1|v2|gpt-5.4|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F1",
+   "sample": 2
+  },
+  "R08": {
+   "slot_key": "20261122T232736Z-383e96|F3|v2|gpt-5.4|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F3",
+   "sample": 1
+  },
+  "R09": {
+   "slot_key": "20261122T232819Z-9cd285|F2|v3|gpt-5.4-mini|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F2",
+   "sample": 2
+  },
+  "R10": {
+   "slot_key": "20261122T232736Z-383e96|F6|v2|gpt-5.4-mini|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F6",
+   "sample": 1
+  },
+  "R11": {
+   "slot_key": "20261122T232819Z-9cd285|F4|v3|gpt-5.4-mini|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F4",
+   "sample": 2
+  },
+  "R12": {
+   "slot_key": "20261122T234556Z-22deb2|F6|v3|gemini-3.5-flash|2",
+   "run_id": "20261122T234556Z-22deb2",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F6",
+   "sample": 2
+  },
+  "R13": {
+   "slot_key": "20261122T232819Z-9cd285|F2|v3|gpt-5.4-mini|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F2",
+   "sample": 1
+  },
+  "R14": {
+   "slot_key": "20261122T232819Z-9cd285|F1|v3|gpt-5.4-mini|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F1",
+   "sample": 1
+  },
+  "R15": {
+   "slot_key": "20261122T232819Z-9cd285|F5|v3|gpt-5.4-mini|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F5",
+   "sample": 1
+  },
+  "R16": {
+   "slot_key": "20261122T232819Z-9cd285|F1|v3|gpt-5.4|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F1",
+   "sample": 1
+  },
+  "R17": {
+   "slot_key": "20261122T232819Z-9cd285|F6|v3|gpt-5.4|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F6",
+   "sample": 2
+  },
+  "R18": {
+   "slot_key": "20261122T232736Z-383e96|F8|v2|gpt-5.4|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F8",
+   "sample": 1
+  },
+  "R19": {
+   "slot_key": "20261122T232736Z-383e96|F2|v2|gpt-5.4|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F2",
+   "sample": 2
+  },
+  "R20": {
+   "slot_key": "20261122T232736Z-383e96|F2|v2|gpt-5.4-mini|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F2",
+   "sample": 1
+  },
+  "R21": {
+   "slot_key": "20261122T234616Z-980644|F8|v3|gemini-3.5-flash|1",
+   "run_id": "20261122T234616Z-980644",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F8",
+   "sample": 1
+  },
+  "R22": {
+   "slot_key": "20261122T232911Z-4a65e1|F1|v3|gemini-3.5-flash|2",
+   "run_id": "20261122T232911Z-4a65e1",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F1",
+   "sample": 2
+  },
+  "R23": {
+   "slot_key": "20261122T234602Z-5836e1|F6|v2|gemini-3.5-flash|1",
+   "run_id": "20261122T234602Z-5836e1",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F6",
+   "sample": 1
+  },
+  "R24": {
+   "slot_key": "20261122T234543Z-71423a|F4|v2|gemini-3.5-flash|1",
+   "run_id": "20261122T234543Z-71423a",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F4",
+   "sample": 1
+  },
+  "R25": {
+   "slot_key": "20261122T234612Z-0be068|F7|v3|gemini-3.5-flash|1",
+   "run_id": "20261122T234612Z-0be068",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F7",
+   "sample": 1
+  },
+  "R26": {
+   "slot_key": "20261122T234547Z-86571c|F5|v2|gemini-3.5-flash|1",
+   "run_id": "20261122T234547Z-86571c",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F5",
+   "sample": 1
+  },
+  "R27": {
+   "slot_key": "20261122T232911Z-4a65e1|F1|v3|gemini-3.5-flash|1",
+   "run_id": "20261122T232911Z-4a65e1",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F1",
+   "sample": 1
+  },
+  "R28": {
+   "slot_key": "20261122T232736Z-383e96|F7|v2|gpt-5.4|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F7",
+   "sample": 2
+  },
+  "R29": {
+   "slot_key": "20261122T232736Z-383e96|F8|v2|gpt-5.4-mini|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F8",
+   "sample": 2
+  },
+  "R30": {
+   "slot_key": "20261122T232736Z-383e96|F2|v2|gpt-5.4|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F2",
+   "sample": 1
+  },
+  "R31": {
+   "slot_key": "20261122T232819Z-9cd285|F5|v3|gpt-5.4|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F5",
+   "sample": 1
+  },
+  "R32": {
+   "slot_key": "20261122T232736Z-383e96|F3|v2|gpt-5.4-mini|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F3",
+   "sample": 1
+  },
+  "R33": {
+   "slot_key": "20261122T232958Z-0bf8a5|F3|v2|gemini-3.5-flash|1",
+   "run_id": "20261122T232958Z-0bf8a5",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F3",
+   "sample": 1
+  },
+  "R34": {
+   "slot_key": "20261122T234556Z-22deb2|F6|v3|gemini-3.5-flash|1",
+   "run_id": "20261122T234556Z-22deb2",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F6",
+   "sample": 1
+  },
+  "R35": {
+   "slot_key": "20261122T232933Z-fd65e8|F2|v3|gemini-3.5-flash|1",
+   "run_id": "20261122T232933Z-fd65e8",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F2",
+   "sample": 1
+  },
+  "R36": {
+   "slot_key": "20261122T232736Z-383e96|F1|v2|gpt-5.4-mini|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F1",
+   "sample": 1
+  },
+  "R37": {
+   "slot_key": "20261122T234607Z-c1eb8c|F7|v2|gemini-3.5-flash|1",
+   "run_id": "20261122T234607Z-c1eb8c",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F7",
+   "sample": 1
+  },
+  "R38": {
+   "slot_key": "20261122T234612Z-0be068|F7|v3|gemini-3.5-flash|2",
+   "run_id": "20261122T234612Z-0be068",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F7",
+   "sample": 2
+  },
+  "R39": {
+   "slot_key": "20261122T234543Z-71423a|F4|v2|gemini-3.5-flash|2",
+   "run_id": "20261122T234543Z-71423a",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F4",
+   "sample": 2
+  },
+  "R40": {
+   "slot_key": "20261122T232819Z-9cd285|F3|v3|gpt-5.4-mini|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F3",
+   "sample": 2
+  },
+  "R41": {
+   "slot_key": "20261122T233016Z-d43d50|F3|v3|gemini-3.5-flash|1",
+   "run_id": "20261122T233016Z-d43d50",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F3",
+   "sample": 1
+  },
+  "R42": {
+   "slot_key": "20261122T234620Z-5f01ad|F8|v2|gemini-3.5-flash|1",
+   "run_id": "20261122T234620Z-5f01ad",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F8",
+   "sample": 1
+  },
+  "R43": {
+   "slot_key": "20261122T233032Z-79998e|F4|v3|gemini-3.5-flash|1",
+   "run_id": "20261122T233032Z-79998e",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F4",
+   "sample": 1
+  },
+  "R44": {
+   "slot_key": "20261122T234552Z-4ccba8|F5|v3|gemini-3.5-flash|2",
+   "run_id": "20261122T234552Z-4ccba8",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F5",
+   "sample": 2
+  },
+  "R45": {
+   "slot_key": "20261122T234552Z-4ccba8|F5|v3|gemini-3.5-flash|1",
+   "run_id": "20261122T234552Z-4ccba8",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F5",
+   "sample": 1
+  },
+  "R46": {
+   "slot_key": "20261122T232736Z-383e96|F7|v2|gpt-5.4|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F7",
+   "sample": 1
+  },
+  "R47": {
+   "slot_key": "20261122T232819Z-9cd285|F4|v3|gpt-5.4|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F4",
+   "sample": 2
+  },
+  "R48": {
+   "slot_key": "20261122T232819Z-9cd285|F3|v3|gpt-5.4-mini|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F3",
+   "sample": 1
+  },
+  "R49": {
+   "slot_key": "20261122T232819Z-9cd285|F8|v3|gpt-5.4|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F8",
+   "sample": 2
+  },
+  "R50": {
+   "slot_key": "20261122T232819Z-9cd285|F2|v3|gpt-5.4|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F2",
+   "sample": 2
+  },
+  "R51": {
+   "slot_key": "20261122T232819Z-9cd285|F8|v3|gpt-5.4-mini|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F8",
+   "sample": 1
+  },
+  "R52": {
+   "slot_key": "20261122T232819Z-9cd285|F6|v3|gpt-5.4|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F6",
+   "sample": 1
+  },
+  "R53": {
+   "slot_key": "20261122T232819Z-9cd285|F2|v3|gpt-5.4|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F2",
+   "sample": 1
+  },
+  "R54": {
+   "slot_key": "20261122T232736Z-383e96|F6|v2|gpt-5.4-mini|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F6",
+   "sample": 2
+  },
+  "R55": {
+   "slot_key": "20261122T232736Z-383e96|F5|v2|gpt-5.4-mini|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F5",
+   "sample": 1
+  },
+  "R56": {
+   "slot_key": "20261122T232819Z-9cd285|F4|v3|gpt-5.4-mini|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F4",
+   "sample": 1
+  },
+  "R57": {
+   "slot_key": "20261122T232819Z-9cd285|F7|v3|gpt-5.4|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F7",
+   "sample": 1
+  },
+  "R58": {
+   "slot_key": "20261122T232819Z-9cd285|F5|v3|gpt-5.4-mini|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F5",
+   "sample": 2
+  },
+  "R59": {
+   "slot_key": "20261122T232736Z-383e96|F5|v2|gpt-5.4-mini|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F5",
+   "sample": 2
+  },
+  "R60": {
+   "slot_key": "20261122T232736Z-383e96|F7|v2|gpt-5.4-mini|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F7",
+   "sample": 1
+  },
+  "R61": {
+   "slot_key": "20261122T232736Z-383e96|F4|v2|gpt-5.4-mini|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F4",
+   "sample": 1
+  },
+  "R62": {
+   "slot_key": "20261122T232857Z-c60df7|F1|v2|gemini-3.5-flash|1",
+   "run_id": "20261122T232857Z-c60df7",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F1",
+   "sample": 1
+  },
+  "R63": {
+   "slot_key": "20261122T232943Z-c27e7a|F2|v2|gemini-3.5-flash|1",
+   "run_id": "20261122T232943Z-c27e7a",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F2",
+   "sample": 1
+  },
+  "R64": {
+   "slot_key": "20261122T232943Z-c27e7a|F2|v2|gemini-3.5-flash|2",
+   "run_id": "20261122T232943Z-c27e7a",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F2",
+   "sample": 2
+  },
+  "R65": {
+   "slot_key": "20261122T232819Z-9cd285|F3|v3|gpt-5.4|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F3",
+   "sample": 1
+  },
+  "R66": {
+   "slot_key": "20261122T232819Z-9cd285|F3|v3|gpt-5.4|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F3",
+   "sample": 2
+  },
+  "R67": {
+   "slot_key": "20261122T232958Z-0bf8a5|F3|v2|gemini-3.5-flash|2",
+   "run_id": "20261122T232958Z-0bf8a5",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F3",
+   "sample": 2
+  },
+  "R68": {
+   "slot_key": "20261122T234607Z-c1eb8c|F7|v2|gemini-3.5-flash|2",
+   "run_id": "20261122T234607Z-c1eb8c",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F7",
+   "sample": 2
+  },
+  "R69": {
+   "slot_key": "20261122T232736Z-383e96|F8|v2|gpt-5.4-mini|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F8",
+   "sample": 1
+  },
+  "R70": {
+   "slot_key": "20261122T233032Z-79998e|F4|v3|gemini-3.5-flash|2",
+   "run_id": "20261122T233032Z-79998e",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F4",
+   "sample": 2
+  },
+  "R71": {
+   "slot_key": "20261122T232736Z-383e96|F8|v2|gpt-5.4|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F8",
+   "sample": 2
+  },
+  "R72": {
+   "slot_key": "20261122T232819Z-9cd285|F7|v3|gpt-5.4-mini|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F7",
+   "sample": 2
+  },
+  "R73": {
+   "slot_key": "20261122T232736Z-383e96|F4|v2|gpt-5.4|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F4",
+   "sample": 1
+  },
+  "R74": {
+   "slot_key": "20261122T232736Z-383e96|F3|v2|gpt-5.4|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F3",
+   "sample": 2
+  },
+  "R75": {
+   "slot_key": "20261122T232736Z-383e96|F6|v2|gpt-5.4|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F6",
+   "sample": 1
+  },
+  "R76": {
+   "slot_key": "20261122T232736Z-383e96|F1|v2|gpt-5.4-mini|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F1",
+   "sample": 2
+  },
+  "R77": {
+   "slot_key": "20261122T232819Z-9cd285|F7|v3|gpt-5.4-mini|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F7",
+   "sample": 1
+  },
+  "R78": {
+   "slot_key": "20261122T232819Z-9cd285|F7|v3|gpt-5.4|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F7",
+   "sample": 2
+  },
+  "R79": {
+   "slot_key": "20261122T232819Z-9cd285|F6|v3|gpt-5.4-mini|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F6",
+   "sample": 2
+  },
+  "R80": {
+   "slot_key": "20261122T232933Z-fd65e8|F2|v3|gemini-3.5-flash|2",
+   "run_id": "20261122T232933Z-fd65e8",
+   "prompt": "v3",
+   "model": "gemini-3.5-flash",
+   "case": "F2",
+   "sample": 2
+  },
+  "R81": {
+   "slot_key": "20261122T232819Z-9cd285|F5|v3|gpt-5.4|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F5",
+   "sample": 2
+  },
+  "R82": {
+   "slot_key": "20261122T232736Z-383e96|F5|v2|gpt-5.4|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F5",
+   "sample": 1
+  },
+  "R83": {
+   "slot_key": "20261122T234620Z-5f01ad|F8|v2|gemini-3.5-flash|2",
+   "run_id": "20261122T234620Z-5f01ad",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F8",
+   "sample": 2
+  },
+  "R84": {
+   "slot_key": "20261122T234547Z-86571c|F5|v2|gemini-3.5-flash|2",
+   "run_id": "20261122T234547Z-86571c",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F5",
+   "sample": 2
+  },
+  "R85": {
+   "slot_key": "20261122T232819Z-9cd285|F4|v3|gpt-5.4|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F4",
+   "sample": 1
+  },
+  "R86": {
+   "slot_key": "20261122T234602Z-5836e1|F6|v2|gemini-3.5-flash|2",
+   "run_id": "20261122T234602Z-5836e1",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F6",
+   "sample": 2
+  },
+  "R87": {
+   "slot_key": "20261122T232819Z-9cd285|F6|v3|gpt-5.4-mini|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F6",
+   "sample": 1
+  },
+  "R88": {
+   "slot_key": "20261122T232736Z-383e96|F1|v2|gpt-5.4|1",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F1",
+   "sample": 1
+  },
+  "R89": {
+   "slot_key": "20261122T232857Z-c60df7|F1|v2|gemini-3.5-flash|2",
+   "run_id": "20261122T232857Z-c60df7",
+   "prompt": "v2",
+   "model": "gemini-3.5-flash",
+   "case": "F1",
+   "sample": 2
+  },
+  "R90": {
+   "slot_key": "20261122T232819Z-9cd285|F1|v3|gpt-5.4|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F1",
+   "sample": 2
+  },
+  "R91": {
+   "slot_key": "20261122T232819Z-9cd285|F8|v3|gpt-5.4|1",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4",
+   "case": "F8",
+   "sample": 1
+  },
+  "R92": {
+   "slot_key": "20261122T232736Z-383e96|F5|v2|gpt-5.4|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F5",
+   "sample": 2
+  },
+  "R93": {
+   "slot_key": "20261122T232819Z-9cd285|F8|v3|gpt-5.4-mini|2",
+   "run_id": "20261122T232819Z-9cd285",
+   "prompt": "v3",
+   "model": "gpt-5.4-mini",
+   "case": "F8",
+   "sample": 2
+  },
+  "R94": {
+   "slot_key": "20261122T232736Z-383e96|F6|v2|gpt-5.4|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4",
+   "case": "F6",
+   "sample": 2
+  },
+  "R95": {
+   "slot_key": "20261122T232736Z-383e96|F3|v2|gpt-5.4-mini|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F3",
+   "sample": 2
+  },
+  "R96": {
+   "slot_key": "20261122T232736Z-383e96|F4|v2|gpt-5.4-mini|2",
+   "run_id": "20261122T232736Z-383e96",
+   "prompt": "v2",
+   "model": "gpt-5.4-mini",
+   "case": "F4",
+   "sample": 2
+  }
+ }
+}
