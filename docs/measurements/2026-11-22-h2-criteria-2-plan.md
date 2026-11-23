@@ -116,3 +116,9 @@ H2's applicant says "my BLS and ACLS are both current. I renewed them together i
 - **How they were made, in Nishanth's words on the sheet:** "Nishanth reviewed all 30 replies himself and dictated his judgments without reading ChatGPT's draft." His AI-assistance answer is "No".
 - **Wording change.** That sentence replaced the header's frozen wording ("Nishanth's own, made blind and without an AI assistant"). Results use Nishanth's sentence.
 - **Committed first.** The sheet is committed before any judge call.
+
+## Amendment to A7 (Nishanth, before any paid call)
+
+- **The new reading.** A7 passes if the new text's share of U and P items labelled `n` scored 2 is smaller than round 1's, **or if both shares are zero**.
+- **Attribution in a tie.** In a tie at zero, the attribution rests on R2: round 1's documented failures and Tobias.
+- **When.** Nishanth chose this on 2026-11-23, after the labels were committed and before any call. The script change is committed before the run.

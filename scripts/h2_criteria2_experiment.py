@@ -520,7 +520,8 @@ def report(args: argparse.Namespace) -> int:
         "A4": g["A4_P_n"]["wrong"] <= 1 and not two_in_both("new", ("P",)),
         "A5": g["A5_C_n"]["wrong"] == 0,
         "A6": pair_right >= 12,
-        "A7": (s5[1] > 0 and sp[1] > 0 and s5[0] / s5[1] < sp[0] / sp[1]),
+        # amended by Nishanth before scoring: a tie at zero passes; R2 then carries the attribution
+        "A7": (s5[1] > 0 and sp[1] > 0 and (s5[0] / s5[1] < sp[0] / sp[1] or (s5[0] == 0 and sp[0] == 0))),
         "R1": h2_new.count("accepted") >= 10,
         "R2": reg_c.count(False) + reg_c.count(None) <= 2 and not reg_both2,
         "C1": fresh_new_all.count("unscored") <= len(fresh_new_all) * 0.15,
