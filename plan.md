@@ -466,11 +466,38 @@ The existing evaluator keeps working exactly as before. Branch `practice-call` f
 
 | # | Item | Owner | Status |
 |---|---|---|---|
-| 1 | `src/rightoncue/practice.py`: conversation, transcript, projection, send, reconcile and evaluate, reusing `live` and `review`. App mode and UI in `app.py`. README paragraph | complex-coder | Pending |
-| 2 | Offline tests in `tests/test_practice.py`, listed under Tests; the full suite passes | complex-coder | Pending |
-| 3 | Independent verification (Opus, high): money, access, no leakage, idempotency | verifier | Pending |
-| 4 | Browser check in a hosted dry run on `127.0.0.1:3005`, at 1280 px and 390 px, verified by the DOM | lead | Pending |
+| 1 | `src/rightoncue/practice.py`: conversation, transcript, projection, send, reconcile and evaluate, reusing `live` and `review`. App mode and UI in `app.py`. README paragraph | complex-coder | Verified (`9cd6a5b`, `0ea4c4e`, `03d6aae`). `live.py`, `review.py`, `ledger.py`, `scoring.py` and existing tests unchanged |
+| 2 | Offline tests in `tests/test_practice.py`, listed under Tests; the full suite passes | complex-coder | Verified: 636 passed, 6 skipped at `03d6aae` (586 passed, 6 skipped before) |
+| 3 | Independent verification (Opus, high): money, access, no leakage, idempotency | verifier | PASS on re-verification of `03d6aae`. Round 1 (`0ea4c4e`) FAILED: an unclassified judge error left no score record, so the judge could be called again and again (each call reserved, so the cap held). Fixed with an attempt log written before each call |
+| 4 | Browser check in a hosted dry run on `127.0.0.1:3005`, at 1280 px and 390 px, verified by the DOM | lead | Verified on `03d6aae`, details below; screenshots in `docs/screenshots/practice-call/` |
 | 5 | Paid smoke test, push, deploy | Nishanth | Blocked (his go-ahead) |
+
+**Owner changes (2026-11-22, Nishanth), built and tested.**
+1. **Short messages.** Send is hidden only when even a one-character message wouldn't fit. The cost line shows the 600-character maximum and says a shorter message is checked at its actual cost. A message that doesn't fit is refused before anything is appended, and the draft is kept.
+2. **Double clicks.**
+   - A double click on Send or Evaluate makes one upstream call: every paid path takes the run lock without waiting, and the page reconciles from the saved run before drawing anything.
+   - A timeout, a connection error or an interrupted call shows that Retry may be charged again.
+   - A practice reply gets at most 2 judge calls on every path.
+3. **Texts and judge version.**
+   - "Use fictional details. Your typed conversation is saved on the server." appears before Start.
+   - "Verdict by {version} ({scorer})" is read from the score record, for fresh and cached results, and appears only for a valid verdict.
+
+**Browser check (lead).** Headless Edge over the DevTools protocol drove the real page with mouse and keyboard events, in a hosted dry run with a 2-second fake call delay. All checks were made through the DOM and the dry-run ledger.
+- **Desktop 1280 × 900, 6 runs:** each double click on Send made 1 generation reservation, and each double click on Evaluate made 1 judge reservation. Clicking Evaluate again on a scored reply made 0 judge reservations. 2 replies and 2 applicant turns were shown, with no duplicates. The waiting screens cleared by themselves in 2.9–5.5 s.
+  - Before the poll fix, 2 of 5 runs needed "Check again"; after it, 0 of 6.
+- **Mobile 390 × 844:** the same results, with no horizontal overflow.
+- **Short-message rule at a $0.0165 cap:**
+  - a 600-character message was refused at its real maximum of $0.017172, with 0 reservations, the draft kept and no turn appended;
+  - a short message then went through with 1 reservation;
+  - Send was then hidden, with "The remaining budget can't cover another reply."
+
+**Known follow-ups (verifier, not blocking; money-safe).**
+- **A guard refusal can show a false charge warning.** If the ledger guard refuses a judge call after the attempt was logged, the attempt is used up and the page says it "may have been charged", though nothing was sent. This needs another process spending the same ledger, or a ledger write error.
+- **The catch-all can show the same warning before any request.** The evaluation catch-all shows the uncertain-charge wording for errors raised before any request: a corrupt attempt log, or an `OSError` writing it.
+- **A torn attempt-log line blocks that reply for good,** failing closed. Hosted, the page shows the generic error; locally, a traceback.
+- **The attempt log's folder entry isn't fsynced** on creation. The score file has the same limitation.
+- **The charge warning shows only for the reply selected** in the dropdown.
+- **Dry-run placeholder replies repeat the same text,** because each Send builds a new fake client.
 
 **Acceptance and tests (offline, fake or dry-run clients only).**
 1. After two applicant messages, the second generation request's input is exactly [opening, message 1, reply 1, message 2] as assistant, user, assistant, user, with prompt v3 as instructions, `gpt-5.4`, effort `none` and 400 output tokens.
