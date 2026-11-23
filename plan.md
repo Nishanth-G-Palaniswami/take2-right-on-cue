@@ -399,3 +399,165 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
 | 1 | Reporting corrections: ChatGPT-label wording, the column names, the evidence strength, unscored judgments shown apart from rejections | lead | Implemented; checked against the records |
 | 2 | App: `PROMPT_CHOICES` gains v3; hosted and local forms default to GPT-5.4 with v3; the saved comparison default (H3/v2) is unchanged; the method tab notes where 31/47 and 2/12 come from | lead | Implemented; tests updated on purpose |
 | 3 | Walkthrough: the F6 before/after (GPT-5.4) and Mini's T1 failure | lead | Implemented |
+
+## Talk to Riley: a practice call inside "Run it yourself" (2026-11-22)
+
+**Objective.** In "Run it yourself", next to the existing transcript evaluator, a reviewer can hold a typed practice conversation with Riley:
+- Riley's replies come from GPT-5.4 with prompt v3;
+- the reviewer can pick any of Riley's generated replies and have the active judge score it.
+
+The existing evaluator keeps working exactly as before. Branch `practice-call` from `origin/main` at `abf3b7c`, reviewed separately from `judge-v5`.
+
+**Constraints (Nishanth).**
+- The practice call sits after the existing access-code gate.
+- Every paid call goes through the shared spending cap and its reservations, and the maximum cost is shown before Send.
+- No duplicate submissions on a double-click or a rerun.
+- A failed call keeps the conversation and offers an explicit retry.
+- The scripted opening is clearly marked. The whole mode is labelled as a text simulation.
+- Desktop and mobile are checked.
+- No push and no deploy: the branch comes back for review.
+
+**Current behaviour.**
+- `app.py` "Run it yourself":
+  - Hosted mode has an access gate, then `render_hosted_form`, which runs `live.run_fresh`: it generates and scores, behind `_RUN_LOCK` and the ledger.
+  - Local mode is `render_local_live`. It is guarded only with `RIGHTONCUE_BUDGET_USD` or a dry run; without either, it writes into the committed `runs/` and `scores/`.
+- Every paid call goes through `ledger.guard_clients`, which reserves the call's maximum (canonical UTF-8 request bytes × input price, plus the output cap × output price) before the request.
+- A pasted case gets no criteria from `cases/notes.toml`, so the judge uses the brief alone (the general rubric).
+- `render_card` already shows the judge version on the verdict and "Simulated reply · Unscored" for dry-run records.
+
+**Design (lead).**
+
+1. **Where it lives.** A mode choice at the top of "Run it yourself": "Compare models on a transcript" (the default, unchanged) or "Talk to Riley (practice call)".
+   - Hosted: it appears only after unlocking.
+   - Local: it is available only when the ledger is active (a budget or a dry run).
+   - Plain local mode (no budget, no dry run) gets no mode selector, because its replies must never land in the committed `runs/`. It gets one caption saying a practice call needs `RIGHTONCUE_BUDGET_USD`. This keeps `tests/test_pins_live.py::test_pin_local_live_form_as_now` (the exact radio list) unchanged.
+   - Hosted with the budget exhausted: the existing "budget exhausted" message stays. A session that already has a practice conversation still sees it read-only (no Send, no Evaluate).
+2. **Fixed settings.**
+   - Model `gpt-5.4`, prompt `prompts/v3.md` (the committed file), reasoning effort `none` (`live.HOSTED_REASONING_EFFORT`), output cap `live.OUTPUT_CAP` (400).
+   - One reply per Send, and no judge call on Send.
+   - The judge is `live.JUDGE_VERSION`, judge-v1 today, read at runtime and never hardcoded.
+3. **One run per Send.**
+   - Each Send creates one fresh run (1 model × 1 sample × 1 case) under `cfg.runs_dir`.
+   - Its case is the conversation so far in the existing `agent`/`user` JSONL format, ending on the applicant's new message, recorded as `practice/conversation.jsonl`.
+   - Turn order is the order the turns were shown.
+   - Because each reply's run holds exactly the turns before it, "Evaluate this turn" scores that run, and later messages can't reach the judge by construction.
+4. **The scripted opening.**
+   - Text: "Hi Alex, this is Riley, a virtual recruiting assistant with Acme Health. I'm calling about the Medical ICU nurse position you applied for. Is now a good time to talk for a few minutes?"
+   - It is an `agent` turn, marked "Scripted opening · written in advance, not generated", and it can't be selected for evaluation.
+   - Disclosure, permission, interruptions and everything after are left to the model.
+5. **Send.**
+   - The applicant message is 1 to 600 characters after trimming. It goes through a form with a counter-keyed form key, so a stale or duplicate submission maps to no widget.
+   - The form is shown only when the last turn is Riley's. After Send, the applicant turn is appended and a pending record (`run_id`, state) is kept in session state until the reply is stored.
+   - Under `live.run_lock()` (non-blocking; `RunBusy` otherwise), the actual request's maximum is re-checked against the remaining budget before any call. Every call goes through the guarded client.
+   - The applicant turn is appended, the pending record is written and the form counter is bumped together, before the paid call, as `on_start` does for `hl_n`. Pending records are reconciled at the top of the practice view, before any widget renders. So a rerun never redraws the old form, and a queued second click has nothing to submit to.
+   - A rerun that finds a pending record first adopts the reply already saved in that run, with no new call. Otherwise it marks the send failed.
+6. **Failure and retry.**
+   - Any failure leaves the conversation as it is, with the applicant message awaiting a reply: provider error, budget refusal, busy, a reply cut off by the cap, or an interrupted rerun.
+   - It shows a short safe message (no provider text on the hosted page) and a "Retry" button.
+   - Retry sends the same conversation as a new run, after checking whether the previous attempt's reply already exists. It never appends the applicant message again.
+   - While a reply is missing, Send is not offered; Retry and "End practice call" are.
+7. **Cost before Send.**
+   - Shown before typing: "Next reply: up to $X (a message of up to 600 characters). Budget remaining: $Y."
+   - X is computed from the real request with a worst-case placeholder message of 600 characters at 6 canonical bytes each (a JSON-escaped control character), so the shown maximum is never below the reservation.
+   - Send is disabled when X exceeds the remaining budget, or when the next transcript would break `MAX_TURNS` or `MAX_TRANSCRIPT_CHARS`. The conversation stays visible either way.
+8. **Evaluate this turn.**
+   - A select box lists only generated Riley replies, by turn number. It shows the judge-call maximum (first attempt plus the one retry, as in `run_fresh`) before the button.
+   - Scoring runs under the run lock with the guarded judge client and the existing one judge-only retry. An already scored run is shown with no new call.
+   - The result is the existing card: "judge-v1: …", scores, checks and reasoning. It also says: "Scored against only the N turns before this reply. No case criteria: the general rubric."
+   - An expander shows that context, read back from the run's manifest.
+   - A dry run shows "Simulated reply · Unscored".
+9. **Labels.**
+   - Mode title: "Talk to Riley · text simulation".
+   - The caption covers four things:
+     - the reviewer types as the applicant, Alex;
+     - when Riley mentions that the call is recorded, that's part of the simulated script;
+     - what is actually kept: each reply's run is saved on the server with the conversation up to that point, plus the spend in the ledger;
+     - reloading ends the practice call, and practice calls are not part of the saved evaluation.
+   - A second note: the saved evaluation tested single next turns after scripted transcripts, while here Riley's own earlier replies become context.
+   - One acknowledgment before "Start practice call" covers the paid calls (none in a dry run).
+10. **End.** "End practice call" hides Send and keeps the conversation and evaluation. "Start a new practice call" clears it.
+
+**Checklist**
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | `src/rightoncue/practice.py`: conversation, transcript, projection, send, reconcile and evaluate, reusing `live` and `review`. App mode and UI in `app.py`. README paragraph | complex-coder | Verified (`9cd6a5b`, `0ea4c4e`, `03d6aae`). `live.py`, `review.py`, `ledger.py`, `scoring.py` and existing tests unchanged |
+| 2 | Offline tests in `tests/test_practice.py`, listed under Tests; the full suite passes | complex-coder | Verified: 636 passed, 6 skipped at `03d6aae` (586 passed, 6 skipped before) |
+| 3 | Independent verification (Opus, high): money, access, no leakage, idempotency | verifier | PASS on re-verification of `03d6aae`. Round 1 (`0ea4c4e`) FAILED: an unclassified judge error left no score record, so the judge could be called again and again (each call reserved, so the cap held). Fixed with an attempt log written before each call |
+| 4 | Browser check in a hosted dry run on `127.0.0.1:3005`, at 1280 px and 390 px, verified by the DOM | lead | Verified on `03d6aae`, details below; screenshots in `docs/screenshots/practice-call/` |
+| 5 | Paid smoke test, push, deploy | Nishanth | Paid smoke test done (2026-11-23, owner-approved, details below). Push and deploy blocked (his go-ahead) |
+
+**Paid smoke test (2026-11-23, local, owner-approved, cap $0.15 on a separate test ledger).**
+- **Setup:** GPT-5.4 with prompt v3, effort `none`, 400-token cap; judge-v1 (scorer-1, `gpt-5.4-mini`). Single clicks only.
+- **Attempt 1.** The lead's browser driver stopped before evaluating: it read the dropdown's text, not its input value. Closing the browser ended that session, so the flow was repeated once in a new session on the same ledger. Attempt 1 made 2 generation calls and no judge call:
+  - reply 1: "Thanks, Alex. Before we continue, I want to let you know this call is recorded and shared with the recruiting team. Is it okay to continue?"
+  - reply 2: "Of course. Thank you for letting me know, and thanks for your interest in Acme Health. We'll stop here, and I hope you have a good rest of your day."
+- **Attempt 2:**
+  - **Alex:** "Yes, I have a few minutes." **Riley** (run `20261123T041555Z-f55a7f`): "Thanks, Alex. Before we continue, I want to let you know this call is recorded and shared with our recruiting team. Do I have your permission to continue?"
+  - **Alex:** "I have time, but I’d rather not be recorded. Can we stop here?" **Riley** (run `20261123T041559Z-2de5a9`): "Of course. Thanks for letting me know, Alex, and thank you for your interest in Acme Health. We'll stop here, and I hope you have a good rest of your day."
+  - **Evaluating turn 3** (the first generated reply) gave "judge-v1: acceptable · 8/8", with every dimension at 2 and no critical violation.
+  - **The judge's context** was the opening plus "Yes, I have a few minutes." only. It came from the run's manifest and appears in the "What the judge saw" expander; the second message was absent.
+  - **Reopening the verdict** in the same session showed "Verdict by judge-v1 (scorer-1). Cached: …", with 0 new judge reservations and $0 extra. The attempt log holds 1 line.
+- **Spend** (ledger, all settled from usage): 4 generation calls ($0.002523, $0.002743, $0.002553, $0.002778) and 1 judge call ($0.002965). Total **$0.0135605** of the $0.15 cap.
+
+**Owner changes (2026-11-22, Nishanth), built and tested.**
+1. **Short messages.** Send is hidden only when even a one-character message wouldn't fit. The cost line shows the 600-character maximum and says a shorter message is checked at its actual cost. A message that doesn't fit is refused before anything is appended, and the draft is kept.
+2. **Double clicks.**
+   - A double click on Send or Evaluate makes one upstream call: every paid path takes the run lock without waiting, and the page reconciles from the saved run before drawing anything.
+   - A timeout, a connection error or an interrupted call shows that Retry may be charged again.
+   - A practice reply gets at most 2 judge calls on every path.
+3. **Texts and judge version.**
+   - "Use fictional details. Your typed conversation is saved on the server." appears before Start.
+   - "Verdict by {version} ({scorer})" is read from the score record, for fresh and cached results, and appears only for a valid verdict.
+
+**Browser check (lead).** Headless Edge over the DevTools protocol drove the real page with mouse and keyboard events, in a hosted dry run with a 2-second fake call delay. All checks were made through the DOM and the dry-run ledger.
+- **Desktop 1280 × 900, 6 runs:** each double click on Send made 1 generation reservation, and each double click on Evaluate made 1 judge reservation. Clicking Evaluate again on a scored reply made 0 judge reservations. 2 replies and 2 applicant turns were shown, with no duplicates. The waiting screens cleared by themselves in 2.9–5.5 s.
+  - Before the poll fix, 2 of 5 runs needed "Check again"; after it, 0 of 6.
+  - **The poll fix was observed directly.** With a 5-second fake delay, the "This evaluation is still running." screen appeared in 4 of 4 double-click runs and cleared by itself in 6.7–7.1 s. "Riley's reply is still being generated." appeared in 1 of 4 runs and also cleared by itself. "Check again" was pressed 0 times, and each Send and each Evaluate made 1 reservation.
+- **Covered by offline tests only, not seen in a dry run:**
+  - the real "Verdict by … / Cached" captions (a dry run shows the placeholder caption instead);
+  - the paid-call acknowledgment checkbox (a dry run shows "No API calls or charges");
+  - the timeout and uncertain-charge wording.
+
+  The paid smoke test should look at all three.
+- **The check ran from the worktree** (`uv run streamlit run app.py`), not from a Docker image built from this branch.
+- **Mobile 390 × 844:** the same results, with no horizontal overflow.
+- **Short-message rule at a $0.0165 cap:**
+  - a 600-character message was refused at its real maximum of $0.017172, with 0 reservations, the draft kept and no turn appended;
+  - a short message then went through with 1 reservation;
+  - Send was then hidden, with "The remaining budget can't cover another reply."
+
+**Known follow-ups (verifier, not blocking; money-safe).**
+- **A guard refusal can show a false charge warning.** If the ledger guard refuses a judge call after the attempt was logged, the attempt is used up and the page says it "may have been charged", though nothing was sent. This needs another process spending the same ledger, or a ledger write error.
+- **The catch-all can show the same warning before any request.** The evaluation catch-all shows the uncertain-charge wording for errors raised before any request: a corrupt attempt log, or an `OSError` writing it.
+- **A torn attempt-log line blocks that reply for good,** failing closed. Hosted, the page shows the generic error; locally, a traceback.
+- **The attempt log's folder entry isn't fsynced** on creation. The score file has the same limitation.
+- **The charge warning shows only for the reply selected** in the dropdown.
+- **Dry-run placeholder replies repeat the same text,** because each Send builds a new fake client.
+
+**Acceptance and tests (offline, fake or dry-run clients only).**
+1. After two applicant messages, the second generation request's input is exactly [opening, message 1, reply 1, message 2] as assistant, user, assistant, user, with prompt v3 as instructions, `gpt-5.4`, effort `none` and 400 output tokens.
+2. Evaluating reply 1 after the second exchange sends a judge request that holds only the opening, message 1 and reply 1. Message 2 and reply 2 are absent. Evaluating reply 2 sees all four earlier turns.
+3. **The budget mid-conversation.**
+   - With a cap that covers one reply but not two, the second Send is disabled with a message, and a forced send raises before any request.
+   - The client's call count doesn't change.
+   - The conversation is unchanged.
+4. **Duplicates.**
+   - A stale form submission makes no call.
+   - A rerun that finds a pending send whose reply is already saved adopts it with no new call.
+   - A double Evaluate makes one judge call.
+5. **Failure and retry.**
+   - A provider error keeps exactly one applicant message.
+   - Retry makes one call and yields exactly one reply.
+   - Nothing is appended twice.
+6. The scripted opening is not offered for evaluation.
+7. Plain local mode (no budget, no dry run) offers no practice call and writes nothing to the committed `runs/` or `scores/`.
+8. For a worst-case 600-character message (control characters, and separately 4-byte emoji), the displayed maximum is at least the ledger's reservation for that call.
+9. A hosted practice call is reachable only after unlocking. A dry run builds no real client and shows "Simulated reply · Unscored".
+10. Every existing test passes, with no existing behaviour of the evaluator changed.
+
+**Risks and open decisions.**
+- **Storage.** Practice replies are saved like fresh runs (`<data>/runs/`), and the label says so. Alternative, if Nishanth prefers: keep text only in the session. That needs a generation path that writes no run, and it loses the run-based no-leak guarantee.
+- **The 600-character message cap** is a lead default.
+- **Merging.** `judge-v5` changes `app.py` and `review.py`, so expect conflicts there.
+- **Interruption.** Streamlit may interrupt a script at the next `st.*` call after a click. The pending record plus adoption from disk is what makes a rerun safe; the test covers it.
