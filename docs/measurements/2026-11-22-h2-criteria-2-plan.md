@@ -109,3 +109,10 @@ H2's applicant says "my BLS and ACLS are both current. I renewed them together i
 - In A1–A5, unscored judgments are not counted as wrong; C1 caps them. In A6 they count as wrong.
 - The results files are write-once, so a crash mid-run leaves partial files that a rerun refuses.
 - The full report prints the P-ID mapping. It is not shared before labelling.
+
+## Addendum: the labels (before any paid call)
+
+- **All labels in.** 30 of 30 are filled: 15 `y` and 15 `n`, each with a reason. The shown text matches the committed sheet, as `verify` confirms.
+- **How they were made, in Nishanth's words on the sheet:** "Nishanth reviewed all 30 replies himself and dictated his judgments without reading ChatGPT's draft." His AI-assistance answer is "No".
+- **Wording change.** That sentence replaced the header's frozen wording ("Nishanth's own, made blind and without an AI assistant"). Results use Nishanth's sentence.
+- **Committed first.** The sheet is committed before any judge call.
