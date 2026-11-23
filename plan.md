@@ -379,11 +379,11 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
 |---|---|---|---|
 | 1 | Candidate `prompts/judge-v5.md` and `scorer-3` (committed flag, self-contradiction check calibrated on 72 entries, speaker-label quotes), with offline tests | lead | Implemented; offline tests pass |
 | 2 | Freeze: pass criteria P1–P6, exposure (H2, the Maya live case, D1), draws and caps | lead | Committed (`c6bc25f`) |
-| 3 | 18 fresh items by a separate author that did not see v5; blind sheet and commitment | item author, then lead | In progress |
-| 4 | Nishanth labels the sheet and approves the spend (fresh stage cap $0.75) | Nishanth | Pending |
-| 5 | Fresh check and regressions (v5: 2 draws; judge-v1: reference); report against P1–P6 | lead | Pending |
-| 6 | If it passes: rescore the 47 original replies against the reviewer labels (with and without H2) and score the 24 v3 replies; cap $0.50 | lead | Pending |
-| 7 | App: judge version on every card, original scores kept, v5 for new live runs once validated | standard-coder | Pending |
+| 3 | 18 fresh items by a separate author that did not see v5; blind sheet and commitment | item author, then lead | Done (`4aace06`) |
+| 4 | Nishanth labels the sheet and approves the spend (fresh stage cap $0.75) | Nishanth | Done (`d3f14b2`) |
+| 5 | Fresh check and regressions (v5: 2 draws; judge-v1: reference); report against P1–P6 | lead | Done: **v5 fails P1–P6** ($0.464140). See `docs/measurements/2026-11-22-judge-v5-results.md` |
+| 6 | If it passes: rescore the 47 original replies against the reviewer labels (with and without H2) and score the 24 v3 replies; cap $0.50 | lead | Not run (v5 failed) |
+| 7 | App: judge version on every card, original scores kept, v5 for new live runs once validated | standard-coder | Not started (v5 failed); judge-v1 stays live |
 | 8 | Independent verification | verifier | Pending |
 
 **Risks.**

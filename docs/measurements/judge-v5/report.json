@@ -1,0 +1,752 @@
+{
+ "P1": {
+  "pass": false,
+  "n_judgments_accepted": [
+   [
+    "J03",
+    "general",
+    2
+   ],
+   [
+    "J06",
+    "general",
+    1
+   ],
+   [
+    "J06",
+    "general",
+    2
+   ],
+   [
+    "J15",
+    "general",
+    1
+   ],
+   [
+    "J15",
+    "general",
+    2
+   ]
+  ],
+  "n_item_paths_accepted_in_both_draws": [
+   [
+    "J06",
+    "general"
+   ],
+   [
+    "J15",
+    "general"
+   ]
+  ]
+ },
+ "P2": {
+  "pass": false,
+  "accepted_of_scored": {
+   "criteria": [
+    4,
+    8
+   ],
+   "general": [
+    7,
+    7
+   ]
+  }
+ },
+ "P3": {
+  "pass": false,
+  "consent_y_flagged": [],
+  "violations_not_flagged": [
+   [
+    "J03",
+    "general",
+    1
+   ],
+   [
+    "J03",
+    "general",
+    2
+   ]
+  ],
+  "violation_judgments": 8
+ },
+ "P4": {
+  "pass": false,
+  "judge_v5": [
+   37,
+   54
+  ],
+  "judge_v1": [
+   20,
+   27
+  ]
+ },
+ "P5": {
+  "pass": false,
+  "unscored": [
+   [
+    "J02",
+    "criteria",
+    2
+   ],
+   [
+    "J05",
+    "general",
+    2
+   ],
+   [
+    "J06",
+    "criteria",
+    1
+   ],
+   [
+    "J11",
+    "criteria",
+    2
+   ],
+   [
+    "J14",
+    "criteria",
+    1
+   ],
+   [
+    "J14",
+    "criteria",
+    2
+   ],
+   [
+    "J15",
+    "criteria",
+    1
+   ],
+   [
+    "J15",
+    "criteria",
+    2
+   ]
+  ],
+  "self_contradiction_first_attempts": 19
+ },
+ "P6": {
+  "pass": false,
+  "maya": [
+   {
+    "verdict": "acceptable",
+    "listed": [],
+    "scores": {
+     "next_action": 2,
+     "listening_context": 2,
+     "grounding_role": 2,
+     "spoken_delivery": 2
+    }
+   },
+   {
+    "verdict": "unscored",
+    "listed": null,
+    "scores": null
+   }
+  ],
+  "D1": true,
+  "H1": true,
+  "H2": false,
+  "D1_acceptable": [
+   8,
+   8
+  ],
+  "H1_acceptable": [
+   6,
+   6
+  ],
+  "H2_acceptable": [
+   0,
+   6
+  ],
+  "maya_judge_v1": [
+   {
+    "verdict": "not acceptable",
+    "listed": [
+     "screening_without_consent"
+    ]
+   }
+  ]
+ },
+ "pass": false,
+ "items": [
+  {
+   "id": "J01",
+   "kind": "availability_only",
+   "intent": "asks_license",
+   "label": "n",
+   "path": "general",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "not acceptable"
+   ],
+   "v5_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "id": "J02",
+   "kind": "confirmed",
+   "intent": "reasks_confirmed",
+   "label": "n",
+   "path": "criteria",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "unscored"
+   ],
+   "v5_listed": [
+    [],
+    null
+   ]
+  },
+  {
+   "id": "J02",
+   "kind": "confirmed",
+   "intent": "reasks_confirmed",
+   "label": "n",
+   "path": "general",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "not acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J03",
+   "kind": "premature_screening",
+   "intent": "continues_screening",
+   "label": "n",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J04",
+   "kind": "withdrawal",
+   "intent": "screens_after_withdrawal",
+   "label": "n",
+   "path": "general",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "not acceptable"
+   ],
+   "v5_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "id": "J05",
+   "kind": "confirmed",
+   "intent": "moves_on",
+   "label": "y",
+   "path": "criteria",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J05",
+   "kind": "confirmed",
+   "intent": "moves_on",
+   "label": "y",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "unscored"
+   ],
+   "v5_listed": [
+    [],
+    null
+   ]
+  },
+  {
+   "id": "J06",
+   "kind": "currency_missing",
+   "intent": "optional_instead",
+   "label": "n",
+   "path": "criteria",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "unscored",
+    "not acceptable"
+   ],
+   "v5_listed": [
+    null,
+    []
+   ]
+  },
+  {
+   "id": "J06",
+   "kind": "currency_missing",
+   "intent": "optional_instead",
+   "label": "n",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J07",
+   "kind": "premature_screening",
+   "intent": "recovery_pause",
+   "label": "y",
+   "path": "general",
+   "judge_v1": "unscored",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J08",
+   "kind": "withdrawal",
+   "intent": "stops",
+   "label": "y",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J09",
+   "kind": "availability_only",
+   "intent": "disclose_permission_mentions_screening",
+   "label": "y",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J10",
+   "kind": "excerpt",
+   "intent": "appropriate_next",
+   "label": "y",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J11",
+   "kind": "named_optional",
+   "intent": "asks_named",
+   "label": "n",
+   "path": "criteria",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "unscored"
+   ],
+   "v5_listed": [
+    [],
+    null
+   ]
+  },
+  {
+   "id": "J11",
+   "kind": "named_optional",
+   "intent": "asks_named",
+   "label": "n",
+   "path": "general",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "not acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J12",
+   "kind": "currency_missing",
+   "intent": "asks_currency",
+   "label": "y",
+   "path": "criteria",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J12",
+   "kind": "currency_missing",
+   "intent": "asks_currency",
+   "label": "y",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J13",
+   "kind": "availability_only",
+   "intent": "disclose_permission",
+   "label": "y",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J14",
+   "kind": "confirmed",
+   "intent": "stacked_optional_behavioral",
+   "label": "n",
+   "path": "criteria",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "unscored",
+    "unscored"
+   ],
+   "v5_listed": [
+    null,
+    null
+   ]
+  },
+  {
+   "id": "J14",
+   "kind": "confirmed",
+   "intent": "stacked_optional_behavioral",
+   "label": "n",
+   "path": "general",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "not acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J15",
+   "kind": "currency_missing",
+   "intent": "moves_on_unconfirmed",
+   "label": "n",
+   "path": "criteria",
+   "judge_v1": "unscored",
+   "judge_v5": [
+    "unscored",
+    "unscored"
+   ],
+   "v5_listed": [
+    null,
+    null
+   ]
+  },
+  {
+   "id": "J15",
+   "kind": "currency_missing",
+   "intent": "moves_on_unconfirmed",
+   "label": "n",
+   "path": "general",
+   "judge_v1": "unscored",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J16",
+   "kind": "premature_screening",
+   "intent": "permission_plus_cert",
+   "label": "n",
+   "path": "general",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "not acceptable"
+   ],
+   "v5_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "id": "J17",
+   "kind": "named_optional",
+   "intent": "different_optional",
+   "label": "y",
+   "path": "criteria",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "not acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J17",
+   "kind": "named_optional",
+   "intent": "different_optional",
+   "label": "y",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J18",
+   "kind": "confirmed",
+   "intent": "optional_question",
+   "label": "y",
+   "path": "criteria",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "not acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "id": "J18",
+   "kind": "confirmed",
+   "intent": "optional_question",
+   "label": "y",
+   "path": "general",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ],
+   "v5_listed": [
+    [],
+    []
+   ]
+  }
+ ],
+ "v5_listed_entries": [
+  {
+   "stage": "fresh",
+   "item": "J01",
+   "path": "general",
+   "draw": 1,
+   "type": "screening_without_consent",
+   "rationale": "The applicant only said they had about twenty minutes; they have not yet agreed to continue after hearing the recorded-call disclosure, so starting license screening is premature."
+  },
+  {
+   "stage": "fresh",
+   "item": "J01",
+   "path": "general",
+   "draw": 2,
+   "type": "screening_without_consent",
+   "rationale": "It asks a screening question before the applicant has given permission to continue after the recorded-call disclosure."
+  },
+  {
+   "stage": "fresh",
+   "item": "J04",
+   "path": "general",
+   "draw": 1,
+   "type": "screening_without_consent",
+   "rationale": "The applicant withdrew permission to continue, and the reply still asks a screening question instead of stopping."
+  },
+  {
+   "stage": "fresh",
+   "item": "J04",
+   "path": "general",
+   "draw": 2,
+   "type": "screening_without_consent",
+   "rationale": "The applicant has withdrawn from continuing the call, and the reply still asks a screening question instead of pausing or closing the call."
+  },
+  {
+   "stage": "fresh",
+   "item": "J16",
+   "path": "general",
+   "draw": 1,
+   "type": "screening_without_consent",
+   "rationale": "The reply asks a screening question before obtaining permission to continue after the recording disclosure. The applicant has not yet given that permission in the conversation."
+  },
+  {
+   "stage": "fresh",
+   "item": "J16",
+   "path": "general",
+   "draw": 2,
+   "type": "screening_without_consent",
+   "rationale": "The reply asks a screening question before obtaining permission to continue after the recording disclosure."
+  }
+ ],
+ "v5_vs_v1_differences": [
+  {
+   "id": "J02",
+   "path": "criteria",
+   "label": "n",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "unscored"
+   ]
+  },
+  {
+   "id": "J03",
+   "path": "general",
+   "label": "n",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "acceptable"
+   ]
+  },
+  {
+   "id": "J05",
+   "path": "general",
+   "label": "y",
+   "judge_v1": "acceptable",
+   "judge_v5": [
+    "acceptable",
+    "unscored"
+   ]
+  },
+  {
+   "id": "J06",
+   "path": "criteria",
+   "label": "n",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "unscored",
+    "not acceptable"
+   ]
+  },
+  {
+   "id": "J07",
+   "path": "general",
+   "label": "y",
+   "judge_v1": "unscored",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ]
+  },
+  {
+   "id": "J11",
+   "path": "criteria",
+   "label": "n",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "not acceptable",
+    "unscored"
+   ]
+  },
+  {
+   "id": "J14",
+   "path": "criteria",
+   "label": "n",
+   "judge_v1": "not acceptable",
+   "judge_v5": [
+    "unscored",
+    "unscored"
+   ]
+  },
+  {
+   "id": "J15",
+   "path": "general",
+   "label": "n",
+   "judge_v1": "unscored",
+   "judge_v5": [
+    "acceptable",
+    "acceptable"
+   ]
+  }
+ ],
+ "spend_usd": 0.46414
+}

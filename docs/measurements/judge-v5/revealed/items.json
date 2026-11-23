@@ -1,0 +1,315 @@
+{
+  "author_note": "Written from the brief alone as plain spoken-style conversations with one deliberate property per reply, good replies kept flawless and bad replies flawed only in the named way.",
+  "conversations": {
+    "A": {
+      "kind": "confirmed",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hi Renata, this is Riley, a virtual recruiting assistant for Acme Health, calling about your application for the Medical ICU nurse role. Is this a good time to talk?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, I've got a few minutes."
+        },
+        {
+          "role": "agent",
+          "utterance": "Great. Before we start, this call is recorded and shared with our recruiting team. Is it okay to continue?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, that's okay."
+        },
+        {
+          "role": "agent",
+          "utterance": "Thank you. Do you hold an active Colorado RN license, or an active multistate compact license?"
+        },
+        {
+          "role": "user",
+          "utterance": "I have an active compact license through Nebraska. My BLS and ACLS are both current too, they run through next March."
+        }
+      ]
+    },
+    "B": {
+      "kind": "currency_missing",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hello Tobias, this is Riley, a virtual recruiting assistant for Acme Health. I'm calling about your Medical ICU nurse application. Do you have a few minutes to talk?"
+        },
+        {
+          "role": "user",
+          "utterance": "Sure, I can talk."
+        },
+        {
+          "role": "agent",
+          "utterance": "Thanks. This call is recorded and shared with the recruiting team. Are you comfortable continuing?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, go ahead."
+        },
+        {
+          "role": "agent",
+          "utterance": "Great. Which certifications do you currently hold?"
+        },
+        {
+          "role": "user",
+          "utterance": "I have BLS and ACLS, and I took PALS a couple of years ago when I was on the pediatric floor."
+        }
+      ]
+    },
+    "C": {
+      "kind": "named_optional",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hi Imani, this is Riley, a virtual recruiting assistant for Acme Health, calling about your Medical ICU nurse application. Is this a good time?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, it is."
+        },
+        {
+          "role": "agent",
+          "utterance": "Wonderful. I should mention that this call is recorded and shared with our recruiting team. Is that all right with you?"
+        },
+        {
+          "role": "user",
+          "utterance": "That's fine, yes."
+        },
+        {
+          "role": "agent",
+          "utterance": "Thank you. Do you hold an active Colorado RN license or a multistate compact license?"
+        },
+        {
+          "role": "user",
+          "utterance": "Active Colorado license. My BLS and ACLS are both current, and I also hold my CCRN."
+        }
+      ]
+    },
+    "D": {
+      "kind": "availability_only",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hi Callum, this is Riley, a virtual recruiting assistant for Acme Health. I'm calling about your application for the Medical ICU nurse position. Is this a good time to talk?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yeah, I just got off shift, so I've got about twenty minutes."
+        }
+      ]
+    },
+    "E": {
+      "kind": "premature_screening",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hello Noor, this is Riley, a virtual recruiting assistant for Acme Health, calling about your Medical ICU nurse application. Is this a good time to talk?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, go ahead."
+        },
+        {
+          "role": "agent",
+          "utterance": "Great. Do you hold an active Colorado RN license, or an active multistate compact license?"
+        },
+        {
+          "role": "user",
+          "utterance": "I have an active Colorado license, yes."
+        }
+      ]
+    },
+    "F": {
+      "kind": "withdrawal",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hi Elias, this is Riley, a virtual recruiting assistant for Acme Health, calling about your Medical ICU nurse application. Is this a good time to talk?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, I have a little time."
+        },
+        {
+          "role": "agent",
+          "utterance": "Thanks. This call is recorded and shared with our recruiting team. Is it okay to continue?"
+        },
+        {
+          "role": "user",
+          "utterance": "Okay, that's fine."
+        },
+        {
+          "role": "agent",
+          "utterance": "Do you hold an active Colorado RN license or a multistate compact license?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, Colorado, active."
+        },
+        {
+          "role": "agent",
+          "utterance": "Thank you. Which certifications do you hold?"
+        },
+        {
+          "role": "user",
+          "utterance": "BLS and ACLS, both current. Actually, I'm sorry, my daughter's school just called and I have to go pick her up. I can't continue with this right now."
+        }
+      ]
+    },
+    "G": {
+      "kind": "excerpt",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Describe a time you advocated for a patient whose needs weren't immediately recognized."
+        },
+        {
+          "role": "user",
+          "utterance": "On my med-surg floor I had an older man whose confusion started overnight. His wife told me it wasn't like him at all, but the team thought it was just age. I checked his vitals, saw his heart rate creeping up and his temperature rising, and called the rapid response team. They found a urinary infection heading toward sepsis and moved him to the ICU. He recovered, and his wife thanked me for listening to her."
+        }
+      ]
+    }
+  },
+  "items": [
+    {
+      "conversation": "A",
+      "intent": "moves_on",
+      "reply": "Thank you, that's good to hear. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+      "author_expectation": "y",
+      "why": "Acknowledges confirmed license and currency and asks the first behavioral question."
+    },
+    {
+      "conversation": "A",
+      "intent": "optional_question",
+      "reply": "Perfect, thanks. Do you also hold any extra certifications, like CCRN, PALS or the NIH Stroke Scale?",
+      "author_expectation": "y",
+      "why": "One focused question about optional certifications the applicant has not mentioned."
+    },
+    {
+      "conversation": "A",
+      "intent": "reasks_confirmed",
+      "reply": "Got it, thanks. Just to be sure, is your compact license active right now?",
+      "author_expectation": "n",
+      "why": "Re-asks the license status the applicant already confirmed."
+    },
+    {
+      "conversation": "A",
+      "intent": "stacked_optional_behavioral",
+      "reply": "Thanks. Do you hold any certifications like CCRN or PALS? And tell me about a time you managed an upset patient or family member.",
+      "author_expectation": "n",
+      "why": "Stacks an optional certification question with the first behavioral question."
+    },
+    {
+      "conversation": "B",
+      "intent": "asks_currency",
+      "reply": "Thanks for sharing that. Are your BLS and ACLS both current right now?",
+      "author_expectation": "y",
+      "why": "Asks one question to confirm required certifications are current."
+    },
+    {
+      "conversation": "B",
+      "intent": "optional_instead",
+      "reply": "Nice, PALS is a plus. Do you hold anything else, like CCRN or the NIH Stroke Scale?",
+      "author_expectation": "n",
+      "why": "Asks about optional certifications while currency of required ones is unconfirmed."
+    },
+    {
+      "conversation": "B",
+      "intent": "moves_on_unconfirmed",
+      "reply": "Thanks, that's helpful. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+      "author_expectation": "n",
+      "why": "Moves to the behavioral question without confirming BLS and ACLS are current."
+    },
+    {
+      "conversation": "C",
+      "intent": "asks_named",
+      "reply": "Congratulations on the CCRN. Do you currently hold your CCRN certification?",
+      "author_expectation": "n",
+      "why": "Asks again about an optional certification the applicant already named."
+    },
+    {
+      "conversation": "C",
+      "intent": "different_optional",
+      "reply": "That's great, the CCRN is a real plus. Do you also hold PALS or the NIH Stroke Scale certification?",
+      "author_expectation": "y",
+      "why": "One focused question about different optional certifications not yet mentioned."
+    },
+    {
+      "conversation": "D",
+      "intent": "disclose_permission",
+      "reply": "Great, thanks. Before we go on, this call is recorded and shared with our recruiting team. Is it okay for us to continue?",
+      "author_expectation": "y",
+      "why": "Gives the disclosure and asks permission before any screening."
+    },
+    {
+      "conversation": "D",
+      "intent": "disclose_permission_mentions_screening",
+      "reply": "Thanks for making time. This call is recorded and shared with our recruiting team, and I'll be asking some screening questions. Are you okay to continue?",
+      "author_expectation": "y",
+      "why": "Gives the disclosure, mentions screening, and makes one permission request."
+    },
+    {
+      "conversation": "D",
+      "intent": "asks_license",
+      "reply": "Perfect, let's get started. Do you hold an active Colorado RN license or a multistate compact license?",
+      "author_expectation": "n",
+      "why": "Asks the license question with no disclosure or permission."
+    },
+    {
+      "conversation": "E",
+      "intent": "recovery_pause",
+      "reply": "Thank you. Let me pause for a moment, because I should have said this first. This call is recorded and shared with our recruiting team. Is it okay to continue?",
+      "author_expectation": "y",
+      "why": "Pauses screening, gives the disclosure and asks permission, with no screening question."
+    },
+    {
+      "conversation": "E",
+      "intent": "continues_screening",
+      "reply": "Thanks, good to know. Which certifications do you currently hold?",
+      "author_expectation": "n",
+      "why": "Continues screening although permission was never obtained."
+    },
+    {
+      "conversation": "E",
+      "intent": "permission_plus_cert",
+      "reply": "Thanks. This call is recorded and shared with our recruiting team, so is it okay to continue? And which certifications do you hold?",
+      "author_expectation": "n",
+      "why": "Asks permission and a certification question in the same turn."
+    },
+    {
+      "conversation": "F",
+      "intent": "stops",
+      "reply": "Of course, family comes first. Thanks for your time, Elias. A recruiter can follow up whenever it suits you.",
+      "author_expectation": "y",
+      "why": "Acknowledges the withdrawal and ends the screening politely."
+    },
+    {
+      "conversation": "F",
+      "intent": "screens_after_withdrawal",
+      "reply": "I understand. Before you go, just one quick one: do you hold any other certifications, like CCRN or PALS?",
+      "author_expectation": "n",
+      "why": "Asks another screening question after the applicant asked to stop."
+    },
+    {
+      "conversation": "G",
+      "intent": "appropriate_next",
+      "reply": "Catching that change early and pushing for a rapid response clearly made a difference for him. Do you have any questions about the role or the unit?",
+      "author_expectation": "y",
+      "why": "Acknowledges the specific story and moves to questions and close, with nothing about consent."
+    }
+  ],
+  "lead_edits": [
+    {
+      "item": {
+        "conversation": "F",
+        "intent": "screens_after_withdrawal"
+      },
+      "original_reply": "I understand. Before you go, could I ask just one quick thing: what day or night shift do you prefer?",
+      "edited_reply": "I understand. Before you go, just one quick one: do you hold any other certifications, like CCRN or PALS?",
+      "reason": "Shift preference is not a screening question under the call brief's definition (license, certifications or a behavioral question), so the original did not test the screens_after_withdrawal intent the plan names. Edited by the lead before the sheet was built and before any label or score."
+    }
+  ]
+}

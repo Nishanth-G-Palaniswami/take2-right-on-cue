@@ -1,0 +1,95 @@
+{
+ "salt": "34952afff6184d486ea1e5242145be02",
+ "items": {
+  "J01": {
+   "index": 11,
+   "conversation": "D",
+   "intent": "asks_license"
+  },
+  "J02": {
+   "index": 2,
+   "conversation": "A",
+   "intent": "reasks_confirmed"
+  },
+  "J03": {
+   "index": 13,
+   "conversation": "E",
+   "intent": "continues_screening"
+  },
+  "J04": {
+   "index": 16,
+   "conversation": "F",
+   "intent": "screens_after_withdrawal"
+  },
+  "J05": {
+   "index": 0,
+   "conversation": "A",
+   "intent": "moves_on"
+  },
+  "J06": {
+   "index": 5,
+   "conversation": "B",
+   "intent": "optional_instead"
+  },
+  "J07": {
+   "index": 12,
+   "conversation": "E",
+   "intent": "recovery_pause"
+  },
+  "J08": {
+   "index": 15,
+   "conversation": "F",
+   "intent": "stops"
+  },
+  "J09": {
+   "index": 10,
+   "conversation": "D",
+   "intent": "disclose_permission_mentions_screening"
+  },
+  "J10": {
+   "index": 17,
+   "conversation": "G",
+   "intent": "appropriate_next"
+  },
+  "J11": {
+   "index": 7,
+   "conversation": "C",
+   "intent": "asks_named"
+  },
+  "J12": {
+   "index": 4,
+   "conversation": "B",
+   "intent": "asks_currency"
+  },
+  "J13": {
+   "index": 9,
+   "conversation": "D",
+   "intent": "disclose_permission"
+  },
+  "J14": {
+   "index": 3,
+   "conversation": "A",
+   "intent": "stacked_optional_behavioral"
+  },
+  "J15": {
+   "index": 6,
+   "conversation": "B",
+   "intent": "moves_on_unconfirmed"
+  },
+  "J16": {
+   "index": 14,
+   "conversation": "E",
+   "intent": "permission_plus_cert"
+  },
+  "J17": {
+   "index": 8,
+   "conversation": "C",
+   "intent": "different_optional"
+  },
+  "J18": {
+   "index": 1,
+   "conversation": "A",
+   "intent": "optional_question"
+  }
+ }
+}
