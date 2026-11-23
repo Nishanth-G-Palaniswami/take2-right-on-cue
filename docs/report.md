@@ -292,6 +292,8 @@ When the applicant has already confirmed the required certifications, a future r
 
 | Item | Where |
 |---|---|
+| Hosted demo | <https://rightoncue.nishanthgp.me>. The saved comparison is public; live runs need the reviewer access code, which is shared separately |
+| Walkthrough video (9:10) | <https://www.loom.com/share/2e492944ef584f0985f5d54c4fa03974>; its recording outline is `docs/walkthrough.md` |
 | Initial prompt | `prompts/v1.md` |
 | Final prompt | `prompts/v3.md` (v2 was the prompt used for the holdout; v3 was tested afterwards) |
 | Judge prompt | `prompts/judge.md` (judge-v1, frozen) |

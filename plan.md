@@ -265,7 +265,8 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
 | 2 | Container for the hosted replay (`Dockerfile`, `.dockerignore`) | lead | Verified locally: build, run, health, no secrets in the image |
 | 3 | Hosting plan for `https://rightoncue.nishanthgp.me` on Render (Docker), with DNS in Netlify DNS (`docs/hosting-plan.md`) | lead | Awaiting Nishanth's review. No push, deploy or DNS change |
 | 4 | Submission report (`docs/report.md`) and walkthrough outline (`docs/walkthrough.md`) | lead | Drafted, for Nishanth's review |
-| 5 | Video and OpenAI usage screenshot | Nishanth | Pending |
+| 5 | Walkthrough video | Nishanth | Done: recorded (9:10) on Loom, <https://www.loom.com/share/2e492944ef584f0985f5d54c4fa03974>, and linked from `README.md`, `docs/report.md` and `docs/walkthrough.md` |
+| 6 | OpenAI usage screenshot | Nishanth | Captured on 2026-11-23: $2.76 for Nov 17–23, before reviewers' live runs. Not in the repo |
 
 ## Hosted live evaluation behind an access code (2026-11-22)
 
