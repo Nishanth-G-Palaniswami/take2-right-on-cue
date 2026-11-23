@@ -286,7 +286,10 @@ def review_fmt(nano: int) -> str:
 # --------------------------------------------------------------- 4. duplicates
 
 
-def test_a_stale_form_or_resubmission_makes_no_call(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_after_send_the_old_form_is_gone_and_reruns_resubmit_nothing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Proves: after a send the counter-keyed form is replaced, and plain reruns and an
+    empty submit make no call. AppTest never delivers a click on a widget that is no
+    longer in the tree, so this does not prove the browser's stale-click behaviour."""
     o = fake(monkeypatch, ["Thanks. What drew you to the ICU?", "never sent"])
     at, _ = hosted_practice(monkeypatch, tmp_path)
     at.text_area(key="pc_msg_0").input("Yes, now works.")
@@ -350,10 +353,12 @@ def test_no_third_judge_attempt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     no_unexpected(at)
     assert len(o.calls) == 3  # the reply, the first judgment and its one retry
     assert badges(at, "Needs review · no valid score") == [":orange-badge[Needs review · no valid score]"]
-    at.button(key="pc_eval").click().run()
-    no_unexpected(at)
-    assert len(o.calls) == 3
-    assert not [c for c in at.caption if CACHED.strip() in c.value]  # nothing was scored
+    captions = [c.value for c in at.caption]
+    assert "No valid verdict from judge-v1 (scorer-1)." in captions
+    assert not [c for c in captions if c.startswith(("Verdict by", "Scored by")) or CACHED.strip() in c]
+    assert "The judge saw only the 2 turns before this reply. No case criteria: the general rubric." in captions
+    assert "No further judge call is allowed for this reply." in captions
+    assert "pc_eval" not in keys(at)  # both attempts used: no button
     rid = at.session_state["pc_turns"][-1]["run_id"]
     assert practice.evaluate(cfg_now(), rid).calls == 0 and len(o.calls) == 3
 
@@ -430,6 +435,80 @@ def test_retry_evaluation_after_a_judge_timeout(tmp_path: Path, monkeypatch: pyt
     at.button(key="pc_eval").click().run()
     no_unexpected(at)
     assert len(o.calls) == 3 and "Verdict by judge-v1 (scorer-1)." in [c.value for c in at.caption]
+
+
+def conflict() -> Exception:
+    req = httpx2.Request("POST", "https://x")
+    return openai.ConflictError("conflict detail sk-proj-****wxyz", response=httpx2.Response(409, request=req), body=None)
+
+
+def judge_reserves(data: Path) -> int:
+    return sum(1 for r in ledger_rows(data) if r["type"] == "reserve" and r["kind"] == "judge")
+
+
+def test_an_unclassified_judge_error_still_counts_toward_the_cap(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """ConflictError is re-raised by the scorer with no score record; the attempt log
+    still caps the reply at JUDGE_ATTEMPTS calls."""
+    o = fake(monkeypatch, ["Thanks. What drew you to the ICU?", *[conflict() for _ in range(4)]])
+    at, data = hosted_practice(monkeypatch, tmp_path)
+    say(at, "Yes, now works.")
+    clicks = 0
+    while "pc_eval" in keys(at) and clicks < 4:
+        at.button(key="pc_eval").click().run()
+        no_unexpected(at)
+        clicks += 1
+    assert clicks == 2 and "pc_eval" not in keys(at)  # no button after the second attempt
+    assert len(o.calls) == 3 and judge_reserves(data) == 2  # 1 generation + 2 judge calls
+    warnings = [w.value for w in at.warning]
+    assert ("The judge's answer didn't arrive. The request may still have been processed and charged "
+            "(the cap counted its maximum). No further judge call is allowed for this reply.") in warnings
+    assert "wxyz" not in everything(at) and "conflict detail" not in everything(at)
+    rid = at.session_state["pc_turns"][-1]["run_id"]
+    cfg = cfg_now()
+    for _ in range(2):  # direct calls: no attempt left
+        assert practice.evaluate(cfg, rid).calls == 0
+    assert len(o.calls) == 3 and judge_reserves(data) == 2
+    assert practice.judge_attempts_logged(cfg, rid) == 2
+
+
+def test_the_first_unclassified_error_shows_the_retry_wording(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    o = fake(monkeypatch, ["Thanks. What drew you to the ICU?", conflict(), judge()])
+    at, _ = hosted_practice(monkeypatch, tmp_path)
+    say(at, "Yes, now works.")
+    at.button(key="pc_eval").click().run()
+    no_unexpected(at)
+    assert ("The judge's answer didn't arrive. The request may still have been processed and charged (the cap "
+            "counted its maximum). Retry evaluation sends it again and may be charged again.") in [w.value for w in at.warning]
+    assert not [e for e in at.error if e.value.startswith("This stopped on an unexpected error")]
+    assert at.button(key="pc_eval").label == "Retry evaluation"
+    at.button(key="pc_eval").click().run()
+    assert len(o.calls) == 3 and "Verdict by judge-v1 (scorer-1)." in [c.value for c in at.caption]
+
+
+def test_the_counted_judge_refuses_past_the_cap_before_any_call(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    hosted_env(monkeypatch, tmp_path)
+    fake(monkeypatch, ["Thanks. What drew you to the ICU?"])
+    cfg = cfg_now()
+    rid = practice.send(cfg, [*opening(), user("Yes, now works.")]).run_id
+    inner = FakeClient(["a", "b", "never sent"])
+    counted = practice._CountedJudge(inner, cfg, rid)
+    counted.responses.create(model="m")
+    counted.responses.create(model="m")
+    with pytest.raises(practice.JudgeAttemptsExhausted):
+        counted.responses.create(model="m")
+    assert len(inner.calls) == 2 and practice.judge_attempts_logged(cfg, rid) == 2
+
+
+def test_a_timeout_then_a_valid_verdict_shows_no_charge_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    o = fake(monkeypatch, ["Thanks. What drew you to the ICU?",
+                           openai.APITimeoutError(request=httpx2.Request("POST", "https://x")), judge()])
+    at, _ = hosted_practice(monkeypatch, tmp_path)
+    say(at, "Yes, now works.")
+    at.button(key="pc_eval").click().run()
+    no_unexpected(at)
+    assert len(o.calls) == 3
+    assert "Verdict by judge-v1 (scorer-1)." in [c.value for c in at.caption]
+    assert not [w for w in at.warning if "didn't arrive" in w.value]
 
 
 # ---------------------------------------------------------- 5. failure and retry
@@ -625,7 +704,9 @@ def test_budget_exhausted_shows_the_conversation_read_only(tmp_path: Path, monke
 # ----------------------------------------- overlapping requests (owner item 2)
 
 
-def test_two_overlapping_sends_make_one_call(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_overlapping_send_calls_get_run_busy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Proves: a second practice.send while the first holds the run lock raises RunBusy
+    with no call. Function level only, not two overlapping Streamlit script runs."""
     hosted_env(monkeypatch, tmp_path)
     o = BlockingClient(["Thanks. What drew you to the ICU?", "never sent"])
     monkeypatch.setattr(live, "GENERATION_FACTORIES", {"openai": lambda: o, "gemini": boom})
@@ -644,7 +725,9 @@ def test_two_overlapping_sends_make_one_call(tmp_path: Path, monkeypatch: pytest
     assert len(o.calls) == 1 and results[0].status == "ok"
 
 
-def test_two_overlapping_evaluations_make_one_call(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_overlapping_evaluate_calls_get_run_busy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Proves: a second practice.evaluate while the first holds the run lock raises
+    RunBusy with no call. Function level only, not two overlapping Streamlit script runs."""
     hosted_env(monkeypatch, tmp_path)
     fake(monkeypatch, ["Thanks. What drew you to the ICU?"])
     cfg = cfg_now()
@@ -783,6 +866,69 @@ def test_pending_evaluation_reconciles_from_the_score_file(tmp_path: Path, monke
     state = {"pc_evals": {rid: {"token": "t", "state": "evaluating"}}}
     assert practice.reconcile_evaluations(state, cfg) == []
     assert state["pc_evals"][rid]["state"] == "done"
+
+
+class SpyLock:
+    """Stands in for the run lock: reports a state, and fails the test if anyone takes it."""
+
+    def __init__(self, held: bool) -> None:
+        self.held = held
+
+    def locked(self) -> bool:
+        return self.held
+
+    def acquire(self, blocking: bool = True) -> bool:
+        raise AssertionError("the wait check must never take the run lock")
+
+
+def test_the_wait_check_adopts_once_the_slot_appears_and_never_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    hosted_env(monkeypatch, tmp_path)
+    fake(monkeypatch, ["Thanks. What drew you to the ICU?"])
+    cfg = cfg_now()
+    rid = practice.send(cfg, [*opening(), user("Yes, now works.")]).run_id
+    slots = practice.run_dir(cfg, rid) / "slots.jsonl"
+    hidden = slots.with_name("slots.hidden")
+    slots.rename(hidden)  # as if the call were still running
+    monkeypatch.setattr(live, "GENERATION_FACTORIES", {"openai": boom, "gemini": boom})
+    monkeypatch.setattr(live, "guarded_clients", boom)
+    spy = SpyLock(held=True)
+    monkeypatch.setattr(live, "_RUN_LOCK", spy)
+    state = pending_state([rid])
+    assert practice.poll_waiting(state, cfg) is True and state["pc_pending"]["state"] == "sending"
+    hidden.rename(slots)
+    spy.held = False
+    assert practice.poll_waiting(state, cfg) is False
+    assert state["pc_turns"][-1]["run_id"] == rid and state["pc_pending"] is None
+
+
+def test_the_waiting_view_polls_with_a_bound(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    o = fake(monkeypatch, ["Thanks. What drew you to the ICU?"])
+    at, _ = hosted_practice(monkeypatch, tmp_path)
+    rid = practice.send(cfg_now(), [*opening(), user("Yes, now works.")]).run_id
+    assert len(o.calls) == 1
+    slots = practice.run_dir(cfg_now(), rid) / "slots.jsonl"
+    hidden = slots.with_name("slots.hidden")
+    slots.rename(hidden)
+    for k, v in pending_state([rid]).items():
+        at.session_state[k] = v
+    lock = live.run_lock()
+    assert lock.acquire(blocking=False)
+    try:
+        at.run()
+        no_unexpected(at)
+        assert "Riley's reply is still being generated." in [i.value for i in at.info]
+        assert "Checking again automatically." in [c.value for c in at.caption]
+        monkeypatch.setattr(practice, "WAIT_POLL_MAX_S", 0.0)
+        at.run()
+        assert "Stopped checking automatically. Use Check again." in [c.value for c in at.caption]
+        assert "pc_check" in keys(at)
+    finally:
+        lock.release()
+    hidden.rename(slots)
+    at.run()
+    no_unexpected(at)
+    assert turns(at)[-1] == ("agent", "Thanks. What drew you to the ICU?") and len(o.calls) == 1
+    assert "pc_wait_since" not in at.session_state
 
 
 # ------------------------------------------------- judge version on the verdict (owner item 3)

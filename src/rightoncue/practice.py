@@ -15,11 +15,14 @@ picked up again without a second call.
 from __future__ import annotations
 
 import json
+import os
 import secrets
 import threading
 from collections.abc import Callable, MutableMapping
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Literal
 
 from . import gemini, live, openai_responses, review, scoring
@@ -43,6 +46,10 @@ WORST_CASE_CHAR = "\u0001"
 # For the length limits (characters of the JSONL transcript), an ordinary character.
 PLAIN_CHAR = "x"
 BUSY = "Another run is in progress, try again shortly."
+# The waiting screens check disk and the lock again every WAIT_POLL_S seconds, for at
+# most WAIT_POLL_MAX_S seconds per wait (then only "Check again"). Tests shrink them.
+WAIT_POLL_S = 1.0
+WAIT_POLL_MAX_S = 120.0
 FATAL_JUDGE_ERRORS = tuple(cls.__name__ for cls in openai_responses.FATAL_ERRORS)
 
 # Serialises the adopt / fail updates of a practice conversation's session state: two
@@ -223,21 +230,99 @@ def judge_max_nano(cfg: live.LiveConfig, run_id: str) -> int:
     return live.project_run(prompt_file(), case, [MODEL], 1).judge_nano
 
 
+class JudgeAttemptsExhausted(RuntimeError):
+    """A practice reply already used its JUDGE_ATTEMPTS judge attempts; no call was made."""
+
+
+def judge_attempts_path(cfg: live.LiveConfig, run_id: str) -> Path:
+    """Practice-owned attempt log, next to the run's score file. Its stem is not a run
+    ID, so review.list_scored_runs never takes it for a score file."""
+    return cfg.scores_dir / f"{run_id}.practice-judge-attempts.jsonl"
+
+
+def judge_attempts_logged(cfg: live.LiveConfig, run_id: str) -> int:
+    """Judge attempts under live.JUDGE_VERSION that reached the guarded client, counted
+    before each call (so an attempt that raised, timed out or was killed still counts)."""
+    path = judge_attempts_path(cfg, run_id)
+    if not path.exists():
+        return 0
+    count = 0
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            raise ValueError(f"{path.as_posix()}:{number}: corrupt judge attempt line") from None
+        if entry.get("judge_prompt_version") == live.JUDGE_VERSION:
+            count += 1
+    return count
+
+
+def _log_judge_attempt(cfg: live.LiveConfig, run_id: str) -> None:
+    path = judge_attempts_path(cfg, run_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(
+        {"run_id": run_id, "judge_prompt_version": live.JUDGE_VERSION,
+         "at": datetime.now(UTC).isoformat()}
+    ) + "\n"
+    with open(path, "ab") as fh:
+        fh.write(line.encode("utf-8"))
+        fh.flush()
+        os.fsync(fh.fileno())
+
+
+class _CountedJudge:
+    """The guarded judge client of one practice reply. Before every call it refuses at
+    the cap, then logs the attempt durably; only then does the guard reserve and call.
+    This holds for every path, including an exception the scorer re-raises without
+    writing a score record. The caller holds the run lock."""
+
+    def __init__(self, inner: Any, cfg: live.LiveConfig, run_id: str) -> None:
+        self._inner = inner
+        self._cfg = cfg
+        self._run_id = run_id
+        self.responses = SimpleNamespace(create=self._create)
+
+    def _create(self, **request: Any) -> Any:
+        if judge_attempts_logged(self._cfg, self._run_id) >= live.JUDGE_ATTEMPTS:
+            raise JudgeAttemptsExhausted(
+                f"practice run {self._run_id}: {live.JUDGE_ATTEMPTS} judge attempts already used; "
+                "no call was made"
+            )
+        _log_judge_attempt(self._cfg, self._run_id)
+        return self._inner.responses.create(**request)
+
+
 @dataclass(frozen=True)
 class Judgment:
-    """What the score file holds for a practice reply."""
+    """What the score file and the attempt log hold for a practice reply."""
 
     record: dict[str, Any] | None  # the record to show (see judgment())
     scored: bool  # a valid verdict exists (any judge version): never judged again
-    failed_attempts: int  # needs_review / judge_failed under live.JUDGE_VERSION
+    failed_attempts: int  # needs_review / judge_failed records under live.JUDGE_VERSION
+    recorded_attempts: int  # scored + failed records under live.JUDGE_VERSION
+    logged_attempts: int  # attempts that reached the client (judge_attempts_logged)
     last_fatal: bool  # the latest failed attempt was a fatal error: no retry after it
-    last_uncertain: bool  # the latest failed attempt got no HTTP response
+    last_no_response: bool  # the latest failed attempt got no HTTP response
+
+    @property
+    def attempts_used(self) -> int:
+        return max(self.logged_attempts, self.recorded_attempts)
 
     @property
     def calls_allowed(self) -> int:
         if self.scored or self.last_fatal:
             return 0
-        return max(0, live.JUDGE_ATTEMPTS - self.failed_attempts)
+        return max(0, live.JUDGE_ATTEMPTS - self.attempts_used)
+
+    @property
+    def charge_uncertain(self) -> bool:
+        """No valid verdict, and an attempt may have been charged without an answer: one
+        got no HTTP response, or one reached the client and left no score record."""
+        if self.scored:
+            return False
+        return self.last_no_response or self.logged_attempts > self.recorded_attempts
 
     @property
     def judge_version(self) -> str | None:
@@ -275,8 +360,10 @@ def judgment(cfg: live.LiveConfig, run_id: str) -> Judgment:
         record=record,
         scored=bool(scored),
         failed_attempts=review.failed_judge_attempts(records, slot_key, text, live.JUDGE_VERSION),
+        recorded_attempts=len(current) + len(failed),
+        logged_attempts=judge_attempts_logged(cfg, run_id),
         last_fatal=last_err.get("type") in FATAL_JUDGE_ERRORS,
-        last_uncertain=bool(failed) and failed[-1].get("status") == "judge_failed"
+        last_no_response=bool(failed) and failed[-1].get("status") == "judge_failed"
         and last_err.get("status_code") is None,
     )
 
@@ -292,10 +379,13 @@ def evaluate(cfg: live.LiveConfig, run_id: str) -> EvalOutcome:
     """Judge one practice reply with live.JUDGE_VERSION, at most JUDGE_ATTEMPTS calls in
     total across every evaluation of it: a first attempt, then one judge-only retry for
     needs_review / judge_failed, as live.run_fresh does. A reply with a valid verdict, a
-    fatal judge error, or no attempt left makes no call.
+    fatal judge error, or no attempt left makes no call. Every call is logged before it
+    is made (_CountedJudge), so an attempt that left no score record still counts.
 
     Raises RunBusy, BudgetExceeded (the projection is more than the remaining budget, or
-    the guard refused the first call; no call), LedgerError, RunInputError.
+    the guard refused the first call; no call), LedgerError, RunInputError. Any other
+    exception from the judge call propagates (the attempt is logged; the ledger settled
+    it at its maximum).
     """
     lock = live.run_lock()
     if not lock.acquire(blocking=False):
@@ -310,9 +400,10 @@ def evaluate(cfg: live.LiveConfig, run_id: str) -> EvalOutcome:
                 "The remaining budget can't cover this evaluation (one judge call plus one "
                 "retry); no call was made."
             )
-        _, judge_client = live.guarded_clients(cfg, ledger, [])
+        _, guarded = live.guarded_clients(cfg, ledger, [])
+        judge_client = _CountedJudge(guarded, cfg, run_id)
         out = EvalOutcome(run_id, 0)
-        if state.failed_attempts == 0:
+        if state.failed_attempts == 0:  # no failed record yet: a first judgment
             _, first = review.score_run(
                 run_dir(cfg, run_id), live.JUDGE_VERSION, scores_dir=cfg.scores_dir, client=judge_client
             )
@@ -321,6 +412,8 @@ def evaluate(cfg: live.LiveConfig, run_id: str) -> EvalOutcome:
                 out.messages.append(live._fatal_judge_message(first, "Scoring"))
                 return out
             if not any(o.kind in live.RETRYABLE_JUDGE_STATUSES for o in first.outcomes):
+                return out
+            if judgment(cfg, run_id).calls_allowed == 0:  # an earlier unrecorded attempt counts
                 return out
         try:
             retried = live.retry_invalid_judgments(cfg, run_dir(cfg, run_id), judge_client)
@@ -337,6 +430,14 @@ def evaluate(cfg: live.LiveConfig, run_id: str) -> EvalOutcome:
         return out
     finally:
         lock.release()
+
+
+def poll_waiting(state: "State", cfg: live.LiveConfig) -> bool:
+    """The waiting screens' automatic check: reconcile again from disk and the lock's
+    state. Never a call, never takes the run lock. True while something still waits."""
+    sending = reconcile(state, cfg) == "waiting"
+    evaluating = reconcile_evaluations(state, cfg) if state.get("pc_evals") else []
+    return sending or bool(evaluating)
 
 
 # ------------------------------------------------- session state (no Streamlit)

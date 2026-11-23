@@ -5,6 +5,7 @@ from __future__ import annotations
 import html
 import math
 import os
+import time
 from typing import Any
 
 import streamlit as st
@@ -979,6 +980,9 @@ PRACTICE_EVAL_UNCERTAIN_FINAL = (
     "The judge's answer didn't arrive. The request may still have been processed and "
     "charged (the cap counted its maximum). No further judge call is allowed for this reply."
 )
+PRACTICE_EVAL_NO_MORE = "No further judge call is allowed for this reply."
+PRACTICE_POLLING = "Checking again automatically."
+PRACTICE_POLL_STOPPED = "Stopped checking automatically. Use Check again."
 PRACTICE_WAITING = "Riley's reply is still being generated."
 PRACTICE_EVAL_WAITING = "This evaluation is still running."
 PRACTICE_RETRY_HINT = "Your message is kept; Retry sends the same conversation again."
@@ -1086,9 +1090,9 @@ def _practice_evaluate(cfg: live.LiveConfig, run_id: str, token: str) -> None:
             practice.finish_evaluation(ss, run_id, token, state="failed", kind="ledger")
         except live.RunInputError as exc:
             practice.finish_evaluation(ss, run_id, token, state="failed", kind="input", detail=str(exc))
-        except Exception as exc:
+        except Exception as exc:  # e.g. an unclassified judge error: logged and charged at its maximum
             live.log.exception("practice evaluation failed: %s", type(exc).__name__)
-            practice.finish_evaluation(ss, run_id, token, state="failed", kind="unexpected")
+            practice.finish_evaluation(ss, run_id, token, state="failed", kind="uncertain")
         else:
             practice.finish_evaluation(
                 ss, run_id, token, state="done", calls=out.calls, messages=out.messages
@@ -1176,16 +1180,20 @@ def _practice_evaluations(cfg: live.LiveConfig, ledger: Any, waiting: list[str])
         st.info(PRACTICE_EVAL_WAITING)
         st.button("Check again", key="pc_eval_check")  # a rerun only, never a call
     else:
-        retry = state.calls_allowed > 0 and (state.failed_attempts > 0 or ev.get("state") == "failed")
-        if state.last_uncertain or ev.get("kind") == "uncertain":
-            st.warning(PRACTICE_EVAL_UNCERTAIN if state.calls_allowed > 0 else PRACTICE_EVAL_UNCERTAIN_FINAL)
-        over = state.calls_allowed > 0 and jmax > remaining
-        if over:
-            st.error("The remaining budget can't cover this evaluation.")
-        if st.button("Retry evaluation" if retry else "Evaluate this turn", key="pc_eval", disabled=over):
-            token = practice.begin_evaluation(ss, run_id)
-            _practice_evaluate(cfg, run_id, token)
-            st.rerun()
+        allowed = state.calls_allowed
+        if not state.scored and (state.charge_uncertain or ev.get("kind") == "uncertain"):
+            st.warning(PRACTICE_EVAL_UNCERTAIN if allowed > 0 else PRACTICE_EVAL_UNCERTAIN_FINAL)
+        elif not state.scored and allowed == 0:
+            st.caption(PRACTICE_EVAL_NO_MORE)
+        if allowed > 0 or state.scored:  # a scored reply shows its cached verdict, with no call
+            retry = allowed > 0 and (state.attempts_used > 0 or ev.get("state") == "failed")
+            over = allowed > 0 and jmax > remaining
+            if over:
+                st.error("The remaining budget can't cover this evaluation.")
+            if st.button("Retry evaluation" if retry else "Evaluate this turn", key="pc_eval", disabled=over):
+                token = practice.begin_evaluation(ss, run_id)
+                _practice_evaluate(cfg, run_id, token)
+                st.rerun()
     numbers = {t["run_id"]: n for n, t in riley}
     for rid in sorted(ss.get("pc_evals", {}), key=lambda r: numbers.get(r, 0)):
         if rid in numbers:
@@ -1213,21 +1221,59 @@ def _practice_evaluation(cfg: live.LiveConfig, run_id: str, number: int) -> None
                 f"Simulated: a placeholder judgment was recorded by {version} "
                 f"({state.scorer_version}); it is not a verdict."
             )
-        else:
+        elif state.scored:
             no_call = ev.get("state") == "done" and ev.get("calls") == 0
-            cached = PRACTICE_CACHED if no_call and state.scored else ""
+            cached = PRACTICE_CACHED if no_call else ""
             st.caption(f"Verdict by {version} ({state.scorer_version}).{cached}")
+        else:  # needs_review / judge_failed: not a verdict
+            st.caption(f"No valid verdict from {version} ({state.scorer_version}).")
     for message in ev.get("messages", []):
         st.warning(message)
     seen = view.cases[0].turns
-    if version is not None:
+    if state.scored and card.reported_model != dryrun.DRY_MODEL:
         st.caption(
             f"Scored by {version} against only the {len(seen)} turns before this reply. "
+            "No case criteria: the general rubric."
+        )
+    elif version is not None or state.logged_attempts:
+        st.caption(
+            f"The judge saw only the {len(seen)} turns before this reply. "
             "No case criteria: the general rubric."
         )
     with st.expander(f"What the judge saw (the {len(seen)} turns before this reply)"):
         for t in seen:
             para(f"{'Riley' if t.role == 'agent' else 'Applicant'}: {t.utterance}", size="0.92rem")
+
+
+@st.fragment(run_every=practice.WAIT_POLL_S)
+def _practice_wait_poll(cfg: live.LiveConfig) -> None:
+    """While a reply or an evaluation is pending, re-check disk and the lock every
+    WAIT_POLL_S seconds (practice.poll_waiting: never a call, never takes the run lock),
+    and redraw the page once it is resolved or the bound is reached."""
+    ss = st.session_state
+    try:
+        still = practice.poll_waiting(ss, cfg)
+        expired = time.monotonic() - ss.get("pc_wait_since", time.monotonic()) > practice.WAIT_POLL_MAX_S
+    except Exception as exc:  # a fragment run is outside the hosted wrapper: never a traceback
+        live.log.exception("practice wait check failed: %s", type(exc).__name__)
+        st.caption(PRACTICE_POLL_STOPPED)
+        return
+    if not still or expired:
+        st.rerun(scope="app")
+    st.caption(PRACTICE_POLLING)
+
+
+def _practice_waiting_refresh(cfg: live.LiveConfig, waiting: bool) -> None:
+    ss = st.session_state
+    if not waiting:
+        if "pc_wait_since" in ss:
+            del ss["pc_wait_since"]
+        return
+    since = ss.setdefault("pc_wait_since", time.monotonic())
+    if time.monotonic() - since <= practice.WAIT_POLL_MAX_S:
+        _practice_wait_poll(cfg)
+    else:
+        st.caption(PRACTICE_POLL_STOPPED)
 
 
 def render_practice(cfg: live.LiveConfig, ledger: Any) -> None:
@@ -1274,6 +1320,7 @@ def render_practice(cfg: live.LiveConfig, ledger: Any) -> None:
         ss["pc_ended"] = True
         st.rerun()
     _practice_evaluations(cfg, ledger, eval_waiting)
+    _practice_waiting_refresh(cfg, waiting or bool(eval_waiting))
     st.divider()
     if st.button("Start a new practice call", key="pc_new"):
         practice.clear(ss)
