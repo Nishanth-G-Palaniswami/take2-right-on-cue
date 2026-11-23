@@ -159,3 +159,15 @@ No paid call is made until Nishanth has labelled the sheet and approved this spe
   - about $0.48 expected;
   - worst-case bound per call up to $0.0177;
   - the hard cap stays at $0.75.
+- **How blind the sheet is.**
+  - Only the J-number-to-item mapping is sealed.
+  - The fresh-check table above and the intent codes in `scripts/judge_v5_experiment.py` are public, and they describe what each kind of reply was written to do. So a reply can be matched to its design on sight.
+  - The lead's chat message about the edit also named the edited reply's purpose: a further screening question after a withdrawal.
+  - Nishanth is asked to label before reading the fresh-check section of this plan or the script. The sheet is unchanged.
+- **The label check (`verify`)** accepts a labelled sheet with reasons, CRLF line endings or a BOM. It refuses a sheet whose item headings, conversations or replies differ from the committed sheet.
+  - Both scoring stages refuse to run until all 18 Accept lines have y or n.
+  - The regression stage was given this gate after the sheet commit and before any call.
+- **Open before scoring: the tolerance in P2.**
+  - If the labels follow the authored design, four certification items are `y`. That is 8 v5 judgments per criteria path.
+  - So "at least 90%" requires 8 of 8 on both paths, at temperature 1.0.
+  - Nishanth decides, before the first paid call, whether P2 stays as written or becomes "all but one per path". Any amendment is committed first.

@@ -38,11 +38,13 @@ from rightoncue.transcript import Turn  # noqa: E402
 PUB = REPO / "docs/measurements/judge-v5"
 PRIV = REPO / "holdout-private/judge-v5"
 ITEMS, KEY, SHEET = PRIV / "items.json", PRIV / "key.json", PUB / "review_sheet.md"
+SHEET_IN_GIT = "docs/measurements/judge-v5/review_sheet.md"  # the committed sheet, for verify()
 RESULTS = PUB / "results"
 JUDGES = ("judge-v5", "judge-v1")
 DRAWS = {"judge-v5": 2, "judge-v1": 1}
 IN_NANO, OUT_NANO = 750, 4_500  # gpt-5.4-mini nano-USD per token (PRD rates)
 PLANNING_NANO = 4_000_000  # $0.004 per call, the plan's planning figure
+BOM, CRLF, LF = "\ufeff", "\r\n", "\n"
 ACCEPT_LINE = re.compile(r"^Accept (J\d\d)\? \(y/n\):[ \t]*(.*?)[ \t]*$", re.MULTILINE)
 
 # conversation kind -> the reply intents the author writes for it (the plan's table)
@@ -151,18 +153,39 @@ def verify() -> None:
     for name, digest in c["private_files"].items():
         if sha(PRIV / name) != digest:
             raise SystemExit(f"{name} does not match the commitment")
-    if sha(SHEET) != c["public_files"]["review_sheet.md"]:
-        # the labelled sheet differs only on Accept/Reason/AI lines; compare with those blanked
-        blank = re.sub(r"^(Accept J\d\d\? \(y/n\):).*$", r"\1", SHEET.read_text(encoding="utf-8"), flags=re.M)
-        blank = re.sub(r"^(Reason \(optional\):).*$", r"\1", blank, flags=re.M)
-        blank = re.sub(r"^(Used an AI assistant while labelling \(yes/no\):).*$", r"\1", blank, flags=re.M)
-        if hashlib.sha256(blank.encode("utf-8")).hexdigest() != c["public_files"]["review_sheet.md"]:
-            raise SystemExit("review_sheet.md differs from the committed sheet beyond its label lines")
+    if sha(SHEET) == c["public_files"]["review_sheet.md"]:
+        return
+    # A labelled sheet may differ in its labels, reasons, line endings or a BOM, never in what
+    # was shown: every item heading and every quoted conversation or reply line must match the
+    # sheet as committed (found in git by the hash in the commitment).
+    import subprocess
+
+    first = subprocess.run(
+        ["git", "log", "--format=%H", "--diff-filter=A", "--", SHEET_IN_GIT],
+        cwd=REPO, capture_output=True, text=True, check=True,
+    ).stdout.split()[-1]
+    committed = subprocess.run(
+        ["git", "show", f"{first}:{SHEET_IN_GIT}"],
+        cwd=REPO, capture_output=True, check=True,
+    ).stdout
+    if hashlib.sha256(committed).hexdigest() != c["public_files"]["review_sheet.md"]:
+        raise SystemExit("the sheet in git does not match the commitment")
+    if shown(committed.decode("utf-8")) != shown(sheet_text()):
+        raise SystemExit("review_sheet.md changes an item heading, a conversation or a reply")
+
+
+def sheet_text() -> str:
+    """The sheet as the labeller saved it: a BOM and CRLF line endings are tolerated."""
+    return SHEET.read_text(encoding="utf-8").lstrip(BOM).replace(CRLF, LF)
+
+
+def shown(text: str) -> list[str]:
+    """What the labeller was shown: item headings and quoted lines, in order."""
+    return [line.rstrip() for line in text.split("\n") if line.startswith("## J") or line.startswith(">")]
 
 
 def labels() -> dict[str, str]:
-    found = {m.group(1): m.group(2).strip().lower() for m in ACCEPT_LINE.finditer(SHEET.read_text(encoding="utf-8"))}
-    return found
+    return {m.group(1): m.group(2).strip().lower() for m in ACCEPT_LINE.finditer(sheet_text())}
 
 
 # ---------------------------------------------------------------------- jobs
@@ -277,10 +300,11 @@ class _FakeClient:
 
 
 def run(args: argparse.Namespace) -> int:
-    if args.stage == "fresh":
-        lab = labels()
-        if len(lab) != 18 or any(v not in ("y", "n") for v in lab.values()):
-            raise SystemExit("label every item on the sheet (y or n) before the fresh stage is scored")
+    # every stage waits for the labels, so no score exists before the sheet is complete
+    verify()
+    lab = labels()
+    if len(lab) != 18 or any(v not in ("y", "n") for v in lab.values()):
+        raise SystemExit("label every item on the sheet (y or n) before any stage is scored")
     judge = scoring.load_judge_prompt(args.judge)
     out_path = (args.out_dir or RESULTS) / f"{args.stage}-{args.judge}.jsonl"
     if out_path.exists():
@@ -374,7 +398,8 @@ def report(args: argparse.Namespace) -> int:
     verify()
     results = args.results_dir or RESULTS
     lab = labels() if args.labels is None else {
-        m.group(1): m.group(2).strip().lower() for m in ACCEPT_LINE.finditer(args.labels.read_text(encoding="utf-8"))}
+        m.group(1): m.group(2).strip().lower()
+        for m in ACCEPT_LINE.finditer(args.labels.read_text(encoding="utf-8").lstrip(BOM).replace(CRLF, LF))}
     if len(lab) != 18 or any(v not in ("y", "n") for v in lab.values()):
         raise SystemExit("the sheet needs y or n on every Accept line")
     convs, items = load_items()
