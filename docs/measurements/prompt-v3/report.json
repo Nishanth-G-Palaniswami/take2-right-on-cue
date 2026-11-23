@@ -1,0 +1,349 @@
+{
+ "labels": {
+  "gpt-5.4": {
+   "v2": {
+    "missing": 2,
+    "given": 3,
+    "pair_cases": 5,
+    "pair_units": 2,
+    "controls": 4,
+    "unscored": 0
+   },
+   "v3": {
+    "missing": 5,
+    "given": 6,
+    "pair_cases": 11,
+    "pair_units": 5,
+    "controls": 4,
+    "unscored": 0
+   }
+  },
+  "gpt-5.4-mini": {
+   "v2": {
+    "missing": 2,
+    "given": 3,
+    "pair_cases": 5,
+    "pair_units": 0,
+    "controls": 4,
+    "unscored": 0
+   },
+   "v3": {
+    "missing": 6,
+    "given": 5,
+    "pair_cases": 11,
+    "pair_units": 5,
+    "controls": 4,
+    "unscored": 0
+   }
+  },
+  "gemini-3.5-flash": {
+   "v2": {
+    "missing": 0,
+    "given": 6,
+    "pair_cases": 6,
+    "pair_units": 0,
+    "controls": 3,
+    "unscored": 0
+   },
+   "v3": {
+    "missing": 1,
+    "given": 5,
+    "pair_cases": 6,
+    "pair_units": 1,
+    "controls": 4,
+    "unscored": 0
+   }
+  },
+  "all": {
+   "v2": {
+    "missing": 4,
+    "given": 12,
+    "pair_cases": 16,
+    "pair_units": 2,
+    "controls": 11,
+    "unscored": 0
+   },
+   "v3": {
+    "missing": 12,
+    "given": 16,
+    "pair_cases": 28,
+    "pair_units": 11,
+    "controls": 12,
+    "unscored": 0
+   }
+  }
+ },
+ "judge": {
+  "gpt-5.4": {
+   "v2": {
+    "missing": 6,
+    "given": 2,
+    "pair_cases": 8,
+    "pair_units": 2,
+    "controls": 4,
+    "unscored": 0
+   },
+   "v3": {
+    "missing": 6,
+    "given": 5,
+    "pair_cases": 11,
+    "pair_units": 5,
+    "controls": 4,
+    "unscored": 0
+   }
+  },
+  "gpt-5.4-mini": {
+   "v2": {
+    "missing": 2,
+    "given": 3,
+    "pair_cases": 5,
+    "pair_units": 0,
+    "controls": 4,
+    "unscored": 0
+   },
+   "v3": {
+    "missing": 6,
+    "given": 5,
+    "pair_cases": 11,
+    "pair_units": 5,
+    "controls": 4,
+    "unscored": 0
+   }
+  },
+  "gemini-3.5-flash": {
+   "v2": {
+    "missing": 0,
+    "given": 5,
+    "pair_cases": 5,
+    "pair_units": 0,
+    "controls": 3,
+    "unscored": 0
+   },
+   "v3": {
+    "missing": 5,
+    "given": 5,
+    "pair_cases": 10,
+    "pair_units": 4,
+    "controls": 4,
+    "unscored": 0
+   }
+  },
+  "all": {
+   "v2": {
+    "missing": 8,
+    "given": 10,
+    "pair_cases": 18,
+    "pair_units": 2,
+    "controls": 11,
+    "unscored": 0
+   },
+   "v3": {
+    "missing": 17,
+    "given": 15,
+    "pair_cases": 32,
+    "pair_units": 14,
+    "controls": 12,
+    "unscored": 0
+   }
+  }
+ },
+ "v3_supported": true,
+ "judge_agreement": {
+  "agree": 80,
+  "scored": 96
+ },
+ "per_case": {
+  "v2|gpt-5.4|F1": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gpt-5.4|F2": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gpt-5.4|F3": {
+   "labels": 0,
+   "judge": 2
+  },
+  "v2|gpt-5.4|F4": {
+   "labels": 1,
+   "judge": 0
+  },
+  "v2|gpt-5.4|F5": {
+   "labels": 0,
+   "judge": 2
+  },
+  "v2|gpt-5.4|F6": {
+   "labels": 0,
+   "judge": 0
+  },
+  "v2|gpt-5.4|F7": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gpt-5.4|F8": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gpt-5.4-mini|F1": {
+   "labels": 0,
+   "judge": 0
+  },
+  "v2|gpt-5.4-mini|F2": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gpt-5.4-mini|F3": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gpt-5.4-mini|F4": {
+   "labels": 0,
+   "judge": 0
+  },
+  "v2|gpt-5.4-mini|F5": {
+   "labels": 0,
+   "judge": 0
+  },
+  "v2|gpt-5.4-mini|F6": {
+   "labels": 1,
+   "judge": 1
+  },
+  "v2|gpt-5.4-mini|F7": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gpt-5.4-mini|F8": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gemini-3.5-flash|F1": {
+   "labels": 0,
+   "judge": 0
+  },
+  "v2|gemini-3.5-flash|F2": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gemini-3.5-flash|F3": {
+   "labels": 0,
+   "judge": 0
+  },
+  "v2|gemini-3.5-flash|F4": {
+   "labels": 2,
+   "judge": 1
+  },
+  "v2|gemini-3.5-flash|F5": {
+   "labels": 0,
+   "judge": 0
+  },
+  "v2|gemini-3.5-flash|F6": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gemini-3.5-flash|F7": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v2|gemini-3.5-flash|F8": {
+   "labels": 1,
+   "judge": 1
+  },
+  "v3|gpt-5.4|F1": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4|F2": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4|F3": {
+   "labels": 1,
+   "judge": 2
+  },
+  "v3|gpt-5.4|F4": {
+   "labels": 2,
+   "judge": 1
+  },
+  "v3|gpt-5.4|F5": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4|F6": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4|F7": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4|F8": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4-mini|F1": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4-mini|F2": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4-mini|F3": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4-mini|F4": {
+   "labels": 1,
+   "judge": 1
+  },
+  "v3|gpt-5.4-mini|F5": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4-mini|F6": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4-mini|F7": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gpt-5.4-mini|F8": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gemini-3.5-flash|F1": {
+   "labels": 1,
+   "judge": 2
+  },
+  "v3|gemini-3.5-flash|F2": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gemini-3.5-flash|F3": {
+   "labels": 0,
+   "judge": 2
+  },
+  "v3|gemini-3.5-flash|F4": {
+   "labels": 1,
+   "judge": 1
+  },
+  "v3|gemini-3.5-flash|F5": {
+   "labels": 0,
+   "judge": 1
+  },
+  "v3|gemini-3.5-flash|F6": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gemini-3.5-flash|F7": {
+   "labels": 2,
+   "judge": 2
+  },
+  "v3|gemini-3.5-flash|F8": {
+   "labels": 2,
+   "judge": 2
+  }
+ }
+}

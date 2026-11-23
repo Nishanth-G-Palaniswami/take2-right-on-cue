@@ -130,9 +130,74 @@ def sheet() -> int:
     return 0
 
 
+MISSING, GIVEN, CONTROLS = ("F1", "F3", "F5"), ("F2", "F4", "F6"), ("F7", "F8")
+PAIRS = (("F1", "F2"), ("F3", "F4"), ("F5", "F6"))
+MODELS = (*OPENAI_MODELS, GEMINI)
+
+
+def judge_verdicts(revealed: Path) -> dict[str, str]:
+    """slot key -> 'y' (judge-v1 acceptable), 'n' (not acceptable) or 'unscored'."""
+    sys.path.insert(0, str(REPO / "src"))
+    from rightoncue import scoring  # noqa: E402
+
+    out: dict[str, str] = {}
+    for p in sorted((PUB / "scores").glob("*.jsonl")):
+        for r in scoring.read_score_records(p):
+            if r.get("judge_prompt_version") != "judge-v1":
+                continue
+            if r["status"] == "scored":
+                out[r["slot_key"]] = "y" if r["decision"]["acceptable"] else "n"
+            else:
+                out.setdefault(r["slot_key"], "unscored")
+    return out
+
+
+def tally(marks: dict[tuple, str], model: str, prompt: str) -> dict[str, int]:
+    """The registered counts for one model and prompt. marks: (prompt, model, case, sample) -> y/n/unscored."""
+    get = lambda c, s: marks.get((prompt, model, c, s))
+    return {
+        "missing": sum(get(c, s) == "y" for c in MISSING for s in (1, 2)),
+        "given": sum(get(c, s) == "y" for c in GIVEN for s in (1, 2)),
+        "pair_cases": sum(get(c, s) == "y" for c in MISSING + GIVEN for s in (1, 2)),
+        "pair_units": sum(get(a, s) == "y" and get(b, s) == "y" for a, b in PAIRS for s in (1, 2)),
+        "controls": sum(get(c, s) == "y" for c in CONTROLS for s in (1, 2)),
+        "unscored": sum(get(c, s) == "unscored" for c in CASES for s in (1, 2)),
+    }
+
+
+def report(labels_path: Path) -> int:
+    import re
+
+    revealed = PUB / "revealed"
+    key = json.loads((revealed / "key.json").read_text(encoding="utf-8"))["items"]
+    labels = dict(re.findall(r"^Accept (R\d\d)\? \(y/n\):[ \t]*(\S+)", labels_path.read_text(encoding="utf-8"), re.M))
+    if sorted(labels) != sorted(key) or any(v not in ("y", "n") for v in labels.values()):
+        raise SystemExit("the label sheet must have y or n for every item")
+    human = {(k["prompt"], k["model"], k["case"], k["sample"]): labels[rid] for rid, k in key.items()}
+    judged = judge_verdicts(revealed)
+    judge = {(k["prompt"], k["model"], k["case"], k["sample"]): judged.get(k["slot_key"], "unscored") for k in key.values()}
+    result: dict = {"labels": {}, "judge": {}}
+    for name, marks in (("labels", human), ("judge", judge)):
+        for m in MODELS:
+            result[name][m] = {p: tally(marks, m, p) for p in PROMPTS}
+        result[name]["all"] = {p: {k: sum(result[name][m][p][k] for m in MODELS) for k in result[name][MODELS[0]][p]} for p in PROMPTS}
+    lab = result["labels"]["all"]
+    result["v3_supported"] = (lab["v3"]["pair_cases"] > lab["v2"]["pair_cases"]
+                              and lab["v3"]["controls"] >= lab["v2"]["controls"] - 1)
+    scored = [k for k, v in judge.items() if v != "unscored"]
+    result["judge_agreement"] = {"agree": sum(judge[k] == human[k] for k in scored), "scored": len(scored)}
+    result["per_case"] = {f"{p}|{m}|{c}": {"labels": sum(human[(p, m, c, s)] == "y" for s in (1, 2)),
+                                           "judge": sum(judge[(p, m, c, s)] == "y" for s in (1, 2))}
+                          for p in PROMPTS for m in MODELS for c in CASES}
+    print(json.dumps(result, indent=1))
+    return 0
+
+
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
-    if cmd not in ("generate", "sheet"):
-        raise SystemExit("usage: prompt_v3_experiment.py generate|sheet")
+    if cmd not in ("generate", "sheet", "report"):
+        raise SystemExit("usage: prompt_v3_experiment.py generate|sheet|report [labels sheet]")
+    if cmd == "report":
+        raise SystemExit(report(Path(sys.argv[2]) if len(sys.argv) > 2 else PUB / "review_sheet_chatgpt.md"))
     raise SystemExit(generate() if cmd == "generate" else sheet())
