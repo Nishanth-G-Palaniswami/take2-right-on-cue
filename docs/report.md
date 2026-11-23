@@ -3,7 +3,7 @@
 Nishanth G Palaniswami, for Take2's Forward Deployed Engineer take-home. Riley is a virtual recruiting assistant for Acme Health's Medical ICU RN role. The question is what Riley should say next, and which model and interviewer prompt to pilot.
 
 **At a glance**
-- **The models agree on safety.** None of the three committed a genuine critical violation in the 92 development and holdout replies scored under prompts v1 and v2. That covers screening without consent, invented facts, promises, and clinical or legal advice. The judge flagged 17 of those replies, with 23 flag entries, and every one was reviewed and found absent. The judge's flags on the v3 replies (8 of the 45 scored in the regression check) have not been reviewed.
+- **The models agree on safety.** None of the three committed a genuine critical violation in the 92 replies scored under prompts v1 and v2 (45 development, 47 holdout). That covers screening without consent, invented facts, promises, and clinical or legal advice. The judge flagged 17 of those replies, with 23 flag entries, and every one was reviewed and found absent. The judge's flags on the v3 replies (8 of the 45 scored in the regression check) have not been reviewed.
 - **They differ on next-move quality and completeness:**
   - **GPT-5.4** gives the most complete answers, but it stacks follow-up questions.
   - **GPT-5.4 Mini** is concise, and the reviewer preferred its tone, but it sometimes asks about actions instead of outcomes, and it once left out a known fact.
@@ -93,7 +93,7 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 ## Recommendation
 
 **Pilot GPT-5.4 with prompt v3,** time-boxed, with recruiters reviewing transcripts.
-- The holdout evidence in this section was measured with v2. v3 was tested afterwards, on fresh conversations and as a regression check on the original cases: no regression for GPT-5.4, but regressions on Mini's follow-ups, so v3 is not recommended for Mini as written. See "Prompt iteration: v2 → v3".
+- The holdout evidence in this section was measured with v2. v3 was tested afterwards, on fresh conversations and as a regression check on the original cases: we observed no regression for GPT-5.4, and regressions on Mini's follow-ups, so v3 is not recommended for Mini as written. See "Prompt iteration: v2 → v3".
 
 The reasons, in the order the plan set them:
 
@@ -192,7 +192,7 @@ We observed no regression for GPT-5.4 in this check. With two samples, we can't 
 - **Judge-v1 is frozen.** Its known limits are in `docs/judge-v1-known-limits.md`.
 
 **Human labels.**
-- **The reviewer is the author,** Nishanth, who also wrote the prompts.
+- **The reviewer is the author,** Nishanth.
 - **The review was blind.** Replies were shuffled under neutral IDs, with model and prompt hidden, and the mappings were committed as salted hashes before generation and verified at reveal.
 - **The labels are AI-assisted.** The reviewer formed initial judgments, read ChatGPT's suggested labels, and discussed the differences before finalizing. ChatGPT also suggested pair choices and helped review the critical flags.
 
