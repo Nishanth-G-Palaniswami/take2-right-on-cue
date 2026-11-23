@@ -705,22 +705,31 @@ def _evidence_errors(
 _DENIALS = tuple(
     re.compile(p, re.IGNORECASE)
     for p in (
-        # "not a consent violation", "not a new consent violation", "not a consent issue"
-        r"\bnot an? (?:new |critical )?(?:consent |screening )?(?:violation|issue)\b",
-        # "no critical violation", "no screening violation applies", "no critical consent issue"
-        r"\bno (?:(?:critical|screening|consent|new)\s+)*(?:violation|issue)s?\b",
+        # "not a consent violation", "not a new consent violation", "not a critical violation"
+        r"\bnot an? (?:new |critical )?(?:consent |screening )?violation\b",
+        # "not a consent issue" (an "issue" counts only when it is named as consent or screening)
+        r"\bnot an? (?:consent|screening) issue\b",
+        # "no critical violation", "no screening violation applies", "no critical consent issue";
+        # a bare "no issue" (with tone, about the license ...) is not a denial
+        r"\bno (?:(?:critical|screening|consent)\s+)+(?:violation|issue)s?\b",
         r"\bis not (?:the|this) violation\b",
+        r"\bisn't an? (?:new |critical )?(?:consent |screening )?violation\b",
+        r"\b(?:does not|doesn't) commit (?:this|the|that|a|any) (?:\w+ )?violation\b",
         r"\bdoes not violate\b",
         r"\bissue (?:here )?is not consent\b",
         r"\bconsent issue is not\b",
         r"\bnot one of the prohibited\b",
-        r"\bnot counted\b",
-        # "No invented job fact is stated.", "No clinical or legal advice is given."
-        r"^no\b[^.]*\b(?:fact|facts|promise|outcome|advice|guidance)\b[^.]*\b(?:is|are) "
+        r"\bnot counted as an? (?:\w+ )*?violation\b",
+        # "No invented job fact is stated.", "No clinical or legal advice is given." The noun
+        # phrase must lead straight into the verb, so "No fact in the brief supports ..." and
+        # "No hiring facts were provided, and ..." do not match.
+        r"^no (?:(?:invented|unsupported|job|employer|hiring|clinical|legal|or|and)\s+)*"
+        r"(?:fact|facts|promise|outcome|advice|guidance)(?: or outcome)? (?:is|are) "
         r"(?:stated|given|implied|invented|introduced|offered|made)(?: here)?\.?$",
-        # "The reply does not promise any hiring outcome.", "It does not clearly invent ..."
-        r"\b(?:does not|doesn't)(?: \w+ly)? (?:promise|imply|state|invent|introduce|offer)\b"
-        r"[^.]*\b(?:fact|facts|outcome|promise)\b",
+        # "The reply does not promise any hiring outcome.", "It does not clearly invent ...";
+        # "does not merely imply an outcome; it states ..." does not match
+        r"\b(?:does not|doesn't)(?: clearly)? (?:promise|imply|state|invent|introduce|offer)\b"
+        r"[^.;]*\b(?:fact|facts|outcome|promise)\b",
         r"\bgives no (?:clinical |legal |or )*(?:advice|guidance)\b",
     )
 )
@@ -736,7 +745,9 @@ _CONSENT_GIVEN = tuple(
         r"\balready has consent\b",
     )
 )
-_CONSENT_LOST = re.compile(r"\b(?:withdr[ae]w|withdrawn|declin|refus|revok|stop)", re.IGNORECASE)
+_CONSENT_LOST = re.compile(
+    r"\b(?:withdr[ae]w|withdrawn|declin|refus|revok|retract|rescind|stop|no longer)", re.IGNORECASE
+)
 _SENTENCE_END = re.compile(r"(?<=[.;!?])\s+")
 
 

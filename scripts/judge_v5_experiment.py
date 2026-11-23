@@ -300,6 +300,8 @@ class _FakeClient:
 
 
 def run(args: argparse.Namespace) -> int:
+    if args.dry_run and args.out_dir is None:
+        raise SystemExit("--dry-run needs --out-dir, so it never takes the write-once results file")
     # every stage waits for the labels, so no score exists before the sheet is complete
     verify()
     lab = labels()
@@ -478,6 +480,20 @@ def report(args: argparse.Namespace) -> int:
                          "judge_v5": [verdict(v5.get((rid, path, d))) for d in (1, 2)],
                          "v5_listed": [(v5.get((rid, path, d)) or {}).get("listed") for d in (1, 2)]})
     summary["items"] = rows
+    # every critical entry v5 listed, with its rationale (fresh and regression)
+    listed = []
+    for name, recs in (("fresh", v5), ("regression", reg5)):
+        for (item, path, draw), r in sorted(recs.items()):
+            if r.get("status") == "scored":
+                for cv in json.loads(r["output_text"]).get("critical_violations", []):
+                    listed.append({"stage": name, "item": item, "path": path, "draw": draw,
+                                   "type": cv["type"], "rationale": cv["rationale"]})
+    summary["v5_listed_entries"] = listed
+    # every fresh item-path where v5's draws differ from judge-v1's verdict
+    summary["v5_vs_v1_differences"] = [
+        {"id": r["id"], "path": r["path"], "label": r["label"], "judge_v1": r["judge_v1"], "judge_v5": r["judge_v5"]}
+        for r in rows if any(v != r["judge_v1"] for v in r["judge_v5"])
+    ]
     spent = sum(r["cost_nano"] for p in results.glob("*.jsonl") for r in map(json.loads, p.read_text(encoding="utf-8").splitlines()))
     summary["spend_usd"] = round(spent / 1e9, 6)
     text = json.dumps(summary, indent=1, ensure_ascii=False) + "\n"

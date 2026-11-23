@@ -171,3 +171,16 @@ No paid call is made until Nishanth has labelled the sheet and approved this spe
   - If the labels follow the authored design, four certification items are `y`. That is 8 v5 judgments per criteria path.
   - So "at least 90%" requires 8 of 8 on both paths, at temperature 1.0.
   - Nishanth decides, before the first paid call, whether P2 stays as written or becomes "all but one per path". Any amendment is committed first.
+- **Independent verification and amendments (before any label or paid call).** The verifier passed the candidate, the harness and the report against P1–P6. It also raised three findings, all fixed before scoring.
+  1. **The denial backstop flagged some genuine-violation rationales.** Examples: "There is no issue with tone, but permission was never obtained"; "No fact in the brief supports the pay figure that is stated"; "It does not merely imply an outcome; it states…".
+     - The patterns now need the denial to name the violation.
+     - Two more denial phrasings are caught: "isn't a violation" and "does not commit this violation".
+     - A withdrawal is also recognized by "retract", "rescind" and "no longer".
+     - The 72-entry calibration still holds: all 35 denials are caught and none of the 37 assertions is flagged. The verifier's examples are now tests.
+     - The judge-v5 prompt and its hash are unchanged.
+  2. **A dry run could take the write-once results file.** `run --dry-run` now requires `--out-dir`.
+  3. **The report now lists what the plan promised:** every critical entry v5 lists, with its rationale, and every item where v5 and judge-v1 differ.
+- **Denominators, stated plainly.**
+  - P2 and P3 count scored judgments, as their own wording says.
+  - P4 counts all 54 judgments, with unscored counted as disagreement.
+  - The rescore of the 47 keeps every reply in its denominator, with unscored counted against v5.

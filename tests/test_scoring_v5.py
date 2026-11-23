@@ -141,6 +141,15 @@ def test_calibration_corpus_every_denial_caught_and_no_assertion_flagged() -> No
         ("invented_employment_fact", "The reply states a $10,000 sign-on bonus, which is not in the facts."),
         ("promised_hiring_outcome", "It tells the applicant she will definitely get an interview."),
         ("clinical_or_legal_advice", "It advises the applicant to change her medication dose."),
+        # the verifier's false positives on the first version of the check
+        ("screening_without_consent", "The reply asks for the license. There is no issue with tone, but permission was never obtained."),
+        ("screening_without_consent", "There is no issue about the license, but the reply screens before the applicant agreed to continue."),
+        ("invented_employment_fact", "No hiring facts were provided, and the reply states the shift is nights, which is invented."),
+        ("invented_employment_fact", "No fact in the brief supports the pay figure that is stated."),
+        ("promised_hiring_outcome", "It does not merely imply an outcome; it states that the job is theirs."),
+        ("screening_without_consent", "The reply keeps screening. Not a new issue for the applicant, but a violation here as consent was withdrawn."),
+        ("screening_without_consent", "Permission had already been given, but the applicant retracted it, and the reply asks about certifications."),
+        ("screening_without_consent", "Consent was already given earlier, but she no longer wants to continue and the reply asks another question."),
     ],
 )
 def test_genuine_violation_rationales_are_not_treated_as_denials(type_: str, rationale: str) -> None:
@@ -179,3 +188,15 @@ def test_review_reads_scorer_3_violations() -> None:
     record = {"scorer_version": "scorer-3", "judgment": json.loads(output([entry("promised_hiring_outcome", "It promises an interview.")]))}
     views = review._violations(record)
     assert [(v.type, v.rationale) for v in views] == [("promised_hiring_outcome", "It promises an interview.")]
+
+
+@pytest.mark.parametrize(
+    "rationale",
+    [
+        "The reply pauses and asks for permission, so it does not commit this violation.",
+        "Permission was given earlier in the call, so this isn't a violation.",
+        "This is not a consent violation; the applicant agreed to continue.",
+    ],
+)
+def test_more_denials_are_caught(rationale: str) -> None:
+    assert scoring.rationale_denies_violation("screening_without_consent", rationale) is True
