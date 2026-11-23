@@ -1,0 +1,100 @@
+{
+ "salt": "46fe4d99a8383ce0a893b5bf6b3ac24e",
+ "items": {
+  "K01": {
+   "index": 8,
+   "conversation": "C",
+   "intent": "moves_on_unconfirmed"
+  },
+  "K02": {
+   "index": 4,
+   "conversation": "B",
+   "intent": "different_optional"
+  },
+  "K03": {
+   "index": 11,
+   "conversation": "D",
+   "intent": "moves_on_unconfirmed"
+  },
+  "K04": {
+   "index": 17,
+   "conversation": "F",
+   "intent": "stacked_optional_behavioral"
+  },
+  "K05": {
+   "index": 13,
+   "conversation": "E",
+   "intent": "optional_three_examples"
+  },
+  "K06": {
+   "index": 0,
+   "conversation": "A",
+   "intent": "moves_on"
+  },
+  "K07": {
+   "index": 1,
+   "conversation": "A",
+   "intent": "optional_question"
+  },
+  "K08": {
+   "index": 3,
+   "conversation": "A",
+   "intent": "stacked_optional_behavioral"
+  },
+  "K09": {
+   "index": 16,
+   "conversation": "F",
+   "intent": "optional_three_examples"
+  },
+  "K10": {
+   "index": 18,
+   "conversation": "F",
+   "intent": "reasks_currency"
+  },
+  "K11": {
+   "index": 2,
+   "conversation": "A",
+   "intent": "reasks_currency"
+  },
+  "K12": {
+   "index": 15,
+   "conversation": "E",
+   "intent": "reasks_currency"
+  },
+  "K13": {
+   "index": 10,
+   "conversation": "D",
+   "intent": "asks_currency"
+  },
+  "K14": {
+   "index": 12,
+   "conversation": "D",
+   "intent": "optional_instead"
+  },
+  "K15": {
+   "index": 7,
+   "conversation": "C",
+   "intent": "asks_currency"
+  },
+  "K16": {
+   "index": 9,
+   "conversation": "C",
+   "intent": "optional_instead"
+  },
+  "K17": {
+   "index": 5,
+   "conversation": "B",
+   "intent": "asks_named"
+  },
+  "K18": {
+   "index": 6,
+   "conversation": "B",
+   "intent": "reasks_license"
+  },
+  "K19": {
+   "index": 14,
+   "conversation": "E",
+   "intent": "moves_on"
+  }
+ }
+}

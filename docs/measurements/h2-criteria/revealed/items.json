@@ -1,0 +1,284 @@
+{
+  "author_note": "Four fresh MICU-recruiting call endings (two explicit-currency, two ambiguous mixed-credential answers) with 13 proposed Riley turns, good and flawed in one intended way each.",
+  "author_note_extra": "Two more MICU-recruiting call endings where BLS and ACLS currency is stated through a valid-through date or a recent renewal, with six proposed Riley turns.",
+  "merge_note": "The lead merged items-extra.json (conversations E, F: written by the same author after Nishanth asked for currency equivalents and a three-example question) into this file. The original 13 items and conversations A-D are unchanged.",
+  "conversations": {
+    "A": {
+      "kind": "explicit_plain",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hi, this is Riley, a virtual recruiting assistant with Acme Health in Denver, calling about the Medical ICU nurse opening. Before we start, I should let you know this call is recorded and shared with our recruiting team. Is that okay with you?"
+        },
+        {
+          "role": "user",
+          "utterance": "Sure, that's fine, go ahead."
+        },
+        {
+          "role": "agent",
+          "utterance": "Thanks, Joaquin. Let's start with your credentials. Do you hold an active Colorado RN license or an active multistate license, and are your BLS and ACLS up to date?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, I have an active Colorado RN license, and my BLS and ACLS are both current."
+        }
+      ]
+    },
+    "B": {
+      "kind": "explicit_named",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hello, this is Riley, a virtual recruiting assistant for Acme Health in Denver. I'm calling about our Medical ICU nurse position. This call is recorded and shared with the recruiting team. Are you comfortable continuing?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, I'm comfortable with that."
+        },
+        {
+          "role": "agent",
+          "utterance": "Great, Fiona. Can you tell me about your nursing license and your certifications?"
+        },
+        {
+          "role": "user",
+          "utterance": "My Colorado RN license is active. I recertified my BLS and ACLS last month, so both are good for another two years. I also hold my CCRN."
+        }
+      ]
+    },
+    "C": {
+      "kind": "mixed_a",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hi, I'm Riley, a virtual recruiting assistant with Acme Health in Denver, calling about the Medical ICU nurse role. Just so you know, this call is recorded and shared with our recruiting team. Is it all right to go on?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, that works for me."
+        },
+        {
+          "role": "agent",
+          "utterance": "Thank you, Lucia. First, do you have an active Colorado RN license or an active multistate license?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, I have an active multistate license through my home state."
+        },
+        {
+          "role": "agent",
+          "utterance": "Perfect. And what certifications do you hold?"
+        },
+        {
+          "role": "user",
+          "utterance": "Well, I've got BLS and ACLS, and back in 2019 I did a PALS course when my hospital was cross-training us for the children's unit."
+        }
+      ]
+    },
+    "D": {
+      "kind": "mixed_b",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hello, this is Riley, a virtual recruiter for Acme Health in Denver. I'm phoning about our Medical ICU registered nurse opening. We record this call and share it with the recruiting team. Do you agree to continue?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yeah, I agree. Go ahead."
+        },
+        {
+          "role": "agent",
+          "utterance": "Thanks, Grant. Do you currently hold an active Colorado RN license, or an active compact license?"
+        },
+        {
+          "role": "user",
+          "utterance": "I do, my Colorado license is active."
+        },
+        {
+          "role": "agent",
+          "utterance": "Good to hear. Which certifications do you have?"
+        },
+        {
+          "role": "user",
+          "utterance": "I hold BLS and ACLS, plus I took an NIH Stroke Scale class around 2018 at my old hospital in Phoenix."
+        }
+      ]
+    },
+    "E": {
+      "kind": "explicit_equiv_valid",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hi, this is Riley, a virtual recruiting assistant with Acme Health in Denver, calling about the Medical ICU nurse opening. This call is recorded and shared with our recruiting team. Is it okay to continue?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, no problem."
+        },
+        {
+          "role": "agent",
+          "utterance": "Thanks, Hollis. Let's talk credentials. Do you have an active Colorado RN license or an active multistate license, and what's the status of your BLS and ACLS?"
+        },
+        {
+          "role": "user",
+          "utterance": "My Colorado RN license is active, and my BLS and ACLS cards are both valid through the end of next June."
+        }
+      ]
+    },
+    "F": {
+      "kind": "explicit_equiv_renewed",
+      "turns": [
+        {
+          "role": "agent",
+          "utterance": "Hello, I'm Riley, a virtual recruiter for Acme Health in Denver. I'm calling about our Medical ICU registered nurse position. We record this call and share it with the recruiting team. Do you agree to go ahead?"
+        },
+        {
+          "role": "user",
+          "utterance": "Yes, that's fine with me."
+        },
+        {
+          "role": "agent",
+          "utterance": "Great, Sabine. Can you tell me about your license and your BLS and ACLS?"
+        },
+        {
+          "role": "user",
+          "utterance": "Sure. I have an active multistate RN license, and I renewed both my BLS and ACLS just a few weeks ago."
+        }
+      ]
+    }
+  },
+  "items": [
+    {
+      "conversation": "A",
+      "intent": "moves_on",
+      "reply": "Wonderful, that's exactly what we need. Let's move to a couple of questions about your experience. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+      "author_expectation": "y",
+      "why": "Acknowledges settled credentials and moves to the first behavioral question."
+    },
+    {
+      "conversation": "A",
+      "intent": "optional_question",
+      "reply": "Great, thanks for confirming. Do you hold any of the extras we like to see in the ICU, such as CCRN or the NIH Stroke Scale?",
+      "author_expectation": "y",
+      "why": "One focused question about optional certifications not yet mentioned."
+    },
+    {
+      "conversation": "A",
+      "intent": "reasks_currency",
+      "reply": "Thanks, Joaquin. Just to be sure, are your BLS and ACLS both current right now?",
+      "author_expectation": "n",
+      "why": "Re-asks currency the applicant already stated explicitly."
+    },
+    {
+      "conversation": "A",
+      "intent": "stacked_optional_behavioral",
+      "reply": "Good to hear. Do you also have CCRN or PALS? And then tell me about a time you managed an upset patient or family member, and how it was resolved.",
+      "author_expectation": "n",
+      "why": "Stacks an optional-certification question with the behavioral question in one turn."
+    },
+    {
+      "conversation": "B",
+      "intent": "different_optional",
+      "reply": "Congratulations on the CCRN, that's a real plus for an ICU. Have you also completed the NIH Stroke Scale certification?",
+      "author_expectation": "y",
+      "why": "One focused question about a different optional certification."
+    },
+    {
+      "conversation": "B",
+      "intent": "asks_named",
+      "reply": "Thanks, Fiona. And do you hold the CCRN?",
+      "author_expectation": "n",
+      "why": "Asks about the certification the applicant just said she holds."
+    },
+    {
+      "conversation": "B",
+      "intent": "reasks_license",
+      "reply": "That's helpful. Before we continue, can you confirm your Colorado license is active at the moment?",
+      "author_expectation": "n",
+      "why": "Re-asks the license the applicant already confirmed as active."
+    },
+    {
+      "conversation": "C",
+      "intent": "asks_currency",
+      "reply": "Thanks for walking me through those, Lucia. Are your BLS and ACLS both current at this point?",
+      "author_expectation": "y",
+      "why": "One focused question settling whether BLS and ACLS are current."
+    },
+    {
+      "conversation": "C",
+      "intent": "moves_on_unconfirmed",
+      "reply": "Nice, the pediatric cross-training sounds useful. Let's turn to a few experience questions. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+      "author_expectation": "n",
+      "why": "Moves on without ever confirming BLS and ACLS are current."
+    },
+    {
+      "conversation": "C",
+      "intent": "optional_instead",
+      "reply": "Got it, thank you. Do you also hold CCRN or the NIH Stroke Scale certification?",
+      "author_expectation": "n",
+      "why": "Asks about other optional certifications instead of BLS and ACLS currency."
+    },
+    {
+      "conversation": "D",
+      "intent": "asks_currency",
+      "reply": "Okay, thanks Grant. Quick check: are your BLS and ACLS current right now?",
+      "author_expectation": "y",
+      "why": "One focused question about whether BLS and ACLS are current."
+    },
+    {
+      "conversation": "D",
+      "intent": "moves_on_unconfirmed",
+      "reply": "Thanks, that gives me a good picture. Now, tell me about a time you managed an upset patient or family member. What happened, and how did you resolve it?",
+      "author_expectation": "n",
+      "why": "Goes to the behavioral question without confirming currency."
+    },
+    {
+      "conversation": "D",
+      "intent": "optional_instead",
+      "reply": "Sounds good. Have you earned your CCRN or PALS, by any chance?",
+      "author_expectation": "n",
+      "why": "Asks about other optional certifications instead of confirming currency."
+    },
+    {
+      "conversation": "E",
+      "intent": "optional_three_examples",
+      "reply": "Perfect, thank you. Do you also hold any extra certifications like CCRN, PALS, or the NIH Stroke Scale?",
+      "author_expectation": "y",
+      "why": "One focused question about optional certifications, with three examples."
+    },
+    {
+      "conversation": "E",
+      "intent": "moves_on",
+      "reply": "Great, that covers what we need. Now tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?",
+      "author_expectation": "y",
+      "why": "Acknowledges settled credentials and asks the first behavioral question."
+    },
+    {
+      "conversation": "E",
+      "intent": "reasks_currency",
+      "reply": "Thanks, Hollis. Just to confirm, are your BLS and ACLS current at the moment?",
+      "author_expectation": "n",
+      "why": "Re-asks currency the applicant already settled with a valid-through date."
+    },
+    {
+      "conversation": "F",
+      "intent": "optional_three_examples",
+      "reply": "Good to hear, and thanks for that. Have you earned anything beyond those, such as CCRN, PALS, or NIH Stroke Scale certification?",
+      "author_expectation": "y",
+      "why": "One focused question about optional certifications, with three examples."
+    },
+    {
+      "conversation": "F",
+      "intent": "stacked_optional_behavioral",
+      "reply": "Wonderful. Do you hold CCRN or PALS? Also, tell me about a time you managed an upset patient or family member, and how it was resolved.",
+      "author_expectation": "n",
+      "why": "Stacks an optional-certification question with the behavioral question in one turn."
+    },
+    {
+      "conversation": "F",
+      "intent": "reasks_currency",
+      "reply": "Thank you, Sabine. Before we go on, are your BLS and ACLS both up to date right now?",
+      "author_expectation": "n",
+      "why": "Re-asks currency the applicant already settled by saying both were just renewed."
+    }
+  ]
+}

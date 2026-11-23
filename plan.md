@@ -375,8 +375,8 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
 |---|---|---|---|
 | 1 | Proposed text (`docs/measurements/h2-criteria/notes-proposed.toml`); old and proposed side by side; the request the judge receives, verified with `plan_scoring` | lead | Done; offline |
 | 2 | 19 fresh items from a separate author; blind sheet; commitment | item author, then lead | Done |
-| 3 | Nishanth labels the 19 items and approves the run (cap $0.65) | Nishanth | Pending |
-| 4 | Score fresh (new/old/general), known (new/old), and the H2 regression (new); report H1–H6 | lead | Pending |
+| 3 | Labels (AI-drafted labels reviewed in full by Nishanth) and approval (cap $0.65) | Nishanth | Done (`879c38a`) |
+| 4 | Score fresh (new/old/general), known (new/old), and the H2 regression (new); report H1–H6 | lead | Done ($0.471435): H1 and H3–H6 met; **H2 (the Tobias boundary) missed**. See `docs/measurements/2026-11-22-h2-criteria-results.md` |
 | 5 | Adoption (`cases/notes.toml` or otherwise) is a separate decision | Nishanth | Not started |
 
 ## judge-v5: certification and consent fixes (2026-11-22)

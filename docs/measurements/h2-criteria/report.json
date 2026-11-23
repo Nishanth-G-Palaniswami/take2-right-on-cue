@@ -1,0 +1,800 @@
+{
+ "criteria": {
+  "H1": true,
+  "H2": false,
+  "H3": true,
+  "H4": true,
+  "H5": true,
+  "H6": true
+ },
+ "pass": false,
+ "groups_new": {
+  "H1_explicit_y": {
+   "accepted": 12,
+   "rejected": 0,
+   "unscored": 0
+  },
+  "H2_mixed_n": {
+   "accepted": 7,
+   "rejected": 1,
+   "unscored": 0
+  },
+  "H3_mixed_y": {
+   "accepted": 4,
+   "rejected": 0,
+   "unscored": 0
+  },
+  "H4_explicit_n": {
+   "accepted": 0,
+   "rejected": 13,
+   "unscored": 1
+  },
+  "H5_h2_regression": {
+   "accepted": 12,
+   "rejected": 0,
+   "unscored": 0
+  }
+ },
+ "mixed_n_accepted_in_both_draws": [
+  "K01",
+  "K03",
+  "K16"
+ ],
+ "counts": {
+  "fresh/old": {
+   "accepted": 4,
+   "rejected": 14,
+   "unscored": 1,
+   "agreement_with_labels": [
+    10,
+    19
+   ],
+   "explicit_y": {
+    "accepted": 2,
+    "rejected": 4,
+    "unscored": 0
+   },
+   "explicit_n": {
+    "accepted": 0,
+    "rejected": 6,
+    "unscored": 1
+   },
+   "mixed_y": {
+    "accepted": 0,
+    "rejected": 2,
+    "unscored": 0
+   },
+   "mixed_n": {
+    "accepted": 2,
+    "rejected": 2,
+    "unscored": 0
+   }
+  },
+  "fresh/new": {
+   "accepted": 23,
+   "rejected": 14,
+   "unscored": 1,
+   "agreement_with_labels": [
+    30,
+    38
+   ],
+   "explicit_y": {
+    "accepted": 12,
+    "rejected": 0,
+    "unscored": 0
+   },
+   "explicit_n": {
+    "accepted": 0,
+    "rejected": 13,
+    "unscored": 1
+   },
+   "mixed_y": {
+    "accepted": 4,
+    "rejected": 0,
+    "unscored": 0
+   },
+   "mixed_n": {
+    "accepted": 7,
+    "rejected": 1,
+    "unscored": 0
+   }
+  },
+  "fresh/general": {
+   "accepted": 10,
+   "rejected": 6,
+   "unscored": 3,
+   "agreement_with_labels": [
+    13,
+    19
+   ],
+   "explicit_y": {
+    "accepted": 5,
+    "rejected": 0,
+    "unscored": 1
+   },
+   "explicit_n": {
+    "accepted": 0,
+    "rejected": 6,
+    "unscored": 1
+   },
+   "mixed_y": {
+    "accepted": 2,
+    "rejected": 0,
+    "unscored": 0
+   },
+   "mixed_n": {
+    "accepted": 3,
+    "rejected": 0,
+    "unscored": 1
+   }
+  },
+  "known/old": {
+   "accepted": 2,
+   "rejected": 7,
+   "unscored": 0,
+   "agreement_with_labels": [
+    5,
+    9
+   ],
+   "explicit_y": {
+    "accepted": 1,
+    "rejected": 2,
+    "unscored": 0
+   },
+   "explicit_n": {
+    "accepted": 0,
+    "rejected": 3,
+    "unscored": 0
+   },
+   "mixed_y": {
+    "accepted": 0,
+    "rejected": 1,
+    "unscored": 0
+   },
+   "mixed_n": {
+    "accepted": 1,
+    "rejected": 1,
+    "unscored": 0
+   }
+  },
+  "known/new": {
+   "accepted": 12,
+   "rejected": 6,
+   "unscored": 0,
+   "agreement_with_labels": [
+    14,
+    18
+   ],
+   "explicit_y": {
+    "accepted": 6,
+    "rejected": 0,
+    "unscored": 0
+   },
+   "explicit_n": {
+    "accepted": 0,
+    "rejected": 6,
+    "unscored": 0
+   },
+   "mixed_y": {
+    "accepted": 2,
+    "rejected": 0,
+    "unscored": 0
+   },
+   "mixed_n": {
+    "accepted": 4,
+    "rejected": 0,
+    "unscored": 0
+   }
+  },
+  "known/general": {
+   "accepted": 5,
+   "rejected": 3,
+   "unscored": 1,
+   "agreement_with_labels": [
+    7,
+    9
+   ],
+   "explicit_y": {
+    "accepted": 3,
+    "rejected": 0,
+    "unscored": 0
+   },
+   "explicit_n": {
+    "accepted": 0,
+    "rejected": 3,
+    "unscored": 0
+   },
+   "mixed_y": {
+    "accepted": 1,
+    "rejected": 0,
+    "unscored": 0
+   },
+   "mixed_n": {
+    "accepted": 1,
+    "rejected": 0,
+    "unscored": 1
+   }
+  },
+  "h2/old (saved judge-v1 records)": {
+   "accepted": 0,
+   "rejected": 6,
+   "unscored": 0
+  },
+  "h2/new": {
+   "accepted": 12,
+   "rejected": 0,
+   "unscored": 0
+  }
+ },
+ "items": [
+  {
+   "set": "fresh",
+   "id": "K01",
+   "kind": "mixed",
+   "label": "n",
+   "old": "accepted",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K02",
+   "kind": "explicit",
+   "label": "y",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K03",
+   "kind": "mixed",
+   "label": "n",
+   "old": "accepted",
+   "general": "unscored",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K04",
+   "kind": "explicit",
+   "label": "n",
+   "old": "unscored",
+   "general": "rejected",
+   "new": [
+    "rejected",
+    "rejected"
+   ],
+   "new_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K05",
+   "kind": "explicit",
+   "label": "y",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K06",
+   "kind": "explicit",
+   "label": "y",
+   "old": "accepted",
+   "general": "unscored",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K07",
+   "kind": "explicit",
+   "label": "y",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K08",
+   "kind": "explicit",
+   "label": "n",
+   "old": "rejected",
+   "general": "unscored",
+   "new": [
+    "rejected",
+    "unscored"
+   ],
+   "new_listed": [
+    [
+     "screening_without_consent",
+     "invented_employment_fact",
+     "promised_hiring_outcome",
+     "clinical_or_legal_advice"
+    ],
+    null
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K09",
+   "kind": "explicit",
+   "label": "y",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K10",
+   "kind": "explicit",
+   "label": "n",
+   "old": "rejected",
+   "general": "rejected",
+   "new": [
+    "rejected",
+    "rejected"
+   ],
+   "new_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K11",
+   "kind": "explicit",
+   "label": "n",
+   "old": "rejected",
+   "general": "rejected",
+   "new": [
+    "rejected",
+    "rejected"
+   ],
+   "new_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K12",
+   "kind": "explicit",
+   "label": "n",
+   "old": "rejected",
+   "general": "rejected",
+   "new": [
+    "rejected",
+    "rejected"
+   ],
+   "new_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K13",
+   "kind": "mixed",
+   "label": "y",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K14",
+   "kind": "mixed",
+   "label": "n",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "rejected",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K15",
+   "kind": "mixed",
+   "label": "y",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K16",
+   "kind": "mixed",
+   "label": "n",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K17",
+   "kind": "explicit",
+   "label": "n",
+   "old": "rejected",
+   "general": "rejected",
+   "new": [
+    "rejected",
+    "rejected"
+   ],
+   "new_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K18",
+   "kind": "explicit",
+   "label": "n",
+   "old": "rejected",
+   "general": "rejected",
+   "new": [
+    "rejected",
+    "rejected"
+   ],
+   "new_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "set": "fresh",
+   "id": "K19",
+   "kind": "explicit",
+   "label": "y",
+   "old": "accepted",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "known",
+   "id": "J02",
+   "kind": "explicit",
+   "label": "n",
+   "old": "rejected",
+   "general": "rejected",
+   "new": [
+    "rejected",
+    "rejected"
+   ],
+   "new_listed": [
+    [],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "set": "known",
+   "id": "J05",
+   "kind": "explicit",
+   "label": "y",
+   "old": "accepted",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "known",
+   "id": "J06",
+   "kind": "mixed",
+   "label": "n",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "known",
+   "id": "J11",
+   "kind": "explicit",
+   "label": "n",
+   "old": "rejected",
+   "general": "rejected",
+   "new": [
+    "rejected",
+    "rejected"
+   ],
+   "new_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent",
+     "invented_employment_fact",
+     "promised_hiring_outcome",
+     "clinical_or_legal_advice"
+    ]
+   ]
+  },
+  {
+   "set": "known",
+   "id": "J12",
+   "kind": "mixed",
+   "label": "y",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "known",
+   "id": "J14",
+   "kind": "explicit",
+   "label": "n",
+   "old": "rejected",
+   "general": "rejected",
+   "new": [
+    "rejected",
+    "rejected"
+   ],
+   "new_listed": [
+    [
+     "screening_without_consent"
+    ],
+    [
+     "screening_without_consent"
+    ]
+   ]
+  },
+  {
+   "set": "known",
+   "id": "J15",
+   "kind": "mixed",
+   "label": "n",
+   "old": "accepted",
+   "general": "unscored",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "known",
+   "id": "J17",
+   "kind": "explicit",
+   "label": "y",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "known",
+   "id": "J18",
+   "kind": "explicit",
+   "label": "y",
+   "old": "rejected",
+   "general": "accepted",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "h2",
+   "id": "20261123T004511Z-b08ea8|H2|v3|gemini-3.5-flash|1",
+   "old": "rejected",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "h2",
+   "id": "20261123T004511Z-b08ea8|H2|v3|gemini-3.5-flash|2",
+   "old": "rejected",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "h2",
+   "id": "20261123T004511Z-b08ea8|H2|v3|gpt-5.4-mini|1",
+   "old": "rejected",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "h2",
+   "id": "20261123T004511Z-b08ea8|H2|v3|gpt-5.4-mini|2",
+   "old": "rejected",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "h2",
+   "id": "20261123T004511Z-b08ea8|H2|v3|gpt-5.4|1",
+   "old": "rejected",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  },
+  {
+   "set": "h2",
+   "id": "20261123T004511Z-b08ea8|H2|v3|gpt-5.4|2",
+   "old": "rejected",
+   "new": [
+    "accepted",
+    "accepted"
+   ],
+   "new_listed": [
+    [],
+    []
+   ]
+  }
+ ],
+ "spend_usd": 0.471435
+}
