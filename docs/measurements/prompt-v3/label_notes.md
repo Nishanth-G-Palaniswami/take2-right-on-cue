@@ -18,9 +18,13 @@
 
   > No, use the chatgpt.md itself, review sheet chatgpt.md, because even though ChatGPT did it, I had a call with two other medical students who told me which looks right and which looks wrong. It read through, translated the transcript, and then this gave me the updated files
 
+- **The attribution line was revised.** At 19:19 local time on 2026-11-22, after `7a6e8fd` and before the reveal, Nishanth edited the line in `review_sheet_chatgpt.md`. No decision or reason changed: all 96 `Accept` lines are identical. The revised line, quoted exactly:
+
+  > Reviewer attribution: ChatGPT supplied all 96 decisions and reasons using the requester’s summary of feedback from two students preparing to become doctors. The students gave feedback on sample interviews. These conversations were generated after reviewing the conversation between the students and the owner of the project (Nishanth G Palaniswami).
+
 - **Their status.**
-  - The source is two medical students' judgments from a call.
-  - ChatGPT turned the call transcript into the 96 decisions and reasons. The sheet itself calls them "AI-generated judgments".
+  - The source is two medical students' judgments from a call with Nishanth.
+  - ChatGPT turned that conversation into the 96 decisions and reasons. The first version of the attribution called them "AI-generated judgments".
   - They are not Nishanth's own labels, and they are not an unaided human check.
   - The record doesn't show whether the students judged each of the 96 replies individually or ChatGPT applied their feedback to the items.
 - **The deviation.** The plan's primary measure was Nishanth's own blind labels. These labels replace that measure, and the deviation is reported with the results.

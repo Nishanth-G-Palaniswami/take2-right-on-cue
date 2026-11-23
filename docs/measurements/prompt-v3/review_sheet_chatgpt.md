@@ -8,7 +8,7 @@ Label each reply as Riley's next turn: `y` if it is an acceptable next turn, `n`
 
 Used an AI assistant while labelling (yes/no): yes
 
-Reviewer attribution: ChatGPT supplied all 96 decisions and reasons using the requester’s summary of feedback from two students preparing to become doctors. The students gave feedback on sample interviews. These entries are AI-generated judgments.
+Reviewer attribution: ChatGPT supplied all 96 decisions and reasons using the requester’s summary of feedback from two students preparing to become doctors. The students gave feedback on sample interviews. These conversations were generated after reviewing the conversation between the students and the owner of the project (Nishanth G Palaniswami).
 
 ---
 
