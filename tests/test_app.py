@@ -147,7 +147,7 @@ def test_method_tab_shows_headline_numbers_and_history() -> None:
     assert "The 16 disagreements come from two cases." in text
     assert "Why exact pair agreement is low." in text
     captions = [c.value for c in at.caption]
-    assert any(c.startswith("Both figures compare the judge with AI-assisted") for c in captions)
+    assert any(c.startswith("Both figures come from the original holdout, prompts v1 and v2, and compare the judge with AI-assisted") for c in captions)
     assert "What I would change next" in text and "asking once about optional certifications" in text
     assert "published measurements stay at 31 of 47 and 2 of 12" in text
 
@@ -223,7 +223,7 @@ def test_live_without_keys_is_disabled_and_explained() -> None:
     assert not at.exception
     assert at.button(key="live_generate").disabled
     errors = " ".join(e.value for e in at.error)
-    assert "gpt-5.4-mini: OPENAI_API_KEY is not set, so generation is disabled" in errors
+    assert "gpt-5.4: OPENAI_API_KEY is not set, so generation is disabled" in errors
     captions = [c.value for c in at.caption]
     assert "OPENAI_API_KEY: not set" in captions and "GEMINI_API_KEY: not set" in captions
     # the confirmation checkbox alone does not enable it
@@ -278,7 +278,7 @@ def test_live_generate_and_score_with_fake_clients(tmp_path: Path, monkeypatch: 
     assert "Fake Gemini words." in text
     [run_dir] = [p for p in runs.iterdir()]
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["prompt"]["path"] == "prompts/v1.md"
+    assert manifest["prompt"]["path"] == "prompts/v3.md"
     assert [m["model"] for m in manifest["models"]] == ["gpt-5.4-mini", "gemini-3.5-flash"]
     assert len(openai_fake.calls) == 1 and len(gemini_fake.calls) == 1
     assert not scores.exists()

@@ -222,7 +222,7 @@ def test_full_hosted_flow_with_fake_clients(tmp_path: Path, monkeypatch: pytest.
     before = committed_snapshot()
 
     at = unlock(run())
-    assert at.selectbox(key="hl_prompt_src").options == ["prompts/v1.md", "prompts/v2.md"]
+    assert at.selectbox(key="hl_prompt_src").options == ["prompts/v1.md", "prompts/v2.md", "prompts/v3.md"]
     at.selectbox(key="hl_prompt_src").set_value("prompts/v2.md")
     at.selectbox(key="hl_case_src").set_value("holdout/H3.jsonl")
     at.multiselect(key="hl_models").set_value(["gpt-5.4-mini", "gemini-3.5-flash"])
@@ -269,7 +269,7 @@ def test_full_hosted_flow_with_fake_clients(tmp_path: Path, monkeypatch: pytest.
 def test_edited_prompt_is_recorded_as_pasted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     data = hosted_env(monkeypatch, tmp_path, RIGHTONCUE_DRY_RUN="1")
     at = unlock(run())
-    at.text_area(key="hl_prompt_text_prompts/v2.md").set_value("You are Riley. Ask one question.")
+    at.text_area(key="hl_prompt_text_prompts/v3.md").set_value("You are Riley. Ask one question.")
     at.run()
     at.button(key="hl_run").click().run()
     assert not at.exception
@@ -423,6 +423,14 @@ def test_local_dry_run_writes_only_to_the_data_dir(tmp_path: Path, monkeypatch: 
     assert not (data / "ledger.jsonl").exists() and (data / "ledger.dry-run.jsonl").is_file()
 
 
+def test_local_form_starts_from_gpt54_with_prompt_v3() -> None:
+    at = run()
+    assert not at.exception
+    assert at.radio(key="live_prompt_src").value == "prompts/v3.md"
+    assert at.radio(key="live_prompt_src").options[:3] == ["prompts/v1.md", "prompts/v2.md", "prompts/v3.md"]
+    assert at.multiselect(key="live_models").value == ["gpt-5.4"]
+
+
 def test_local_mode_without_a_budget_writes_no_ledger(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(live, "DEFAULT_LOCAL_DATA_DIR", tmp_path / "data")
     at = run()
@@ -553,14 +561,18 @@ def live_tab_text(at: AppTest) -> str:
     )
 
 
-def test_hosted_form_starts_from_prompt_v2_with_v1_available(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_hosted_form_starts_from_gpt54_with_prompt_v3_and_v1_v2_available(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     hosted_env(monkeypatch, tmp_path, RIGHTONCUE_DRY_RUN="1")
     at = unlock(run())
     src = at.selectbox(key="hl_prompt_src")
-    assert src.value == "prompts/v2.md" and "prompts/v1.md" in src.options
-    assert at.text_area(key="hl_prompt_text_prompts/v2.md").value == (REPO / "prompts" / "v2.md").read_text(encoding="utf-8").lstrip("﻿")
-    # the saved comparison still opens on H3 with prompt v2
+    assert src.value == "prompts/v3.md" and src.options == ["prompts/v1.md", "prompts/v2.md", "prompts/v3.md"]
+    assert at.text_area(key="hl_prompt_text_prompts/v3.md").value == (REPO / "prompts" / "v3.md").read_text(encoding="utf-8").lstrip("﻿")
+    assert at.multiselect(key="hl_models").value == ["gpt-5.4"]
+    # the projected maximum cost is visible before anything is generated
+    assert any("projected maximum cost" in i.value.lower() and "$" in i.value for i in at.info)
+    # the saved comparison still opens on the H3 holdout run with prompt v2, and the published figures stand
     assert at.radio(key="sel_case").value == "H3" and at.radio(key="sel_prompt").value == "v2"
+    assert [m.value for m in at.metric] == ["31 of 47", "2 of 12"]
 
 
 def test_two_invalid_judgments_show_needs_review_with_no_valid_score(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

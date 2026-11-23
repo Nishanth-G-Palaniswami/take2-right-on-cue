@@ -22,11 +22,10 @@
 
   > Reviewer attribution: ChatGPT supplied all 96 decisions and reasons using the requester’s summary of feedback from two students preparing to become doctors. The students gave feedback on sample interviews. These conversations were generated after reviewing the conversation between the students and the owner of the project (Nishanth G Palaniswami).
 
-- **Their status.**
-  - The source is two medical students' judgments from a call with Nishanth.
-  - ChatGPT turned that conversation into the 96 decisions and reasons. The first version of the attribution called them "AI-generated judgments".
+- **Their status (Nishanth's wording, 2026-11-22):** ChatGPT assigned all 96 labels using the transcripts and Nishanth’s summary of feedback from two students who discussed sample interviews.
+  - The reports call them **ChatGPT labels**.
   - They are not Nishanth's own labels, and they are not an unaided human check.
-  - The record doesn't show whether the students judged each of the 96 replies individually or ChatGPT applied their feedback to the items.
+  - The development and holdout reviews keep their own attribution (`holdout/review/label_notes.md`).
 - **The deviation.** The plan's primary measure was Nishanth's own blind labels. These labels replace that measure, and the deviation is reported with the results.
 - **Blindness.** Until the reveal, which model and prompt wrote each reply existed only in the gitignored `holdout-private/prompt-v3/`, and no reply had been scored. So the labels could not have used model, prompt or score. What the students themselves were shown is not recorded.
 - `review_sheet.md` stays blank, as committed in `032930b`.

@@ -9,7 +9,8 @@ Nishanth G Palaniswami, for Take2's Forward Deployed Engineer take-home. Riley i
   - **GPT-5.4 Mini** is concise, and the reviewer preferred its tone, but it sometimes asks about actions instead of outcomes, and it once left out a known fact.
   - **Gemini 3.5 Flash** is the most consistent and the judge's favourite, but the reviewer preferred its wording least.
 - **The prompt revision (v1 → v2) fixed one specific failure:** re-asking about a story that was already finished. On fresh holdout cases it did not narrow the gaps between models.
-- **Recommendation:** a bounded pilot of **GPT-5.4 with prompt v2**, with Mini as the cost-down option once its gap on factual questions is re-tested. See [Recommendation](#recommendation).
+- **A second revision (v2 → v3), tested after the holdout,** changed the behavioral follow-up: ask about a missing outcome, and accept a given one, even a negative or unresolved one. We observed no regression for GPT-5.4. We observed a regression for Mini, consistent with the change.
+- **Recommendation:** a bounded pilot of **GPT-5.4 with prompt v3**. See [Recommendation](#recommendation).
 - **Caveats on the evidence:**
   - **The human labels are AI-assisted.** The reviewer saw ChatGPT's suggestions before finalizing.
   - **The samples are small:** 2 replies per model per case, on 4 development and 4 holdout cases.
@@ -78,8 +79,8 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 
 **Pilot GPT-5.4 with prompt v3,** time-boxed, with recruiters reviewing transcripts.
 - The holdout evidence in this section was measured with v2.
-- v3 was tested afterwards, on fresh conversations and as a regression check on the original cases. It improved GPT-5.4's follow-ups with no regression; see "Prompt iteration: v2 → v3".
-- v3 is not recommended for Mini as written: it regressed on Mini's follow-ups.
+- v3 was tested afterwards, on fresh conversations and as a regression check on the original cases. We observed no regression for GPT-5.4 in this check; see "Prompt iteration: v2 → v3".
+- v3 is not recommended for Mini as written: we observed regressions on Mini's follow-ups, consistent with the wording change.
 
 The reasons, in the order the plan set them:
 
@@ -91,7 +92,7 @@ The reasons, in the order the plan set them:
 **Tradeoffs and risks:**
 - **Stacked follow-ups.** Under v2, GPT-5.4 asks two things at once when an answer is incomplete. v3 tested one question about the missing outcome: on D3, GPT-5.4's two v2 replies stacked "what did you say or do… and how did it end up getting resolved?", and both v3 replies asked one outcome question.
 - **The evidence conflicts.** The judge rated GPT-5.4 lowest, and the reviewer preferred Mini's tone in 3 of 4 direct GPT-5.4-versus-Mini pairs. Those wins came on closings and acknowledgments; Mini lost the factual pair.
-- **When Mini becomes the better choice.** If cost or latency matters more than completeness, Mini is the alternative. The case that should decide it is an H3-type applicant question with a known answer, because that is where Mini fell short twice under v2.
+- **When Mini becomes the better choice.** If cost or latency matters more than completeness, Mini is the alternative. The case that should decide it is an H3-type applicant question with a known answer, because that is where Mini fell short twice under v2. With v3 as written, Mini showed observed regressions on follow-ups, so a Mini pilot would need v2 or a revised prompt.
 - **Gemini** is free and the judge's favourite. It needs its closing phrasing fixed ("best in your job search" when the applicant only stopped this call) before it would be the pilot choice.
 
 ## Prompt iteration: v1 → v2
@@ -129,22 +130,24 @@ The reasons, in the order the plan set them:
 
 **How it was tested.** Two pre-registered checks, both separate from the published holdout results:
 1. **Fresh pairs.** Eight fresh conversations, three of them pairs where one added sentence gives the outcome. 96 replies were labelled blind (`docs/measurements/2026-11-22-prompt-v3-results.md`).
-   - The labels used are AI-mediated: ChatGPT encoded two medical students' judgments from a call.
+   - It uses **ChatGPT labels**: ChatGPT assigned all 96 labels using the transcripts and Nishanth’s summary of feedback from two students who discussed sample interviews.
 2. **A regression check.** v3 on D1–D4 and H1–H4 against the saved v2 replies, plus one targeted case where the applicant gives the outcome but not their own action (`docs/measurements/2026-11-22-prompt-v3-regression-results.md`).
 
 **Results by model:**
 
-| Model | Fresh pairs, labels (of 12), v2 → v3 | Fresh pairs, judge-v1 (of 12) | Original cases, judge-v1 (of 16) | Targeted case: asks what the applicant did (of 2), v2 → v3 |
+| Model | Fresh pairs, accepted by the ChatGPT labels (of 12), v2 → v3 | Fresh pairs, accepted by judge-v1 (of 12) | Original cases, judge-v1 accepted / rejected / unscored (of 16), v2 → v3 | Targeted case: replies that ask what the applicant did (of 2), v2 → v3 |
 |---|---|---|---|---|
-| GPT-5.4 | **5 → 11** | 8 → 11 | **9 → 12** | 2 → 2 |
-| GPT-5.4 Mini | 5 → 11 | 5 → 11 | 12 → 11 | 2 → **0** |
-| Gemini 3.5 Flash | 6 → 6 | 5 → 10 | 14 → 13 | 2 → 2 |
+| GPT-5.4 | **5 → 11** | 8 → 11 | **9 / 7 / 0 → 12 / 2 / 2** | 2 → 2 |
+| GPT-5.4 Mini | 5 → 11 | 5 → 11 | 12 / 4 / 0 → 11 / 4 / 1 | 2 → **0** |
+| Gemini 3.5 Flash | 6 → 6 | 5 → 10 | 14 / 2 / 0 → 13 / 3 / 0 | 2 → 2 |
+
+The three unscored v3 judgments are judge-v1's quote check failing twice on a speaker-label quote. They are reported apart from rejections.
 
 **Where the change helped: GPT-5.4, the same conversation and sample under each prompt.** The applicant describes calming an upset son and adds, "Honestly, it never really got resolved: he still filed a complaint, and I never heard what came of it."
 
-> **v2:** "You explained the change clearly and offered another way for him to connect with his mother, even though he was still upset. Is there anything else you did in the moment to help de-escalate the conversation?" Labels: rejected. judge-v1: 4/8.
+> **v2:** "You explained the change clearly and offered another way for him to connect with his mother, even though he was still upset. Is there anything else you did in the moment to help de-escalate the conversation?" ChatGPT labels: rejected. judge-v1: 4/8.
 >
-> **v3:** "Thanks for being clear about that. Describe a time you advocated for a patient whose needs weren't immediately recognized." Labels: accepted. judge-v1: 8/8.
+> **v3:** "Thanks for being clear about that. Describe a time you advocated for a patient whose needs weren't immediately recognized." ChatGPT labels: accepted. judge-v1: 8/8.
 
 v2 kept probing a finished story because the result was unresolved. v3 accepts an unresolved result as an answer and moves on.
 
@@ -154,15 +157,17 @@ v2 kept probing a finished story because the result was unresolved. v3 accepts a
 
 - **The right move:** it asks about the outcome.
 - **The flaw:** it credits the applicant with an order they only requested.
-- **The scoring split:** the labels rejected it for that reason. judge-v1 gave it 8/8, because its criteria check the move, not whether the acknowledgment assumes facts.
+- **The scoring split:** the ChatGPT labels rejected it for that reason. judge-v1 gave it 8/8, because its criteria check the move, not whether the acknowledgment assumes facts.
 
-Most of the 16 label–judge disagreements in the pair experiment are of this kind.
+Most of the 16 disagreements between the ChatGPT labels and judge-v1 in the pair experiment are of this kind.
 
-**Regressions.** All three are GPT-5.4 Mini's, on the follow-up moments:
+**Observed regressions.** All three are GPT-5.4 Mini's, on the follow-up moments, and they are consistent with the wording change:
 - **The targeted case, both samples:** it moves on without asking what the applicant did.
 - **D4, one sample:** it re-asks an outcome the applicant already gave.
 
-GPT-5.4 had none. The app's default stays v2 until the owner decides.
+We observed no regression for GPT-5.4 in this check. With two samples, we can't establish what caused every difference.
+
+**In the app,** "Run it yourself" defaults to GPT-5.4 with v3 and shows the projected maximum cost before anything is generated; v1 and v2 stay selectable. The saved comparison still opens on the H3 holdout run with prompt v2. The published 31 of 47 and 2 of 12 come from the original holdout across v1 and v2.
 
 ## How quality was measured
 
@@ -273,11 +278,12 @@ When the applicant has already confirmed the required certifications, a future r
 | Item | Where |
 |---|---|
 | Initial prompt | `prompts/v1.md` |
-| Final prompt | `prompts/v2.md` |
+| Final prompt | `prompts/v3.md` (v2 was the final prompt for the holdout; v3 was tested afterwards) |
 | Judge prompt | `prompts/judge.md` (judge-v1, frozen) |
 | Iteration log | This report, plus `docs/measurements/` (each experiment, with rules committed before results) |
 | Evaluation method and agreement | This report; `docs/judge-v1-known-limits.md`; `docs/measurements/2026-11-21-holdout-preregistration.md`; `docs/measurements/2026-11-21-holdout-results.md` |
 | The tool | `README.md`; the CLI (`uv run next-turn …`); the Streamlit app (`uv run streamlit run app.py`) |
 | Saved evidence | `runs/`, `scores/`, `holdout/` |
+| Prompt v3 experiment and regression check | `docs/measurements/2026-11-22-prompt-v3-results.md`, `docs/measurements/2026-11-22-prompt-v3-regression-results.md`, `docs/measurements/prompt-v3/` |
 | Exploratory live example of judge disagreement (outside the scored evaluation, no human label) | `examples/acls-lapse-judge-disagreement/` |
-| OpenAI usage | Recorded usage across the project comes to about **$1.33** at standard rates: generation $0.14, judging $0.94, judge-v4 calibration $0.23, preflights $0.01. The usage-page screenshot is authoritative |
+| OpenAI usage | Recorded usage through the holdout comes to about **$1.33** at standard rates: generation $0.14, judging $0.94, judge-v4 calibration $0.23, preflights $0.01. The later experiments recorded **$0.898091** more: certification guidance $0.165581, prompt v3 $0.441581, v3 regression check $0.290929. Live demo runs are on top of that. The usage-page screenshot is authoritative |

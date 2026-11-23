@@ -20,7 +20,7 @@
 | H2 certifications volunteered | 0 → 0 | 0 → 0 | 0 → 0 |
 | H3 day-shift guarantee | **0 → 2** | 0 → 1 | **2 → 1** |
 | H4 close | 2 → 2 | 2 → 2 | 2 → 2 |
-| **Total of 16** | **9 → 12** | 12 → 11 | 14 → 13 |
+| **Accepted / rejected / unscored, of 16** | **9 / 7 / 0 → 12 / 2 / 2** | 12 / 4 / 0 → 11 / 4 / 1 | 14 / 2 / 0 → 13 / 3 / 0 |
 
 **What the table includes:**
 - **Unscored.** Three v3 judgments are unscored after their retry: gpt-5.4 D1 s2, Mini D1 s1 and gpt-5.4 D2 s1. Each time, the judge quoted a turn with its "Applicant:" label (known limit 3). These are not reply failures.
@@ -39,15 +39,15 @@
 
 ## Regressions
 
-**Attributable to the change** (pre-registered: the behavioral follow-up moments and T1). All three are on **gpt-5.4-mini**:
-- **T1, both samples:** it moves on past an answer that lacks the applicant's own action. This is the main risk of dropping v2's general follow-up rule, and it happened.
-- **D4, sample 2:** it re-asks a given outcome: "That makes sense, and it sounds like bringing the charge nurse in helped settle the inconsistency. What was the outcome after that conversation?" Under v2, the same sample moved on correctly. This is v3's outcome rule over-applied.
+**Observed regressions consistent with the wording change** (on the pre-registered follow-up moments and T1). The plan called these "attributed to the change". With two samples, this report describes them as observed regressions consistent with it. All three are on **gpt-5.4-mini**:
+- **T1, both samples:** it moves on past an answer that lacks the applicant's own action. This is consistent with the main risk of dropping v2's general follow-up rule.
+- **D4, sample 2:** it re-asks a given outcome: "That makes sense, and it sounds like bringing the charge nurse in helped settle the inconsistency. What was the outcome after that conversation?" Under v2, the same sample moved on correctly. This is consistent with v3's outcome rule being over-applied.
 
-**Not attributable:**
+**Other differences:**
 - **Gemini on H3, sample 1** (2 → 1): grounding 1 for an invented process detail ("handled directly by the hiring team during the offer process"). That is not the follow-up instruction.
 - **The three unscored judgments:** judge-v1's quote check, not the replies.
 
-**gpt-5.4 shows no regression.** It improves on D3, D4 and H3, and it asks for the applicant's own action on T1 under both prompts.
+**We observed no regression for GPT-5.4 in this check.** Its acceptances rose on D3, D4 and H3, and it asked for the applicant's own action on T1 under both prompts. With two samples, we can't establish what caused every difference.
 
 ## An improvement the judge credits, which the reviewer's dev label did not require
 
@@ -56,8 +56,8 @@
 
 ## Conclusion
 
-- **gpt-5.4: v3 is safe.** It improves on the original cases and has no regression.
+- **GPT-5.4:** we observed no regression in this check. On the original cases, its acceptances rose from 9 to 12 of 16, with 2 v3 judgments unscored.
 - **Mini and Gemini: v3 is not recommended as written.**
   - Mini loses the "ask what you did" follow-up and over-applies the outcome rule.
-  - Gemini gains nothing on the labels in the pair experiment, and its acknowledgments still assume outcomes (R41).
+  - Gemini gains nothing on the ChatGPT labels in the pair experiment, and its acknowledgments still assume outcomes (R41).
 - **A v4 that keeps v2's general missing-part rule and adds v3's outcome clause** would address the Mini regression, but it is untested.
