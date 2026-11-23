@@ -292,6 +292,8 @@ When the applicant has already confirmed the required certifications, a future r
 
 | Item | Where |
 |---|---|
+| Hosted demo | <https://rightoncue.nishanthgp.me>. The saved comparison is public; live runs need the reviewer access code, which is shared separately |
+| Walkthrough video (9:10) | <https://www.loom.com/share/2e492944ef584f0985f5d54c4fa03974>; its recording outline is `docs/walkthrough.md` |
 | Initial prompt | `prompts/v1.md` |
 | Final prompt | `prompts/v3.md` (v2 was the prompt used for the holdout; v3 was tested afterwards) |
 | Judge prompt | `prompts/judge.md` (judge-v1, frozen) |
@@ -301,4 +303,4 @@ When the applicant has already confirmed the required certifications, a future r
 | Saved evidence | `runs/`, `scores/`, `holdout/` |
 | Prompt v3 experiment and regression check | `docs/measurements/2026-11-22-prompt-v3-results.md`, `docs/measurements/2026-11-22-prompt-v3-regression-results.md`, `docs/measurements/prompt-v3/` |
 | Exploratory live example of judge disagreement (outside the scored evaluation, no human label) | `examples/acls-lapse-judge-disagreement/` |
-| OpenAI usage | Recorded usage through the holdout comes to about **$1.33** at standard rates: generation $0.14, judging $0.94, judge-v4 calibration $0.23, preflights $0.01. The later experiments recorded **$0.898091** more: certification guidance $0.165581, prompt v3 $0.441581, v3 regression check $0.290929. Live demo runs are on top of that. The usage-page screenshot is authoritative |
+| OpenAI usage | Recorded usage through the holdout comes to about **$1.33** at standard rates: generation $0.14, judging $0.94, judge-v4 calibration $0.23, preflights $0.01. The later experiments recorded **$0.898091** more: certification guidance $0.165581, prompt v3 $0.441581, v3 regression check $0.290929. Live demo runs are on top of that. The usage-page screenshot is authoritative: on 2026-11-23, before reviewers' live runs, it showed **$2.76** for Nov 17–23 on the `right-on-cue-eval` project. It is sent with the submission, not committed |

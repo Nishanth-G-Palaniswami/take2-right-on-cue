@@ -1,4 +1,10 @@
-# Walkthrough outline (5–10 minutes)
+# Walkthrough
+
+**The recording:** [Right on Cue walkthrough on Loom (9:10)](https://www.loom.com/share/2e492944ef584f0985f5d54c4fa03974).
+
+## Recording outline
+
+This is the plan the recording followed. The timings below are planned, not the recording's; the actual chapters are on Loom.
 
 **Setup before recording:**
 - **The app.** Either the hosted app (<https://rightoncue.nishanthgp.me>) with the access code, or the app running locally with your own keys (`uv run streamlit run app.py`).
@@ -21,6 +27,7 @@ The hosted cap is $5.00.
 | 6:10–7:30 | Results and the recommendation | Open the "How it was evaluated" tab. It leads with **What changed with prompt v3?**: on the original holdout cases, judge-v1 accepted 14/24 v2 replies and 16/24 v3 replies (GPT-5.4 4/8 → 6/8). Say why that is not a measured improvement: every change is on H3, where the reviewer had already accepted GPT-5.4's v2 replies. The fresh follow-up experiment, with its ChatGPT labels, is listed separately. Then, under **Original v1/v2 judge–reviewer agreement**: individual agreement 31/47, exact pair agreement 2/12 (12 evaluable), both from the original holdout across v1 and v2. The models are equal on safety. In the report, show the four-dimension table under the final prompt v3. The recommendation is a bounded **GPT-5.4 + v3** pilot; "Run it yourself" opens on that setup. We observed no regression for GPT-5.4 in the v3 regression check, and an observed regression for Mini. judge-v4 was tested and not adopted; one line on why |
 | 7:30–8:30 | How it's built, and the limits | The CLI (`run`, `show`, `score`), blind review with committed hashes, and the frozen judge with known limits. **The limits:** one reviewer with AI-assisted labels for the holdout; ChatGPT labels for the v3 experiment; 2 samples per cell; text only. The raw evidence lives in `runs/`, `scores/`, `holdout/` and `docs/measurements/` |
 
-**Before submitting:**
-- **OpenAI usage.** Capture the usage-page screenshot for the project's date range. Recorded usage is about $1.33 through the holdout, plus $0.898091 for the later experiments, plus the live demo runs. The page is authoritative.
-- **The video link.** Add it at the top of `README.md` ("Video walkthrough"), and check that it opens for a reviewer without signing in.
+## Before submitting
+
+- **OpenAI usage.** Done: the usage-page screenshot, captured on 2026-11-23, shows $2.76 for Nov 17–23 on the `right-on-cue-eval` project, before reviewers' live runs. It is sent with the submission, not committed. Recorded usage is about $1.33 through the holdout, plus $0.898091 for the later experiments, plus the live demo runs. The page is authoritative.
+- **The video link.** Done: linked at the top of `README.md`, at the top of this file and in the Deliverables table of `docs/report.md`.

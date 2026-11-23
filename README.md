@@ -1,13 +1,23 @@
 # Right on Cue
 
-A next-turn evaluation tool for Take2's Forward Deployed Engineer take-home. Given a call prompt and a partial screening-call transcript, it asks a model for the recruiter's next line several times and saves every reply verbatim, so the replies can be compared and judged.
+Right on Cue gives three models (GPT-5.4, GPT-5.4 Mini and Gemini 3.5 Flash) the same partial recruiter call, has each one generate Riley's next reply, and shows the evidence behind each score. Riley is a virtual recruiter screening ICU nurse applicants.
 
-**For reviewers:**
-- **Hosted app:** <https://rightoncue.nishanthgp.me>. It opens on the saved three-model comparison of holdout case H3 with the final prompt v3, and v2 is one click away on the same case and sample. "Run it yourself" needs the access code from Nishanth and defaults to the recommended setup, GPT-5.4 with prompt v3.
-- **Report:** [`docs/report.md`](docs/report.md). It covers the method, the model comparison, both prompt iterations and the recommendation.
-- **Video walkthrough:** _link to be added before submission._
+- **Live demo:** [rightoncue.nishanthgp.me](https://rightoncue.nishanthgp.me)
+- **Watch the walkthrough (9:10):** [Loom](https://www.loom.com/share/2e492944ef584f0985f5d54c4fa03974)
+- **Evaluation report:** [`docs/report.md`](docs/report.md)
 
-Status: milestone 3. One or more models per run (OpenAI models such as `gpt-5.4-mini` through the Responses API, Google Gemini models such as `gemini-3.5-flash` through the `google-genai` SDK), raw generation, a blind review view for human preferences, and a scorer for saved replies (code checks, a fixed `gpt-5.4-mini` judge, and a pass/fail decision made in code). Failed generations can't be retried yet.
+**Recommendation:** pilot GPT-5.4 with prompt v3, and continue reviewing a sample of replies. With v3, GPT-5.4 moved on once the applicant had described the outcome, even when the outcome was "it never really got resolved". The same prompt change made Mini skip a useful follow-up in a targeted test, so v3 is not recommended for Mini as written.
+
+The app has three tabs:
+- **Compare replies:** the saved three-model comparison, opening on holdout case H3 with prompt v3, sample 1, with each reply's judge verdict, the human label where one exists, and the scores and the judge's quoted evidence on demand.
+- **How it was evaluated:** what changed with prompt v3, how often the judge agreed with the human reviewer, the method, and the headline results.
+- **Run it yourself:** generate fresh replies in one of two modes: "Compare models on a transcript" (pick or edit a prompt and transcript, choose models and samples, then generate and score) or "Talk to Riley (practice call)", where you type as the applicant.
+
+The saved results are public. Live runs in "Run it yourself" need the reviewer access code, which is shared separately and is not in this repository.
+
+Prompts: [initial prompt (v1)](prompts/v1.md) · [final prompt (v3)](prompts/v3.md)
+
+It is a next-turn evaluation tool for Take2's Forward Deployed Engineer take-home. Given a call prompt and a partial screening-call transcript, it asks a model for the recruiter's next line several times and saves every reply verbatim, so the replies can be compared and judged.
 
 ## Setup
 
@@ -44,7 +54,7 @@ In this plain local mode (no `RIGHTONCUE_BUDGET_USD`, no `RIGHTONCUE_DRY_RUN`), 
 
 `<data>` is `RIGHTONCUE_DATA_DIR`. Locally it defaults to `data/`; hosted mode requires it.
 
-**Hosted mode.** `RIGHTONCUE_HOSTED=1` serves the saved comparison to everyone. "Run it yourself" stays off (with a generic message; the reason goes to the server log) unless the host also sets the access code, the budget, the data directory and both keys. Then a reviewer enters the access code, starts from GPT-5.4 with `prompts/v3.md` (the recommended setup and the default; `v1.md` and `v2.md` stay selectable, and the saved comparison still opens on the v2 holdout run) and a case file (both editable in place), picks models and samples, and clicks "Generate and score". Fresh replies are scored by judge-v1. A reply whose judgment comes back invalid (`needs_review`, for example a quote that fails the unchanged quote check) or failed (`judge_failed`) gets one judge-only retry with the exact saved reply. A valid verdict, acceptable or not, is final. Both attempts stay in the score file. The maximum shown before Generate counts the retry, and the cap is checked before each call. If the retry also fails, the card reads "Needs review · no valid score". The replies are shown as side-by-side cards labelled "Fresh run: generated just now, not part of the saved evaluation", with the run ID. The saved comparison is labelled "Saved example". The settings are fixed on the hosted site: OpenAI reasoning effort `none` and Gemini thinking `MINIMAL` (the measured settings), and each reply is capped at 400 output tokens. A reply that reaches the cap is shown as an incomplete operational failure. Provider error text is never shown on the public page; only the error type and HTTP status are.
+**Hosted mode.** `RIGHTONCUE_HOSTED=1` serves the saved comparison to everyone. It opens on H3 with prompt v3, sample 1; v2, the prompt used for the original holdout, is one click away. "Run it yourself" stays off (with a generic message; the reason goes to the server log) unless the host also sets the access code, the budget, the data directory and both keys. Then a reviewer enters the access code, starts from GPT-5.4 with `prompts/v3.md` (the recommended setup and the default; `v1.md` and `v2.md` stay selectable) and a case file (both editable in place), picks models and samples, and clicks "Generate and score". Fresh replies are scored by judge-v1. A reply whose judgment comes back invalid (`needs_review`, for example a quote that fails the unchanged quote check) or failed (`judge_failed`) gets one judge-only retry with the exact saved reply. A valid verdict, acceptable or not, is final. Both attempts stay in the score file. The maximum shown before Generate counts the retry, and the cap is checked before each call. If the retry also fails, the card reads "Needs review · no valid score". The replies are shown as side-by-side cards labelled "Fresh run: generated just now, not part of the saved evaluation", with the run ID. The saved comparison is labelled "Saved example". The settings are fixed on the hosted site: OpenAI reasoning effort `none` and Gemini thinking `MINIMAL` (the measured settings), and each reply is capped at 400 output tokens. A reply that reaches the cap is shown as an incomplete operational failure. Provider error text is never shown on the public page; only the error type and HTTP status are.
 
 | Variable | Meaning |
 |---|---|
@@ -233,7 +243,7 @@ Both sheets carry their commitment hash, so the compare commands refuse a sheet 
 
 ## Layout
 
-- `prompts/`: call prompts. `v1.md` is the starter prompt and is never edited. `v2.md` is the working prompt: v1 with one line changed (see `docs/measurements/2026-11-20-v2-d1-d4.md`).
+- `prompts/`: call prompts. `v1.md` is the starter prompt and is never edited. `v2.md` is the prompt used for the original holdout: v1 with one line changed (see `docs/measurements/2026-11-20-v2-d1-d4.md`). `v3.md` is the recommended pilot prompt: v2 with one line of the behavioral follow-up changed (see `docs/measurements/2026-11-22-prompt-v3-results.md`).
 - `prompts/judge.md`: the judge's instructions (`judge-v1`), pinned by SHA-256 in `src/rightoncue/scoring.py`.
 - `docs/measurements/`: each prompt experiment, with counting rules committed before its replies were generated, then the results.
 - `cases/dev/`: partial transcripts in JSON Lines, one `{"role": "agent"|"user", "utterance": ...}` per line, ending on a user turn.
