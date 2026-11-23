@@ -527,7 +527,7 @@ LIVE_LEDGER_ERROR = (
 )
 FRESH_LABEL = "Fresh run: generated just now, not part of the saved evaluation"
 # "Run it yourself" defaults to the recommended setup (GPT-5.4 with prompt v3); v1 and v2 stay
-# selectable. The saved comparison keeps its own default (H3, prompt v2: the holdout run).
+# selectable. The saved comparison has its own default (DEFAULT_SELECTION: H3, prompt v3).
 LIVE_DEFAULT_PROMPT = "prompts/v3.md"
 LIVE_DEFAULT_MODEL = "gpt-5.4"
 RETRY_NOTE = "one per reply, plus one retry for a judgment that needs review"
@@ -1031,7 +1031,7 @@ if os.environ.get(live.DRY_RUN_ENV) == "1":
     st.warning(DRY_RUN_BANNER)
 st.caption(
     "Three AI models answer the same recruiter phone-screen moment. A frozen LLM judge "
-    "and a human reviewer each give a verdict."
+    "gives a verdict on every reply; a human reviewer labelled the v1 and v2 holdout replies."
 )
 tab_compare, tab_method, tab_live = st.tabs(
     ["Compare replies", "How it was evaluated", "Run it yourself"]
