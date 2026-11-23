@@ -29,5 +29,5 @@ The hosted cap is $5.00.
 
 ## Before submitting
 
-- **OpenAI usage.** Done: the usage-page screenshot, captured on 2026-11-23, shows $2.76 for Nov 17–23 on the `right-on-cue-eval` project, before reviewers' live runs. It is sent with the submission, not committed. Recorded usage is about $1.33 through the holdout, plus $0.898091 for the later experiments, plus the live demo runs. The page is authoritative.
+- **OpenAI usage.** Done: the usage-page screenshot was captured on 2026-11-23, before reviewers' live runs. It is not in the repo. Recorded usage is about $1.33 through the holdout, plus $0.898091 for the later experiments, plus the live demo runs. The page is authoritative.
 - **The video link.** Done: linked at the top of `README.md`, at the top of this file and in the Deliverables table of `docs/report.md`.
