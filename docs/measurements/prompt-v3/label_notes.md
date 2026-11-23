@@ -12,6 +12,17 @@
   - ChatGPT's labels will be reported as a second, AI-generated set, beside his labels and judge-v1's.
 - **Blindness.** Nothing was revealed: the key, the generation log and the runs are still private. ChatGPT saw only the blind sheet. Nishanth has seen ChatGPT's decisions, so his labels are blind to model and prompt, but not independent of those decisions.
 
-## Second return: Nishanth's labels
+## Decision: these labels are the ones used (2026-11-22, before the reveal)
 
-To be recorded when the sheet is returned, before the reveal.
+- **Nishanth's decision.** Use `review_sheet_chatgpt.md` as the labels for this experiment. His account, quoted exactly:
+
+  > No, use the chatgpt.md itself, review sheet chatgpt.md, because even though ChatGPT did it, I had a call with two other medical students who told me which looks right and which looks wrong. It read through, translated the transcript, and then this gave me the updated files
+
+- **Their status.**
+  - The source is two medical students' judgments from a call.
+  - ChatGPT turned the call transcript into the 96 decisions and reasons. The sheet itself calls them "AI-generated judgments".
+  - They are not Nishanth's own labels, and they are not an unaided human check.
+  - The record doesn't show whether the students judged each of the 96 replies individually or ChatGPT applied their feedback to the items.
+- **The deviation.** The plan's primary measure was Nishanth's own blind labels. These labels replace that measure, and the deviation is reported with the results.
+- **Blindness.** ChatGPT and the students saw only the blind sheet: conversations and replies under neutral IDs, with no model, prompt or score. Nothing had been revealed.
+- `review_sheet.md` stays blank, as committed in `032930b`.
