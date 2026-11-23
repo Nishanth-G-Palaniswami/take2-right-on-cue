@@ -1,0 +1,13 @@
+{
+ "experiment": "cert-guidance",
+ "private_files": {
+  "key.json": "98e94b97c91c8552d0ed7354a28287519ae980b8c21a70001db728cdccf542cf",
+  "criteria-current.toml": "178d9cf44aed597694b2efc3cffdb50f7a4d6d7f0809ff862ce64ab8892366da",
+  "criteria-candidate.toml": "6cbccedad77d6f11a5e40ee8ee283b16c8629efb015289532afb3da59563babb"
+ },
+ "public_files": {
+  "examples.json": "9d513878584ac5769d495b79780e951d1d084fef6cbb969fd28181829fd72e4e",
+  "label_sheet.md": "eaf4eccce3b422ceb4e57f09fbfbfc84ff0dfb3bd9ee4a53d08e81a6888400a2"
+ },
+ "note": "Private files live in holdout-private/cert-guidance/ (gitignored) until Nishanth's labels are committed; each holds a random salt."
+}

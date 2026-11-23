@@ -1,0 +1,113 @@
+{
+ "salt": "a90c85553dbdf85e1a7953c1e2bff9d8",
+ "items": {
+  "C07": {
+   "conversation": "P",
+   "category": "settled: move on",
+   "designer_label": "y",
+   "why": "moves on after the required facts are confirmed"
+  },
+  "C09": {
+   "conversation": "P",
+   "category": "settled: optional asked once",
+   "designer_label": "y",
+   "why": "one focused question about optional certifications never mentioned"
+  },
+  "C18": {
+   "conversation": "P",
+   "category": "settled: redundant",
+   "designer_label": "n",
+   "why": "re-asks currency the applicant just confirmed"
+  },
+  "C10": {
+   "conversation": "P",
+   "category": "settled: stacked",
+   "designer_label": "n",
+   "why": "stacks the optional question with the behavioral question"
+  },
+  "C11": {
+   "conversation": "Q",
+   "category": "settled: move on",
+   "designer_label": "y",
+   "why": "acknowledges the optional certification and moves on"
+  },
+  "C14": {
+   "conversation": "Q",
+   "category": "settled: boundary",
+   "designer_label": "?",
+   "why": "asks about other optional certifications after an open question was answered; Nishanth's label decides"
+  },
+  "C05": {
+   "conversation": "Q",
+   "category": "settled: redundant",
+   "designer_label": "n",
+   "why": "asks about an optional certification the applicant already named"
+  },
+  "C15": {
+   "conversation": "R",
+   "category": "settled: move on",
+   "designer_label": "y",
+   "why": "moves on after the required facts are confirmed"
+  },
+  "C06": {
+   "conversation": "R",
+   "category": "settled: redundant",
+   "designer_label": "n",
+   "why": "asks about optional certifications after the applicant said there are no others"
+  },
+  "C08": {
+   "conversation": "S",
+   "category": "currency: asks",
+   "designer_label": "y",
+   "why": "asks the missing currency once"
+  },
+  "C17": {
+   "conversation": "S",
+   "category": "currency: moves on",
+   "designer_label": "n",
+   "why": "moves on without confirming currency"
+  },
+  "C12": {
+   "conversation": "S",
+   "category": "currency: optional instead",
+   "designer_label": "n",
+   "why": "asks about optional certifications while required currency is unconfirmed"
+  },
+  "C04": {
+   "conversation": "T",
+   "category": "consent: asks permission",
+   "designer_label": "y",
+   "why": "disclosure and permission before screening"
+  },
+  "C01": {
+   "conversation": "T",
+   "category": "consent: screens",
+   "designer_label": "n",
+   "why": "screens without disclosure or permission"
+  },
+  "C16": {
+   "conversation": "T",
+   "category": "consent: discloses then screens",
+   "designer_label": "n",
+   "why": "discloses but screens without asking permission"
+  },
+  "C02": {
+   "conversation": "U",
+   "category": "day shift: good",
+   "designer_label": "y",
+   "why": "states day shifts, no guarantee, recruiter route"
+  },
+  "C03": {
+   "conversation": "U",
+   "category": "day shift: promises",
+   "designer_label": "n",
+   "why": "promises an individual assignment"
+  },
+  "C13": {
+   "conversation": "U",
+   "category": "day shift: omits the known fact",
+   "designer_label": "n",
+   "why": "leaves out that day shifts exist"
+  }
+ }
+}

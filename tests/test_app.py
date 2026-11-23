@@ -143,6 +143,66 @@ def test_method_tab_shows_headline_numbers_and_history() -> None:
     assert [m.value for m in at.metric] == ["31 of 47", "2 of 12"]
     text = body(at)
     assert "Experiment history" in text and "judge-v4" in text and "not adopted" in text
+    # the plain-language notes beside each metric, the disclosure and the next change
+    assert "The 16 disagreements come from two cases." in text
+    assert "Why exact pair agreement is low." in text
+    captions = [c.value for c in at.caption]
+    assert any(c.startswith("Both figures compare the judge with AI-assisted") for c in captions)
+    assert "What I would change next" in text and "asking once about optional certifications" in text
+    assert "published measurements stay at 31 of 47 and 2 of 12" in text
+
+
+def _cards_by_id() -> dict[str, review.Card]:
+    holdout = review.load_holdout()
+    out: dict[str, review.Card] = {}
+    for run_id in holdout.run_by_prompt.values():
+        view = review.load_run_view(review.RUNS_DIR / run_id, review.scores_path_for(run_id), "judge-v1")
+        review.annotate_holdout(view, holdout)
+        out.update({c.neutral_id: c for c in view.all_cards() if c.neutral_id})
+    return out
+
+
+def test_agreement_notes_match_the_committed_records() -> None:
+    """Every count and quote beside the agreement metrics is derived from the records."""
+    cards = _cards_by_id()
+    disagree = sorted(
+        nid for nid, c in cards.items()
+        if c.decision in ("acceptable", "not acceptable") and (c.decision == "acceptable") != c.human_accept
+    )
+    assert len(disagree) == 47 - 31
+    assert [n for n in disagree if n.startswith("H2")] == [f"H2-{i:02d}" for i in range(1, 13)]
+    assert all(cards[n].human_accept for n in disagree if n.startswith("H2"))
+    assert [n for n in disagree if cards[n].human_accept and n.startswith("H3")] == ["H3-02", "H3-04", "H3-08"]
+    assert [n for n in disagree if not cards[n].human_accept] == ["H3-09"]
+    # H3-02: the shown reply is the recorded reply, and each judge excerpt is in the
+    # recorded rationale of a dimension the judge scored 1
+    h302 = cards["H3-02"]
+    assert h302.decision == "not acceptable"
+    rationale = {d.label: (d.score, d.rationale) for d in h302.dimensions}
+    for label, excerpt in [
+        ("next action", "it fails to clearly answer the known fact that day shifts are offered in the unit"),
+        ("grounding", "it omits the available fact that day shifts are offered"),
+    ]:
+        score, text = rationale[label]
+        assert score == 1 and excerpt in text
+    assert "12-hour day shifts from 7 a.m. to 7 p.m." in (h302.reply or "")
+    assert (cards["H3-06"].decision, cards["H3-06"].total) == ("acceptable", 8)
+    # pairs: the judge's ties, the reviewer's tie and the two exact matches
+    pairs = json.loads((review.PAIR_COMPARE).read_text(encoding="utf-8"))["pairs"]
+    judge_ties = [p for p in pairs if p["machine"] == "tie"]
+    assert len(judge_ties) == 9 and {p["case"] for p in judge_ties} == {"H1", "H2", "H4"}
+    assert [p["pair_id"] for p in pairs if p["human"] == "tie"] == ["P06"]
+    assert sorted(p["pair_id"] for p in pairs if p["human"] == p["machine"]) == ["P06", "P09"]
+    assert sorted(p["pair_id"] for p in pairs if p["machine"] != "tie" and p["human"] != p["machine"]) == ["P07", "P08"]
+    # the page shows exactly these records
+    at = run_app()
+    text = body(at)
+    assert f"“{h302.reply}”" in text
+    assert "it fails to clearly answer the known fact that day shifts are offered in the unit" in text
+    assert "it omits the available fact that day shifts are offered" in text
+    assert any("H3-06, scored 8/8" in c.value for c in at.caption)
+    for fact in ("H2, 12.", "H3, 4.", "(H3-02, H3-04, H3-08)", "(H3-09)", "tied 9 of 12 pairs", "(P06, an H2 pair)", "(P09)", "(P07, P08)"):
+        assert fact in text, fact
 
 
 def test_hosted_mode_has_no_live_evaluation(monkeypatch: pytest.MonkeyPatch) -> None:
