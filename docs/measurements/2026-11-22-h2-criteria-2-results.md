@@ -1,6 +1,8 @@
 # H2 criteria, round 2: results
 
 **Verdict: the round-2 text misses four of its ten pre-registered criteria (A2, A4, A6, R2), so it is not adopted.**
+
+**The H2 work is closed (Nishanth, 2026-11-23).** judge-v1 stays live, and neither H2 text is adopted.
 - judge-v1, Riley's prompt, `cases/notes.toml` and every historical score are unchanged.
 - Round 1 (`docs/measurements/2026-11-22-h2-criteria-results.md`, five passes and one failed check) stays in the report.
 
@@ -13,7 +15,14 @@
 
 **Labels.** In Nishanth's words on the sheet: "Nishanth reviewed all 30 replies himself and dictated his judgments without reading ChatGPT's draft." His AI-assistance answer is "No". 15 `y`, 15 `n`.
 
-**Spend.** $0.503692 of the $0.65 cap, over 132 calls (120 judgments plus retries). Every planned job finished, in one process.
+**Spend and coverage.** $0.503692 of the $0.65 cap, over 132 calls (120 judgments plus retries), in one process.
+- **Every planned judgment ran.** Each got its one retry where needed.
+- **Unscored after the retry:**
+  - 4 of the 60 fresh judgments under the round-2 text;
+  - 2 of the 18 Tobias and round-1 judgments;
+  - none of the 12 H2 judgments;
+  - none of the 30 fresh judgments under round 1's text.
+- Unscored judgments are counted as such and never as agreement.
 
 ## The criteria
 

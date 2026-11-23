@@ -324,7 +324,8 @@ This is an exploratory live example, outside the scored evaluation, with no reco
   - "Moves on" after an unconfirmed status was still allowed in 4 of 7 scored judgments.
   - 9 of 15 pairs were fully right.
   - Round 1's Tobias failures fell from 11 wrong to 1, with 2 unscored, which is still over the frozen limit.
-- **Not adopted** (`docs/measurements/2026-11-22-h2-criteria-2-results.md`).
+- **Coverage.** Every planned judgment ran. 4 of the 60 fresh judgments remained unscored after their retry.
+- **Not adopted, and the H2 work is closed.** judge-v1 stays live (`docs/measurements/2026-11-22-h2-criteria-2-results.md`).
 
 ### What I would change next
 

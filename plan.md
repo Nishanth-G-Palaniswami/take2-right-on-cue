@@ -367,6 +367,8 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
 
 ## H2 criteria, round 2: paired items (2026-11-22)
 
+**Closed (Nishanth, 2026-11-23).** H2 is closed with judge-v1 kept, and neither H2 text is adopted. Every planned judgment ran; 4 of the 60 fresh judgments remained unscored after their retry. The frozen labels and results stay as committed.
+
 **Objective.** Fix round 1's failed Tobias boundary. Only the H2 text changes:
 - a closed list of confirmations;
 - naming a credential or past training doesn't count;
