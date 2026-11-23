@@ -271,6 +271,12 @@ def render_comparison() -> None:
 
 # --------------------------------------------------------------- view 2: methodology
 
+# judge-v5 and the H2 criteria rounds were not merged; their evidence stays on the
+# h2-criteria-2 branch, linked at a fixed commit (the same links as docs/report.md).
+H2_EVIDENCE = (
+    "https://github.com/Nishanth-G-Palaniswami/take2-right-on-cue/blob/"
+    "a2dd8d9d1604d79b526cf08bf1f65c2c0c1f37df/docs/measurements"
+)
 HISTORY: list[tuple[str, str, str | None]] = [
     (
         "Prompt v1 to v2",
@@ -305,6 +311,32 @@ HISTORY: list[tuple[str, str, str | None]] = [
         "regression for Mini on a follow-up case, consistent with the change. GPT-5.4 with v3 "
         "is the recommended setup and the default in Run it yourself.",
         "docs/measurements/2026-11-22-prompt-v3-results.md",
+    ),
+    (
+        "judge-v5",
+        "A candidate judge: accept either move once the license and current BLS and ACLS are "
+        "confirmed, judge consent on the new reply in context, and invalidate a flag the judge's "
+        "own rationale denies. Tested on a fresh, pre-registered sheet; it missed all six "
+        "criteria and was not adopted. judge-v1 stays the default "
+        f"([results on the h2-criteria-2 branch]({H2_EVIDENCE}/2026-11-22-judge-v5-results.md)).",
+        None,
+    ),
+    (
+        "H2 criteria, round 1",
+        "judge-v1 fixed; only H2's case instructions changed. Five of six pre-registered checks "
+        "passed, but when the applicant only named BLS and ACLS and mentioned past training, "
+        "replies that moved on or asked about extras were accepted in 7 of 8 judgments. "
+        "Tested and not adopted "
+        f"([results on the h2-criteria-2 branch]({H2_EVIDENCE}/2026-11-22-h2-criteria-results.md)).",
+        None,
+    ),
+    (
+        "H2 criteria, round 2",
+        "A stricter H2 text: naming a credential or past training doesn't confirm it is current. "
+        "It met six of ten pre-registered criteria and was not adopted. The H2 work is closed; "
+        "judge-v1 and the case criteria are unchanged "
+        f"([results on the h2-criteria-2 branch]({H2_EVIDENCE}/2026-11-22-h2-criteria-2-results.md)).",
+        None,
     ),
 ]
 # Plain-language notes beside the two agreement metrics. Every count and quote comes
@@ -351,9 +383,12 @@ CHANGE_NEXT = (
     "When the applicant has already confirmed the required certifications, a future rubric "
     "should accept either moving on to the behavioral questions or asking once about "
     "optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant "
-    "has explicitly settled should still fail. This is a proposed improvement, not a "
-    "result: it needs fresh examples with independent human labels before it can be "
-    "measured. The published measurements stay at 31 of 47 and 2 of 12."
+    "has explicitly settled should still fail. Two rounds of revised H2 criteria showed that "
+    "case wording alone doesn't get judge-v1 there: at temperature 1.0 with no reasoning "
+    "effort, it doesn't reliably refuse to move on when currency is unconfirmed. A further "
+    "attempt needs a change outside the wording, such as judge reasoning effort or a "
+    "deterministic currency check, and a new fresh sheet. The published measurements stay "
+    "at 31 of 47 and 2 of 12."
 )
 V3_LEAD = (
     "**Prompt v3 is the final prompt, and GPT-5.4 + v3 is the recommended setup.** v3 changes "

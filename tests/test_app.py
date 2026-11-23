@@ -192,6 +192,30 @@ def test_method_tab_shows_headline_numbers_and_history() -> None:
     assert "published measurements stay at 31 of 47 and 2 of 12" in text
 
 
+def test_method_tab_agrees_with_the_report_on_judge_v5_and_h2() -> None:
+    at = run_app()
+    assert not at.exception
+    md = [m.value for m in at.tabs[1].markdown]  # includes the rendered report
+    report = (REPO / "docs" / "report.md").read_text(encoding="utf-8")
+    # "What I would change next": the app's own paragraph is the report's, word for word
+    change_next = md[md.index("#### What I would change next") + 1]
+    assert change_next in report
+    assert "case wording alone doesn't get judge-v1 there" in change_next
+    assert change_next.endswith("The published measurements stay at 31 of 47 and 2 of 12.")
+    assert not any("proposed improvement, not a result" in v for v in md)
+    # judge-v5 and both H2 rounds: tested, not adopted, linking the report's evidence
+    titles = ("- **judge-v5.**", "- **H2 criteria, round 1.**", "- **H2 criteria, round 2.**")
+    entries = [v for v in md if v.startswith(titles)]
+    assert [e.split(".**")[0] for e in entries] == [t.removesuffix(".**") for t in titles]
+    for entry in entries:
+        assert "not adopted" in entry
+        urls = re.findall(r"\]\((https://[^)\s]+)\)", entry)
+        assert len(urls) == 1 and "/blob/a2dd8d9d1604d79b526cf08bf1f65c2c0c1f37df/" in urls[0]
+        assert urls[0] in report
+    # the published judge-v1 figures are unchanged
+    assert [m.value for m in at.metric] == ["31 of 47", "2 of 12"]
+
+
 def test_method_tab_leads_with_the_v3_retest() -> None:
     at = run_app()
     assert not at.exception
