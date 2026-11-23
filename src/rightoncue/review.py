@@ -277,7 +277,7 @@ def _violations(record: dict[str, Any]) -> list[ViolationView]:
         return []
     version = record.get("scorer_version")
     cvs = judgment["critical_violations"]
-    if version == "scorer-1":
+    if version in ("scorer-1", "scorer-3"):
         return [ViolationView(cv["type"], cv["rationale"]) for cv in cvs]
     if version == "scorer-2":  # one entry per type; only present ones count
         return [ViolationView(name, e["rationale"]) for name, e in cvs.items() if e["present"]]

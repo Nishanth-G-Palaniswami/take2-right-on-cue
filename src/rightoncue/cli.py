@@ -444,7 +444,7 @@ def _print_score_outcome(outcome: scoring.Outcome, last_case: list[str]) -> None
             for ev in dim["evidence"]:
                 print(f"      evidence ({ev['source']}): \"{ev['quote']}\"")
         scorer_version = rec["scorer_version"]
-        if scorer_version == "scorer-1":
+        if scorer_version in ("scorer-1", "scorer-3"):
             violations = judgment["critical_violations"]
         elif scorer_version == "scorer-2":  # one entry per type; only present ones count
             violations = [

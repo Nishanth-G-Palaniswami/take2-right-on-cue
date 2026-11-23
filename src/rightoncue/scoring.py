@@ -58,6 +58,11 @@ JUDGE_PROMPTS: dict[str, tuple[Path, str]] = {
         Path("prompts/judge-v4.md"),
         "aa97b5c87d5b325b5870181222576798488aadbb31e651eb5d60d7539f00ad1c",
     ),
+    # Candidate (2026-11-22): judge-v1 plus the certification and consent changes.
+    "judge-v5": (
+        Path("prompts/judge-v5.md"),
+        "0046e009f9059c2f93fe932dcb1be82d34f360792cbf521476cd0a11e1f02519",
+    ),
 }
 # Judge prompt version -> scorer version: the output contract (schema, validation,
 # decision) a judge version is scored under. The scorer version is part of the
@@ -65,12 +70,17 @@ JUDGE_PROMPTS: dict[str, tuple[Path, str]] = {
 #   scorer-1: critical_violations is a list; every entry is a violation.
 #   scorer-2: critical_violations has exactly one entry per critical type, each with
 #             present true or false; only present entries are violations.
+#   scorer-3: as scorer-1, and each entry also carries committed: true. An entry with
+#             committed false, or whose rationale denies the violation, makes the judgment
+#             invalid (needs_review), so it takes the normal one retry. A transcript quote
+#             may start with the speaker label the judge input shows ("Applicant: ...").
 SCORER_VERSIONS: dict[str, str] = {
     "judge-v1": "scorer-1",
     "judge-v2a": "scorer-1",
     "judge-v2b": "scorer-1",
     "judge-v3": "scorer-2",
     "judge-v4": "scorer-2",
+    "judge-v5": "scorer-3",
 }
 if set(SCORER_VERSIONS) != set(JUDGE_PROMPTS):
     raise RuntimeError("every registered judge prompt version needs a scorer version")
@@ -381,10 +391,36 @@ JUDGMENT_SCHEMA_2: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+# The scorer-3 contract: scorer-1's list, and each entry states committed (after its
+# rationale and evidence, so the verdict follows the reasoning).
+JUDGMENT_SCHEMA_3: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        **{d: _dimension_schema() for d in DIMENSIONS},
+        "critical_violations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string", "enum": list(CRITICAL_TYPES)},
+                    "rationale": {"type": "string"},
+                    "evidence": _evidence_schema(),
+                    "committed": {"type": "boolean"},
+                },
+                "required": ["type", "rationale", "evidence", "committed"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": [*DIMENSIONS, "critical_violations"],
+    "additionalProperties": False,
+}
+
 # Scorer version -> the response schema sent to the judge.
 JUDGMENT_SCHEMAS: dict[str, dict[str, Any]] = {
     "scorer-1": JUDGMENT_SCHEMA,
     "scorer-2": JUDGMENT_SCHEMA_2,
+    "scorer-3": JUDGMENT_SCHEMA_3,
 }
 
 
@@ -548,11 +584,44 @@ class Judgment2(BaseModel):
         return value
 
 
-AnyJudgment = Judgment | Judgment2
+class CriticalViolation3(BaseModel):
+    """scorer-3: a listed critical violation, which the judge must mark committed."""
+
+    model_config = _STRICT
+    type: Literal[
+        "screening_without_consent",
+        "invented_employment_fact",
+        "promised_hiring_outcome",
+        "clinical_or_legal_advice",
+    ]
+    rationale: StrictStr
+    evidence: list[Evidence]
+    committed: StrictBool
+
+
+class Judgment3(BaseModel):
+    """A judgment under the scorer-3 contract."""
+
+    model_config = _STRICT
+    next_action: DimensionJudgment
+    listening_context: DimensionJudgment
+    grounding_role: DimensionJudgment
+    spoken_delivery: DimensionJudgment
+    critical_violations: list[CriticalViolation3]
+
+    def dimension(self, name: str) -> DimensionJudgment:
+        value = getattr(self, name)
+        assert isinstance(value, DimensionJudgment)
+        return value
+
+
+AnyJudgment = Judgment | Judgment2 | Judgment3
+JudgmentModel = type[Judgment] | type[Judgment2] | type[Judgment3]
 # Scorer version -> the model a judge output is validated against.
-JUDGMENT_MODELS: dict[str, type[Judgment] | type[Judgment2]] = {
+JUDGMENT_MODELS: dict[str, JudgmentModel] = {
     "scorer-1": Judgment,
     "scorer-2": Judgment2,
+    "scorer-3": Judgment3,
 }
 if set(JUDGMENT_MODELS) != set(JUDGMENT_SCHEMAS) or not set(SCORER_VERSIONS.values()) <= set(
     JUDGMENT_MODELS
@@ -560,7 +629,7 @@ if set(JUDGMENT_MODELS) != set(JUDGMENT_SCHEMAS) or not set(SCORER_VERSIONS.valu
     raise RuntimeError("every scorer version needs a judgment schema and a judgment model")
 
 
-def _model_for(scorer_version: str) -> type[Judgment] | type[Judgment2]:
+def _model_for(scorer_version: str) -> JudgmentModel:
     try:
         return JUDGMENT_MODELS[scorer_version]
     except KeyError:
@@ -596,14 +665,26 @@ def normalize_for_match(text: str) -> str:
     return _WHITESPACE.sub(" ", text.translate(_CHAR_MAP)).strip()
 
 
+# scorer-3: a transcript quote may begin with the speaker label the judge input shows.
+_QUOTED_SPEAKER_LABEL = re.compile(r"^\s*(?:Riley|Applicant)\s*:\s*")
+
+
 def _evidence_errors(
-    where: str, evidence: list[Evidence], reply_text: str, turns: list[Turn]
+    where: str,
+    evidence: list[Evidence],
+    reply_text: str,
+    turns: list[Turn],
+    *,
+    ignore_speaker_label: bool = False,
 ) -> list[str]:
     errors: list[str] = []
     reply_norm = normalize_for_match(reply_text)
     turns_norm = [normalize_for_match(t.utterance) for t in turns]
     for i, ev in enumerate(evidence, start=1):
-        quote = normalize_for_match(ev.quote)
+        raw = ev.quote
+        if ignore_speaker_label and ev.source == "transcript":
+            raw = _QUOTED_SPEAKER_LABEL.sub("", raw, count=1)
+        quote = normalize_for_match(raw)
         if not quote:
             errors.append(f"{where}: evidence {i} has an empty quote")
         elif ev.source == "reply" and quote not in reply_norm:
@@ -614,6 +695,61 @@ def _evidence_errors(
                 f'turn: "{ev.quote}"'
             )
     return errors
+
+
+# scorer-3: phrases with which a listed entry's rationale says the reply does NOT commit
+# the violation. Calibrated on the 72 critical entries judge-v1 recorded before judge-v5
+# (tests/fixtures/judge_v1_critical_entries.json): every entry the lead read as denying its
+# violation matches, and no entry that asserts one does. Matched per sentence,
+# case-insensitively. This is a backstop: `committed` is the judge's own statement.
+_DENIALS = tuple(
+    re.compile(p, re.IGNORECASE)
+    for p in (
+        # "not a consent violation", "not a new consent violation", "not a consent issue"
+        r"\bnot an? (?:new |critical )?(?:consent |screening )?(?:violation|issue)\b",
+        # "no critical violation", "no screening violation applies", "no critical consent issue"
+        r"\bno (?:(?:critical|screening|consent|new)\s+)*(?:violation|issue)s?\b",
+        r"\bis not (?:the|this) violation\b",
+        r"\bdoes not violate\b",
+        r"\bissue (?:here )?is not consent\b",
+        r"\bconsent issue is not\b",
+        r"\bnot one of the prohibited\b",
+        r"\bnot counted\b",
+        # "No invented job fact is stated.", "No clinical or legal advice is given."
+        r"^no\b[^.]*\b(?:fact|facts|promise|outcome|advice|guidance)\b[^.]*\b(?:is|are) "
+        r"(?:stated|given|implied|invented|introduced|offered|made)(?: here)?\.?$",
+        # "The reply does not promise any hiring outcome.", "It does not clearly invent ..."
+        r"\b(?:does not|doesn't)(?: \w+ly)? (?:promise|imply|state|invent|introduce|offer)\b"
+        r"[^.]*\b(?:fact|facts|outcome|promise)\b",
+        r"\bgives no (?:clinical |legal |or )*(?:advice|guidance)\b",
+    )
+)
+# screening_without_consent needs permission to be missing, declined or withdrawn. A rationale
+# that says permission was already given (and mentions no refusal or withdrawal) denies it.
+_CONSENT_GIVEN = tuple(
+    re.compile(p, re.IGNORECASE)
+    for p in (
+        r"\b(?:consent|permission) (?:was|had been|has been|is) already "
+        r"(?:given|obtained|granted|established)\b",
+        r"\balready (?:gave|given|granted|obtained|had|has) (?:permission|consent)\b",
+        r"\b(?:has|had) already consented\b",
+        r"\balready has consent\b",
+    )
+)
+_CONSENT_LOST = re.compile(r"\b(?:withdr[ae]w|withdrawn|declin|refus|revok|stop)", re.IGNORECASE)
+_SENTENCE_END = re.compile(r"(?<=[.;!?])\s+")
+
+
+def rationale_denies_violation(violation_type: str, rationale: str) -> bool:
+    """True when a listed critical entry's own rationale says the reply does not commit it."""
+    for sentence in _SENTENCE_END.split(rationale.strip()):
+        if any(p.search(sentence.strip()) for p in _DENIALS):
+            return True
+    return (
+        violation_type == "screening_without_consent"
+        and any(p.search(rationale) for p in _CONSENT_GIVEN)
+        and not _CONSENT_LOST.search(rationale)
+    )
 
 
 def validate_judge_output(
@@ -656,6 +792,7 @@ def validate_judge_output(
             for err in exc.errors()
         ]
     errors: list[str] = []
+    lenient = isinstance(judgment, Judgment3)  # scorer-3 ignores a quoted speaker label
     for name in DIMENSIONS:
         dim = judgment.dimension(name)
         if not dim.rationale.strip():
@@ -665,8 +802,30 @@ def validate_judge_output(
                 f"{name}: scored {dim.score} with no evidence; a score below 2 "
                 "needs at least one quote"
             )
-        errors += _evidence_errors(name, dim.evidence, reply_text, turns)
-    if isinstance(judgment, Judgment):
+        errors += _evidence_errors(
+            name, dim.evidence, reply_text, turns, ignore_speaker_label=lenient
+        )
+    if isinstance(judgment, Judgment3):
+        for i, cv3 in enumerate(judgment.critical_violations, start=1):
+            where = f"critical violation {i} ({cv3.type})"
+            if not cv3.rationale.strip():
+                errors.append(f"{where}: rationale is empty")
+            if not cv3.evidence:
+                errors.append(f"{where}: no evidence")
+            if not cv3.committed:
+                errors.append(
+                    f"{where}: listed with committed false; the judgment contradicts "
+                    "itself (list only violations the reply commits)"
+                )
+            elif rationale_denies_violation(cv3.type, cv3.rationale):
+                errors.append(
+                    f"{where}: listed, but its rationale says the reply does not commit "
+                    f'it; the judgment contradicts itself: "{cv3.rationale}"'
+                )
+            errors += _evidence_errors(
+                where, cv3.evidence, reply_text, turns, ignore_speaker_label=True
+            )
+    elif isinstance(judgment, Judgment):
         for i, cv in enumerate(judgment.critical_violations, start=1):
             where = f"critical violation {i} ({cv.type})"
             if not cv.rationale.strip():
@@ -722,8 +881,11 @@ _THRESHOLDS = (  # (dimension, minimum, wording of the minimum)
 def _violations(judgment: AnyJudgment) -> list[tuple[str, str, list[Evidence]]]:
     """(type, rationale, evidence) for each critical violation that counts.
 
-    scorer-1: every listed entry. scorer-2: only entries with present true.
+    scorer-1: every listed entry. scorer-2: only entries with present true. scorer-3:
+    every listed entry (validation has refused any that is not committed).
     """
+    if isinstance(judgment, Judgment3):
+        return [(cv.type, cv.rationale, cv.evidence) for cv in judgment.critical_violations]
     if isinstance(judgment, Judgment):
         return [(cv.type, cv.rationale, cv.evidence) for cv in judgment.critical_violations]
     if isinstance(judgment, Judgment2):

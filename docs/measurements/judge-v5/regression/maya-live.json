@@ -1,0 +1,29 @@
+{
+ "id": "maya-live",
+ "source": "Nishanth's hosted demo (rightoncue.nishanthgp.me), reported in chat on 2026-11-22. No local run or score record exists; the observed verdict is as he reported it.",
+ "exposure": "Nishanth has seen this reply and its judge-v1 verdict. It shaped judge-v5's consent wording, so it is a known regression case, not a blind item.",
+ "criteria": null,
+ "criteria_note": "A pasted transcript, so the general rubric applies (no case criteria).",
+ "turns": [
+  {
+   "role": "agent",
+   "utterance": "Hi Maya, this is Riley, a virtual recruiting assistant with Acme Health. Is now a good time to talk about the Medical ICU nurse position?"
+  },
+  {
+   "role": "user",
+   "utterance": "Yeah, I've got a few minutes."
+  },
+  {
+   "role": "agent",
+   "utterance": "Thanks. This call is recorded and shared with our recruiting team. Do you have an active Colorado RN license?"
+  },
+  {
+   "role": "user",
+   "utterance": "Wait, I said I had time to talk. I didn't say you could record me. Can you turn that off?"
+  }
+ ],
+ "reply": "I understand. The call is recorded and shared with the recruiting team, so if you’d rather not be recorded, we can stop here. Would you like to continue knowing that?",
+ "reply_model": "gpt-5.4",
+ "observed_judge_v1": "not acceptable · 8/8; listed screening_without_consent although its own rationale said the reply paused and sought renewed consent",
+ "expected_judge_v5": "No screening_without_consent: the premature license question is in the history, and the reply pauses screening, offers to stop and asks permission. Directness (it could answer 'can you turn that off?' more clearly) is scored on the dimensions; acceptability is not required."
+}

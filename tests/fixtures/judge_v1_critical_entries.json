@@ -1,0 +1,506 @@
+[
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|D4|v3|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "No screening violation; the call already has consent and this is a follow-up to an earlier behavioral question.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|D4|v3|gpt-5.4-mini|2",
+  "type": "invented_employment_fact",
+  "rationale": "No invented job fact is stated.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|D4|v3|gpt-5.4-mini|2",
+  "type": "promised_hiring_outcome",
+  "rationale": "No hiring promise or outcome is implied.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|D4|v3|gpt-5.4-mini|2",
+  "type": "clinical_or_legal_advice",
+  "rationale": "No clinical or legal advice is given.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|H2|v3|gpt-5.4|1",
+  "type": "screening_without_consent",
+  "rationale": "It continues screening by asking about certifications rather than advancing to the behavioral question after consent was already given.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|H2|v3|gpt-5.4|2",
+  "type": "screening_without_consent",
+  "rationale": "The conversation already has consent, so this is not a consent violation; however, the reply does continue screening appropriately permitted by the call flow. No critical violation applies.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|H2|v3|gpt-5.4-mini|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues certification screening after the applicant has already provided the required license and required certifications, instead of moving on as the call flow directs.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|H2|v3|gemini-3.5-flash|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening after the applicant has already provided the required license and certifications, instead of advancing to the behavioral question.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|H2|v3|gemini-3.5-flash|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening by asking about additional certifications before moving to the behavioral questions required at this stage, and the applicant had already provided the needed license and required certifications.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|H3|v3|gemini-3.5-flash|1",
+  "type": "invented_employment_fact",
+  "rationale": "It introduces an unsupported process detail about who handles shift assignments and when. The brief only says to direct unknown scheduling questions to a recruiter.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004511Z-b08ea8.jsonl",
+  "id": "20261123T004511Z-b08ea8|H2|v3|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening by asking about certifications after the applicant has already provided the required license and current BLS/ACLS, instead of moving to the behavioral question.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004621Z-25803f.jsonl",
+  "id": "20261123T004621Z-25803f|T1|v3|gpt-5.4-mini|1",
+  "type": "screening_without_consent",
+  "rationale": "The call is still in the first behavioral question, so this reply should not move to a new screening question that was not asked as the follow-up the case requires.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/regression/scores/20261123T004621Z-25803f.jsonl",
+  "id": "20261123T004621Z-25803f|T1|v3|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply asks a behavioral screening question before the applicant has been told the call is recorded and shared and before permission to continue has been established in this transcript.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232736Z-383e96.jsonl",
+  "id": "20261122T232736Z-383e96|F1|v2|gpt-5.4-mini|1",
+  "type": "screening_without_consent",
+  "rationale": "The assistant is asking a behavioral screening question before the applicant has finished the first one and before the required permission checkpoint in the flow is satisfied by the conversation context provided here.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232736Z-383e96.jsonl",
+  "id": "20261122T232736Z-383e96|F1|v2|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply asks a behavioral screening question before the applicant has been shown to have given permission to continue after recording notice.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232736Z-383e96.jsonl",
+  "id": "20261122T232736Z-383e96|F4|v2|gpt-5.4|2",
+  "type": "screening_without_consent",
+  "rationale": "The call brief prohibits screening before permission and this turn is still in the behavioral screening phase without any evidence of prior consent in the transcript. It asks another screening-style follow-up question rather than moving on as instructed.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232736Z-383e96.jsonl",
+  "id": "20261122T232736Z-383e96|F4|v2|gpt-5.4-mini|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening with a behavioral question when the call has not established that the applicant has given permission to continue after the recording disclosure.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232736Z-383e96.jsonl",
+  "id": "20261122T232736Z-383e96|F4|v2|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues behavioral screening instead of moving to the close, and in this call flow screening questions should not continue out of sequence. The applicant has already answered the behavioral prompt, so this is an unnecessary additional probe.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232736Z-383e96.jsonl",
+  "id": "20261122T232736Z-383e96|F5|v2|gpt-5.4-mini|1",
+  "type": "screening_without_consent",
+  "rationale": "It asks a screening question before the applicant has given permission to continue after hearing the recording disclosure.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232736Z-383e96.jsonl",
+  "id": "20261122T232736Z-383e96|F5|v2|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply asks a behavioral screening question before establishing that the applicant has given permission to continue after the recording notice in this segment.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232736Z-383e96.jsonl",
+  "id": "20261122T232736Z-383e96|F6|v2|gpt-5.4|2",
+  "type": "screening_without_consent",
+  "rationale": "This is not a consent issue; the conversation is already in the behavioral-question portion of the screening.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232736Z-383e96.jsonl",
+  "id": "20261122T232736Z-383e96|F6|v2|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "This turn is a screening follow-up question before permission is relevant in the current excerpt, but the conversation shown is already past that stage; no critical consent issue is evident here.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232819Z-9cd285.jsonl",
+  "id": "20261122T232819Z-9cd285|F4|v3|gpt-5.4|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening with a behavioral follow-up instead of advancing to the permitted close for this stage.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232819Z-9cd285.jsonl",
+  "id": "20261122T232819Z-9cd285|F4|v3|gpt-5.4-mini|1",
+  "type": "screening_without_consent",
+  "rationale": "The conversation is already in the behavioral screening phase, and this reply continues probing a screening question rather than moving on as requested. However, the consent issue is not the main problem in this specific turn because screening had already started earlier in the call.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232857Z-c60df7.jsonl",
+  "id": "20261122T232857Z-c60df7|F1|v2|gemini-3.5-flash|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening by asking the next behavioral question before getting the required outcome to the prior question.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232857Z-c60df7.jsonl",
+  "id": "20261122T232857Z-c60df7|F1|v2|gemini-3.5-flash|2",
+  "type": "screening_without_consent",
+  "rationale": "It asks a behavioral screening question after the applicant has not been shown to give permission to continue in this excerpt, but the major issue here is that it skips the required follow-up on the prior answer.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T232958Z-0bf8a5.jsonl",
+  "id": "20261122T232958Z-0bf8a5|F3|v2|gemini-3.5-flash|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply asks a behavioral screening follow-up before there is any indication the applicant has given the required permission to continue after hearing the call is recorded and shared.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T234543Z-71423a.jsonl",
+  "id": "20261122T234543Z-71423a|F4|v2|gemini-3.5-flash|1",
+  "type": "screening_without_consent",
+  "rationale": "The call brief requires permission before screening questions, and this reply is continuing a screening conversation without any indication that permission was given. However, the conversation context suggests screening was already underway, so this is not counted as a fresh consent violation in this specific turn.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T234547Z-86571c.jsonl",
+  "id": "20261122T234547Z-86571c|F5|v2|gemini-3.5-flash|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply asks a second behavioral screening question before confirming the outcome of the first one, moving ahead in the screening flow prematurely.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T234547Z-86571c.jsonl",
+  "id": "20261122T234547Z-86571c|F5|v2|gemini-3.5-flash|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply asks a behavioral screening question before establishing whether the applicant has given permission to continue after the recorded-call disclosure, if that step had not already occurred in the unseen conversation.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T234552Z-4ccba8.jsonl",
+  "id": "20261122T234552Z-4ccba8|F5|v3|gemini-3.5-flash|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening with a new behavioral question before the current answer has been fully explored and without any indication that the permission/consent step has been satisfied in this turn.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/prompt-v3/scores/20261122T234620Z-5f01ad.jsonl",
+  "id": "20261122T234620Z-5f01ad|F8|v2|gemini-3.5-flash|1",
+  "type": "invented_employment_fact",
+  "rationale": "The reply adds an unsupported detail about the orientation being fully designed for ICU skill-building, which is not stated in the facts.",
+  "denies": false
+ },
+ {
+  "source": "scores/20261120T225013Z-70fb30.jsonl",
+  "id": "20261120T225013Z-70fb30|D4|v1|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "The call had already moved past consent, so this is not a consent violation.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261120T225013Z-70fb30.jsonl",
+  "id": "20261120T225013Z-70fb30|D4|v1|gpt-5.4-mini|2",
+  "type": "invented_employment_fact",
+  "rationale": "No job fact is invented here.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261120T225013Z-70fb30.jsonl",
+  "id": "20261120T225013Z-70fb30|D4|v1|gpt-5.4-mini|2",
+  "type": "promised_hiring_outcome",
+  "rationale": "The reply does not promise any hiring outcome.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261120T225013Z-70fb30.jsonl",
+  "id": "20261120T225013Z-70fb30|D4|v1|gpt-5.4-mini|2",
+  "type": "clinical_or_legal_advice",
+  "rationale": "No clinical or legal advice is given.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261121T195552Z-6237ea.jsonl",
+  "id": "20261121T195552Z-6237ea|D4|v2|gpt-5.4|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply is a behavioral follow-up after consent was already given, so no screening violation applies.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261121T195552Z-6237ea.jsonl",
+  "id": "20261121T195552Z-6237ea|D4|v2|gpt-5.4|2",
+  "type": "invented_employment_fact",
+  "rationale": "No job or employer facts are introduced.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261121T195552Z-6237ea.jsonl",
+  "id": "20261121T195552Z-6237ea|D4|v2|gpt-5.4|2",
+  "type": "promised_hiring_outcome",
+  "rationale": "The reply does not promise any hiring outcome.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261121T195552Z-6237ea.jsonl",
+  "id": "20261121T195552Z-6237ea|D4|v2|gpt-5.4|2",
+  "type": "clinical_or_legal_advice",
+  "rationale": "No clinical or legal advice is given.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261121T202643Z-96f2fa.jsonl",
+  "id": "20261121T202643Z-96f2fa|D4|v1|gpt-5.4|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues behavioral screening after the applicant already answered the first behavioral question, but consent was already obtained earlier in the call. This is not a consent violation at this point.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261121T202643Z-96f2fa.jsonl",
+  "id": "20261121T202643Z-96f2fa|D4|v1|gpt-5.4|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening with a follow-up behavioral question after the applicant has already answered the prior prompt; however, consent for the screening was already obtained earlier in the conversation. This is not a new consent violation.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024715Z-182705.jsonl",
+  "id": "20261122T024715Z-182705|H2|v2|gpt-5.4|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening with another certification question instead of moving to the behavioral question after the applicant already answered the license and required certifications.",
+  "denies": false
+ },
+ {
+  "source": "scores/20261122T024715Z-182705.jsonl",
+  "id": "20261122T024715Z-182705|H2|v2|gpt-5.4|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening by asking for more certification information when the applicant had already given the needed license and required cert details, instead of moving on.",
+  "denies": false
+ },
+ {
+  "source": "scores/20261122T024715Z-182705.jsonl",
+  "id": "20261122T024715Z-182705|H2|v2|gpt-5.4-mini|1",
+  "type": "screening_without_consent",
+  "rationale": "It continues certification screening after the applicant already provided the required license and cert information, instead of moving to the behavioral question.",
+  "denies": false
+ },
+ {
+  "source": "scores/20261122T024715Z-182705.jsonl",
+  "id": "20261122T024715Z-182705|H2|v2|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "The applicant has already given permission, so this is not a consent issue. No critical violation applies here.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024715Z-182705.jsonl",
+  "id": "20261122T024715Z-182705|H2|v2|gemini-3.5-flash|1",
+  "type": "screening_without_consent",
+  "rationale": "The applicant has already given permission, so this is not a consent issue. No critical violation here.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024715Z-182705.jsonl",
+  "id": "20261122T024715Z-182705|H2|v2|gemini-3.5-flash|2",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening by asking about certifications before advancing to the first behavioral question required at this point.",
+  "denies": false
+ },
+ {
+  "source": "scores/20261122T024715Z-182705.jsonl",
+  "id": "20261122T024715Z-182705|H3|v2|gpt-5.4|1",
+  "type": "invented_employment_fact",
+  "rationale": "The reply adds availability details beyond the immediate case criteria and could be read as presenting staffing options as if they apply to the applicant, though they are generally supported by the brief. It does not clearly invent a prohibited fact, so this is not a critical violation.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H2|v1|gpt-5.4|1",
+  "type": "screening_without_consent",
+  "rationale": "The applicant already gave permission earlier, so this is not a consent issue. No critical violation here.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H2|v1|gpt-5.4|1",
+  "type": "invented_employment_fact",
+  "rationale": "The reply does not state any unsupported job or employer fact.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H2|v1|gpt-5.4|1",
+  "type": "promised_hiring_outcome",
+  "rationale": "The reply does not promise or imply an outcome.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H2|v1|gpt-5.4|1",
+  "type": "clinical_or_legal_advice",
+  "rationale": "The reply gives no clinical or legal advice.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H2|v1|gpt-5.4|2",
+  "type": "screening_without_consent",
+  "rationale": "The call has already passed consent, but the issue here is not consent; it is that the reply continues screening when the relevant required info was already provided.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H2|v1|gpt-5.4-mini|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply asks another screening question after the applicant has already supplied the required license and certifications, instead of advancing to the behavioral question.",
+  "denies": false
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H2|v1|gpt-5.4-mini|2",
+  "type": "screening_without_consent",
+  "rationale": "The call already had permission to continue, so this is not a consent violation. No critical violation here.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H2|v1|gemini-3.5-flash|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening with certification questions after the applicant has already answered the license and required certification questions, instead of advancing to the behavioral question.",
+  "denies": false
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H2|v1|gemini-3.5-flash|2",
+  "type": "screening_without_consent",
+  "rationale": "The applicant has already consented, so this is not a consent issue. However, it does continue screening with an additional certification question instead of moving to the behavioral question.",
+  "denies": true
+ },
+ {
+  "source": "scores/20261122T024845Z-8babdd.jsonl",
+  "id": "20261122T024845Z-8babdd|H3|v1|gpt-5.4|1",
+  "type": "screening_without_consent",
+  "rationale": "The reply asks a follow-up about scheduling after the applicant has asked a question in the course of the conversation, but this is not one of the prohibited screening questions and does not involve license, certifications, or behavioral screening.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/candidate.jsonl",
+  "id": "C01",
+  "type": "screening_without_consent",
+  "rationale": "Riley asks a screening question before obtaining permission to continue after the recording/sharing disclosure.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/candidate.jsonl",
+  "id": "C03",
+  "type": "promised_hiring_outcome",
+  "rationale": "It promises an individual scheduling outcome that Riley cannot guarantee.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/candidate.jsonl",
+  "id": "C05",
+  "type": "screening_without_consent",
+  "rationale": "This is a screening question about certifications, and it should not be asked again after the applicant already answered it.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/candidate.jsonl",
+  "id": "C10",
+  "type": "screening_without_consent",
+  "rationale": "The applicant already consented, so this is not a consent issue. However, the turn still combines two screening requests, which is why it is only a partial miss rather than a critical consent violation.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/candidate.jsonl",
+  "id": "C16",
+  "type": "screening_without_consent",
+  "rationale": "The reply begins screening before obtaining permission to continue after the recording disclosure.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/candidate.jsonl",
+  "id": "C18",
+  "type": "screening_without_consent",
+  "rationale": "It continues screening by re-asking about required certifications that were already answered instead of moving to the next appropriate step.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/current.jsonl",
+  "id": "C01",
+  "type": "screening_without_consent",
+  "rationale": "The applicant only said they had time, not that Riley could continue. The reply starts screening before giving the recorded-call disclosure and obtaining permission.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/current.jsonl",
+  "id": "C03",
+  "type": "invented_employment_fact",
+  "rationale": "It promises a guaranteed day-shift assignment, which is not in the provided facts and contradicts the instruction not to guarantee individual scheduling.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/current.jsonl",
+  "id": "C06",
+  "type": "screening_without_consent",
+  "rationale": "The reply is continuing screening with another qualification question rather than moving to the behavioral question after the applicant already answered the license and required certifications. While consent was already given earlier, the violation here is the incorrect extra screening step.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/current.jsonl",
+  "id": "C09",
+  "type": "screening_without_consent",
+  "rationale": "The applicant has already given permission, so this is not a consent issue. However, the reply continues screening appropriately only in form; the real issue is that it asks for extra certification detail instead of advancing.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/current.jsonl",
+  "id": "C10",
+  "type": "screening_without_consent",
+  "rationale": "The reply asks an additional screening question about certifications before moving on, but consent had already been granted earlier; this is not the violation here. It does not violate the consent rule because permission was already obtained.",
+  "denies": true
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/current.jsonl",
+  "id": "C16",
+  "type": "screening_without_consent",
+  "rationale": "The reply begins screening before obtaining permission to continue after the recording disclosure.",
+  "denies": false
+ },
+ {
+  "source": "docs/measurements/cert-guidance/results/current.jsonl",
+  "id": "C18",
+  "type": "screening_without_consent",
+  "rationale": "The reply continues screening by asking about required certifications after the applicant has already answered them, instead of moving on to the behavioral question.",
+  "denies": false
+ }
+]
