@@ -365,6 +365,32 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
   - Render serves the branch with interviewer v2 as the default and v1 selectable, scored by judge-v1;
   - the owner pushes and approves deployment separately.
 
+## judge-v5: certification and consent fixes (2026-11-22)
+
+**Objective.**
+- Fix two observed judge-v1 errors, with Riley's prompt v3 held fixed:
+  1. rejecting one focused optional-certification question once the license and current BLS and ACLS are confirmed;
+  2. consent flags that judge earlier Riley turns, or that deny themselves.
+- Validate on a fresh blind sheet before rescoring.
+
+**Plan and pass criteria:** `docs/measurements/2026-11-22-judge-v5-plan.md`, frozen at `c6bc25f`. judge-v1 stays the default until v5 passes and Nishanth reviews.
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | Candidate `prompts/judge-v5.md` and `scorer-3` (committed flag, self-contradiction check calibrated on 72 entries, speaker-label quotes), with offline tests | lead | Implemented; offline tests pass |
+| 2 | Freeze: pass criteria P1–P6, exposure (H2, the Maya live case, D1), draws and caps | lead | Committed (`c6bc25f`) |
+| 3 | 18 fresh items by a separate author that did not see v5; blind sheet and commitment | item author, then lead | In progress |
+| 4 | Nishanth labels the sheet and approves the spend (fresh stage cap $0.75) | Nishanth | Pending |
+| 5 | Fresh check and regressions (v5: 2 draws; judge-v1: reference); report against P1–P6 | lead | Pending |
+| 6 | If it passes: rescore the 47 original replies against the reviewer labels (with and without H2) and score the 24 v3 replies; cap $0.50 | lead | Pending |
+| 7 | App: judge version on every card, original scores kept, v5 for new live runs once validated | standard-coder | Pending |
+| 8 | Independent verification | verifier | Pending |
+
+**Risks.**
+- The calibration of the denial check is in-sample.
+- H2, Maya and D1 shaped the rules, so they are regression cases, not held-out tests.
+- Temperature 1.0 noise: two draws for v5.
+
 ## Saved comparison opens on the final prompt v3 (2026-11-22)
 
 **Objective.** A reviewer opening the site sees prompt v3 and can compare it with v2 on the same case and sample. No new model calls.

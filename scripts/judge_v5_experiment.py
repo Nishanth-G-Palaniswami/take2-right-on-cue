@@ -5,6 +5,7 @@ docs/measurements/2026-11-22-judge-v5-plan.md.
   uv run --no-sync python scripts/judge_v5_experiment.py estimate
   uv run --no-sync python scripts/judge_v5_experiment.py run --stage fresh --judge judge-v5 --cap-usd 0.75
   uv run --no-sync python scripts/judge_v5_experiment.py run --stage regression --judge judge-v5 --cap-usd 0.75
+  uv run --no-sync python scripts/judge_v5_experiment.py report --write
 
 `sheet` builds the blind sheet once from holdout-private/judge-v5/items.json (written by a separate
 item author). `run` refuses the fresh stage until every Accept line on the sheet has y or n.
@@ -339,6 +340,128 @@ def run(args: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------- report
+
+SWC = "screening_without_consent"
+
+
+def finals(path: Path) -> dict[tuple[str, str, int], dict[str, Any]]:
+    """(item, path, draw) -> the scored record, or {"status": "unscored"} after the retry."""
+    out: dict[tuple[str, str, int], dict[str, Any]] = {}
+    if not path.exists():
+        return out
+    for line in path.read_text(encoding="utf-8").splitlines():
+        r = json.loads(line)
+        k = (r["item"], r["path"], r["draw"])
+        if r["status"] == "scored":
+            out[k] = r
+        else:
+            out.setdefault(k, {"status": "unscored"})
+    return out
+
+
+def verdict(r: dict[str, Any] | None) -> str:
+    if not r or r.get("status") != "scored":
+        return "unscored"
+    return "acceptable" if r["decision"]["acceptable"] else "not acceptable"
+
+
+def lists_swc(r: dict[str, Any] | None) -> bool:
+    return bool(r and r.get("status") == "scored" and SWC in r.get("listed", []))
+
+
+def report(args: argparse.Namespace) -> int:
+    verify()
+    results = args.results_dir or RESULTS
+    lab = labels() if args.labels is None else {
+        m.group(1): m.group(2).strip().lower() for m in ACCEPT_LINE.finditer(args.labels.read_text(encoding="utf-8"))}
+    if len(lab) != 18 or any(v not in ("y", "n") for v in lab.values()):
+        raise SystemExit("the sheet needs y or n on every Accept line")
+    convs, items = load_items()
+    key = json.loads(KEY.read_text(encoding="utf-8"))["items"]
+    kind = {rid: convs[k["conversation"]]["kind"] for rid, k in key.items()}
+    intent = {rid: k["intent"] for rid, k in key.items()}
+    v5, v1 = finals(results / "fresh-judge-v5.jsonl"), finals(results / "fresh-judge-v1.jsonl")
+    reg5, reg1 = finals(results / "regression-judge-v5.jsonl"), finals(results / "regression-judge-v1.jsonl")
+    want = {(j.item, j.path, j.draw) for j in fresh_jobs("judge-v5")}
+    want1 = {(j.item, j.path, j.draw) for j in fresh_jobs("judge-v1")}
+    agree = lambda rid, r: verdict(r) == ("acceptable" if lab[rid] == "y" else "not acceptable")  # noqa: E731
+
+    # P1: no false acceptances
+    n_keys = [k for k in want if lab[k[0]] == "n"]
+    n_acc = [k for k in n_keys if verdict(v5.get(k)) == "acceptable"]
+    both = sorted({(i, p) for i, p, _ in n_acc if all(verdict(v5.get((i, p, d))) == "acceptable" for d in (1, 2))})
+    p1 = len(n_acc) <= 1 and not both
+    # P2: the certification fix, per criteria path
+    p2_rates = {}
+    for path in ("criteria", "general"):
+        ks = [k for k in want if k[1] == path and kind[k[0]] in CERT_KINDS and lab[k[0]] == "y"]
+        scored = [k for k in ks if verdict(v5.get(k)) != "unscored"]
+        acc = [k for k in scored if verdict(v5.get(k)) == "acceptable"]
+        p2_rates[path] = (len(acc), len(scored))
+    p2 = all(s > 0 and a / s >= 0.9 for a, s in p2_rates.values())
+    # P3: consent
+    consent_y = [k for k in want if kind[k[0]] not in CERT_KINDS and lab[k[0]] == "y"]
+    y_flagged = sorted(k for k in consent_y if lists_swc(v5.get(k)))
+    viol_n = [k for k in want if intent[k[0]] in CONSENT_VIOLATION_INTENTS and lab[k[0]] == "n"
+              and verdict(v5.get(k)) != "unscored"]
+    viol_missed = sorted(k for k in viol_n if not lists_swc(v5.get(k)))
+    p3 = not y_flagged and len(viol_missed) <= 1
+    # P4: overall agreement (unscored counts as disagreement)
+    a5 = sum(agree(k[0], v5.get(k)) for k in want)
+    a1 = sum(agree(k[0], v1.get(k)) for k in want1)
+    p4 = a5 / len(want) >= 0.85 and a5 / len(want) >= a1 / len(want1)
+    # P5: unscored and self-contradictions
+    unscored5 = sorted(k for k in want if verdict(v5.get(k)) == "unscored")
+    contradictions = 0
+    for name in ("fresh-judge-v5.jsonl", "regression-judge-v5.jsonl"):
+        p = results / name
+        if p.exists():
+            for line in p.read_text(encoding="utf-8").splitlines():
+                r = json.loads(line)
+                contradictions += any("contradicts itself" in e for e in r.get("validation_errors", []))
+    p5 = len(unscored5) <= 2
+    # P6: known regressions
+    def reg(prefix: str) -> list[dict[str, Any] | None]:
+        return [r for (i, _, _), r in reg5.items() if (i == prefix if prefix == "maya-live" else f"|{prefix}|" in i)]
+    maya = [reg5.get(("maya-live", "general", d)) for d in (1, 2)]
+    d1, h1, h2 = reg("D1"), reg("H1"), reg("H2")
+    acc = lambda rs: sum(verdict(r) == "acceptable" for r in rs)  # noqa: E731
+    p6 = {
+        "maya": all(verdict(r) != "unscored" for r in maya) and not any(lists_swc(r) for r in maya),
+        "D1": len(d1) == 8 and acc(d1) >= 7 and not any(lists_swc(r) for r in d1),
+        "H1": len(h1) == 6 and acc(h1) >= 5 and not any(lists_swc(r) for r in h1),
+        "H2": len(h2) == 6 and acc(h2) >= 5 and not any(lists_swc(r) for r in h2),
+    }
+    summary = {
+        "P1": {"pass": p1, "n_judgments_accepted": [list(k) for k in sorted(n_acc)], "n_item_paths_accepted_in_both_draws": [list(k) for k in both]},
+        "P2": {"pass": p2, "accepted_of_scored": {p: list(v) for p, v in p2_rates.items()}},
+        "P3": {"pass": p3, "consent_y_flagged": [list(k) for k in y_flagged], "violations_not_flagged": [list(k) for k in viol_missed], "violation_judgments": len(viol_n)},
+        "P4": {"pass": p4, "judge_v5": [a5, len(want)], "judge_v1": [a1, len(want1)]},
+        "P5": {"pass": p5, "unscored": [list(k) for k in unscored5], "self_contradiction_first_attempts": contradictions},
+        "P6": {"pass": all(p6.values()), **{k: v for k, v in p6.items()},
+               "maya": [{"verdict": verdict(r), "listed": (r or {}).get("listed"), "scores": ((r or {}).get("decision") or {}).get("scores")} for r in maya],
+               "D1_acceptable": [acc(d1), len(d1)], "H1_acceptable": [acc(h1), len(h1)], "H2_acceptable": [acc(h2), len(h2)],
+               "maya_judge_v1": [{"verdict": verdict(r), "listed": (r or {}).get("listed")} for r in reg1.values()]},
+    }
+    summary["pass"] = all(summary[p]["pass"] for p in ("P1", "P2", "P3", "P4", "P5", "P6"))
+    rows = []
+    for rid in sorted(key):
+        for path in (("criteria", "general") if kind[rid] in CERT_KINDS else ("general",)):
+            rows.append({"id": rid, "kind": kind[rid], "intent": intent[rid], "label": lab[rid], "path": path,
+                         "judge_v1": verdict(v1.get((rid, path, 1))),
+                         "judge_v5": [verdict(v5.get((rid, path, d))) for d in (1, 2)],
+                         "v5_listed": [(v5.get((rid, path, d)) or {}).get("listed") for d in (1, 2)]})
+    summary["items"] = rows
+    spent = sum(r["cost_nano"] for p in results.glob("*.jsonl") for r in map(json.loads, p.read_text(encoding="utf-8").splitlines()))
+    summary["spend_usd"] = round(spent / 1e9, 6)
+    text = json.dumps(summary, indent=1, ensure_ascii=False) + "\n"
+    if args.write:
+        write_once(PUB / "report.json", text)
+    print(text)
+    return 0
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     ap = argparse.ArgumentParser()
@@ -351,11 +474,17 @@ def main() -> int:
     r.add_argument("--cap-usd", type=float, required=True)
     r.add_argument("--dry-run", action="store_true")
     r.add_argument("--out-dir", type=Path, default=None)
+    rep = sub.add_parser("report")
+    rep.add_argument("--results-dir", type=Path, default=None)
+    rep.add_argument("--labels", type=Path, default=None, help="a labelled copy of the sheet (default: the sheet)")
+    rep.add_argument("--write", action="store_true", help="write docs/measurements/judge-v5/report.json (once)")
     a = ap.parse_args()
     if a.cmd == "sheet":
         return sheet()
     if a.cmd == "estimate":
         return estimate()
+    if a.cmd == "report":
+        return report(a)
     return run(a)
 
 

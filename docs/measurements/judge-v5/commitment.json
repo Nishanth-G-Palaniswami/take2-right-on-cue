@@ -1,0 +1,10 @@
+{
+ "private_files": {
+  "items.json": "7210d1d89919c9ccb63b38e3a070d3e1a623c8d8898909dec4beaaa277e0ac6e",
+  "key.json": "3baa0e3b127984b80573c53a10b2daf20265590f38e9261db6e440ddd6db5831"
+ },
+ "public_files": {
+  "review_sheet.md": "12388b706aca7c5220a650fbb035b43822745e6f7ae96de3080cec51ae0643ee"
+ },
+ "judge_v5_prompt_sha256": "0046e009f9059c2f93fe932dcb1be82d34f360792cbf521476cd0a11e1f02519"
+}

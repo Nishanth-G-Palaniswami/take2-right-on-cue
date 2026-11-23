@@ -139,3 +139,23 @@ Planning figure: **$0.004 per judge call**. The recorded judge-v1 mean is $0.003
 | **Total** | | **about $0.81** | **$1.25** |
 
 No paid call is made until Nishanth has labelled the sheet and approved this spend.
+
+## Addendum: building the sheet (after the freeze, before any label or paid call)
+
+- **The author.** A separate agent wrote the 7 conversations and 18 replies from the inputs listed above. It did not open the repository.
+- **The lead's check.** The lead read every item, then made one edit before the sheet was built:
+  - one reply's extra question asked about shift preference, which the call brief does not define as a screening question;
+  - it now asks a certification question, so it tests what the plan says;
+  - the original and edited text are kept in `holdout-private/judge-v5/items.json` (`lead_edits`), which the commitment covers.
+- **Resemblances, disclosed.**
+  - The plan's own table requires one conversation of the D1 type: availability given, no disclosure yet. Its text and replies are new, but its license reply is worded close to the certification check's C01.
+  - The excerpt conversation is an advocacy story about early sepsis. That theme also appears in the prompt-v3 conversations; the story itself is different.
+- **Offline dry run of every stage and of `report`.**
+  - It used a stand-in judge that accepts everything, with the author's expectations as stand-in labels in a scratch copy.
+  - It fails P1, P3 and P4 as it should, which shows the analysis separates a lax judge from a good one. No call was made and nothing was written to `results/`.
+- **Exposure risk in this session's transcript.** Two tool outputs show the author's intended answers: the lead's read-through of the items, and the dry-run report. Nishanth was asked not to expand them before labelling.
+- **Projected spend** for the fresh and regression stage, from `estimate`:
+  - 104 first attempts;
+  - about $0.48 expected;
+  - worst-case bound per call up to $0.0177;
+  - the hard cap stays at $0.75.
