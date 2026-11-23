@@ -271,9 +271,17 @@ This is an exploratory live example, outside the scored evaluation, with no reco
   - it separated "asks for the outcome" from "asks what you did" (14/14), which earlier attempts had missed.
 - **Why it wasn't adopted.** It still marked down D1 permission requests that mention "a few screening questions", following the frozen criterion's "as its own question". That missed one pre-registered criterion (1/4), so judge-v1 stays the submission default (`docs/measurements/2026-11-21-judge-v4-plan.md`).
 
+### judge-v5 and the H2 criteria: tested, not adopted
+
+Three later pre-registered experiments tried to fix the H2 boundary (judge-v5 also targeted the consent flags), with prompt v3 fixed. None passed, so judge-v1 and `cases/notes.toml` are unchanged, no published number changed, and the H2 work is closed. Their documents and code are on the `h2-criteria-2` branch, not on `main`.
+
+- **judge-v5** ([results](https://github.com/Nishanth-G-Palaniswami/take2-right-on-cue/blob/a2dd8d9d1604d79b526cf08bf1f65c2c0c1f37df/docs/measurements/2026-11-22-judge-v5-results.md)). judge-v1 with three changes: accept either move once the license and current BLS and ACLS are confirmed, judge consent on the new reply in context, and invalidate a flag that the judge's own rationale denies. It missed all six criteria. H2 stayed at 0 of 6, a new field left 8 of 54 judgments unscored, and "I have BLS and ACLS" was read as current. It did improve D1 (8 of 8) and H1 (6 of 6). Labels: 18 fresh items, labelled by the reviewer with AI assistance.
+- **H2 criteria, round 1** ([results](https://github.com/Nishanth-G-Palaniswami/take2-right-on-cue/blob/a2dd8d9d1604d79b526cf08bf1f65c2c0c1f37df/docs/measurements/2026-11-22-h2-criteria-results.md)). judge-v1 fixed; only H2's case instructions changed. Five of six checks passed: the six saved H2 replies, all rejected under the frozen criterion, were accepted in 12 of 12 judgments. It failed one boundary: when the applicant only named BLS and ACLS and mentioned past training, replies that moved on or asked about extras were accepted in 7 of 8 judgments. Labels: AI-drafted, reviewed in full by the reviewer.
+- **H2 criteria, round 2** ([results](https://github.com/Nishanth-G-Palaniswami/take2-right-on-cue/blob/a2dd8d9d1604d79b526cf08bf1f65c2c0c1f37df/docs/measurements/2026-11-22-h2-criteria-2-results.md)). A stricter text: naming a credential or past training doesn't confirm it is current. Six of ten criteria were met. "Moves on" after an unconfirmed status was still allowed in 4 of 7 scored judgments, and 4 of 60 fresh judgments stayed unscored. Labels: the reviewer's own, "dictated … without reading ChatGPT's draft".
+
 ### What I would change next
 
-When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. This is a proposed improvement, not a result: it needs fresh examples with independent human labels before it can be measured. The published measurements stay at 31 of 47 and 2 of 12.
+When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. The two H2 rounds showed that case wording alone doesn't get judge-v1 there: at temperature 1.0 with no reasoning effort, it doesn't reliably refuse to move on when currency is unconfirmed. A further attempt needs a change outside the wording, such as judge reasoning effort or a deterministic currency check, and a new fresh sheet.
 
 ## Limits
 
@@ -292,10 +300,10 @@ When the applicant has already confirmed the required certifications, a future r
 | Initial prompt | `prompts/v1.md` |
 | Final prompt | `prompts/v3.md` (v2 was the prompt used for the holdout; v3 was tested afterwards) |
 | Judge prompt | `prompts/judge.md` (judge-v1, frozen) |
-| Iteration log | This report, plus `docs/measurements/` (each experiment, with rules committed before results) |
+| Iteration log | This report, plus `docs/measurements/` (each experiment, with rules committed before results). judge-v5 and the H2 criteria rounds are on branch `h2-criteria-2`, commit `a2dd8d9` |
 | Evaluation method and agreement | This report; `docs/judge-v1-known-limits.md`; `docs/measurements/2026-11-21-holdout-preregistration.md`; `docs/measurements/2026-11-21-holdout-results.md` |
 | The tool | `README.md`; the CLI (`uv run next-turn …`); the Streamlit app (`uv run streamlit run app.py`) |
 | Saved evidence | `runs/`, `scores/`, `holdout/` |
 | Prompt v3 experiment and regression check | `docs/measurements/2026-11-22-prompt-v3-results.md`, `docs/measurements/2026-11-22-prompt-v3-regression-results.md`, `docs/measurements/prompt-v3/` |
 | Exploratory live example of judge disagreement (outside the scored evaluation, no human label) | `examples/acls-lapse-judge-disagreement/` |
-| OpenAI usage | Recorded usage through the holdout comes to about **$1.33** at standard rates: generation $0.14, judging $0.94, judge-v4 calibration $0.23, preflights $0.01. The later experiments recorded **$0.898091** more: certification guidance $0.165581, prompt v3 $0.441581, v3 regression check $0.290929. Live demo runs are on top of that. The usage-page screenshot is authoritative |
+| OpenAI usage | Recorded usage through the holdout comes to about **$1.33** at standard rates: generation $0.14, judging $0.94, judge-v4 calibration $0.23, preflights $0.01. The later experiments recorded **$0.898091** more: certification guidance $0.165581, prompt v3 $0.441581, v3 regression check $0.290929. judge-v5 and the two H2 rounds recorded **$1.439267** more: $0.464140, $0.471435 and $0.503692. These estimates price every input token at the standard rate, with no cached-input discount; 65% of the judge's input tokens in the score files on `main` were cached, so the bill can be lower. Live demo runs are on top of that. The usage-page screenshot is authoritative |
