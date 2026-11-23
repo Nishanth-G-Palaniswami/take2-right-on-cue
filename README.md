@@ -2,6 +2,11 @@
 
 A next-turn evaluation tool for Take2's Forward Deployed Engineer take-home. Given a call prompt and a partial screening-call transcript, it asks a model for the recruiter's next line several times and saves every reply verbatim, so the replies can be compared and judged.
 
+**For reviewers:**
+- **Hosted app:** <https://rightoncue.nishanthgp.me>. It opens on the saved three-model comparison (holdout H3, prompt v2). "Run it yourself" needs the access code from Nishanth and defaults to the recommended setup, GPT-5.4 with prompt v3.
+- **Report:** [`docs/report.md`](docs/report.md). It covers the method, the model comparison, both prompt iterations and the recommendation.
+- **Video walkthrough:** _link to be added before submission._
+
 Status: milestone 3. One or more models per run (OpenAI models such as `gpt-5.4-mini` through the Responses API, Google Gemini models such as `gemini-3.5-flash` through the `google-genai` SDK), raw generation, a blind review view for human preferences, and a scorer for saved replies (code checks, a fixed `gpt-5.4-mini` judge, and a pass/fail decision made in code). Failed generations can't be retried yet.
 
 ## Setup

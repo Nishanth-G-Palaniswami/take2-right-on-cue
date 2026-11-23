@@ -8,7 +8,7 @@ Nishanth G Palaniswami, for Take2's Forward Deployed Engineer take-home. Riley i
   - **GPT-5.4** gives the most complete answers, but it stacks follow-up questions.
   - **GPT-5.4 Mini** is concise, and the reviewer preferred its tone, but it sometimes asks about actions instead of outcomes, and it once left out a known fact.
   - **Gemini 3.5 Flash** is the most consistent and the judge's favourite, but the reviewer preferred its wording least.
-- **The prompt revision (v1 → v2) fixed one specific failure:** re-asking about a story that was already finished. On fresh holdout cases it did not narrow the gaps between models.
+- **v2 reduced re-asking** about a story that was already finished, and it was the prompt used for the holdout. GPT-5.4 still reopened one of two completed D4 stories under v2. On fresh holdout cases, v2 did not narrow the gaps between models.
 - **A second revision (v2 → v3), tested after the holdout,** changed the behavioral follow-up: ask about a missing outcome, and accept a given one, even a negative or unresolved one. We observed no regression for GPT-5.4. We observed a regression for Mini, consistent with the change.
 - **Recommendation:** a bounded pilot of **GPT-5.4 with prompt v3**. See [Recommendation](#recommendation).
 - **Caveats on the evidence:**
@@ -25,7 +25,7 @@ All counts are from saved runs. "Dev" means development cases D1–D4 and "holdo
 - **Strength: the most complete answers to applicant questions.** On H3 (a parent asks for a guaranteed day shift), it gave the real shift hours and routed the question to a recruiter.
 - **Weakness: it stacks requests.** On D3 (the applicant leaves out how a story ended), all four of its replies asked two things at once, as in "What did you say in that conversation, and how did things end up after that?".
 - **Weakness: under prompt v1 it reopened a finished story.** That happened in both D4 replies, and in 1 of 2 under v2.
-- **Reviewer:** accepted **8/8** of its holdout replies under the final prompt.
+- **Reviewer:** accepted **8/8** of its holdout replies under prompt v2, the prompt used for the holdout.
 - **Judge:** rated it lowest, because the judge penalises the stacked follow-ups.
 
 **GPT-5.4 Mini**
@@ -48,7 +48,7 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 
 | Split / prompt | Model | Next action | Listening | Grounding | Delivery | Judge acceptable | Reviewer accepted |
 |---|---|---|---|---|---|---|---|
-| Holdout, v2 (final) | GPT-5.4 | 1.25 | 1.50 | 1.62 | 1.50 | 4/8 | **8/8** |
+| Holdout, v2 (holdout prompt) | GPT-5.4 | 1.25 | 1.50 | 1.62 | 1.50 | 4/8 | **8/8** |
 | | Mini | 1.25 | 1.62 | 1.75 | 1.62 | 4/8 | 6/8 |
 | | Gemini | **1.50** | **1.75** | **1.75** | **1.75** | **6/8** | 7/8 |
 | Holdout, v1 | GPT-5.4 | 1.50 | 1.62 | 1.62 | 1.62 | 5/8 | 8/8 |
@@ -61,8 +61,23 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 **How to read it:**
 - **Next action separates the models most.** It is where the judge marks stacked or misdirected follow-ups.
 - **Grounding is nearly flat.** No model invented facts. The holdout grounding dips come almost entirely from H2 (below), where every model scored 1.
-- **H2 depresses every holdout row equally:** all 12 H2 replies scored 3/8.
+- **H2 depresses every holdout row:** all 12 H2 replies were rejected. Eleven scored 3/8 and one scored 4/8 (GPT-5.4, v1, sample 1).
 - **Missing cells:** one Gemini v1 holdout reply failed to generate, and three development replies were left unscored after their retry.
+
+**Under the final prompt, v3.** These are the 48 v3 judgments from the regression check (`docs/measurements/2026-11-22-prompt-v3-regression-results.md`), averaged the same way. They are judge-v1 only; no human labelled these replies.
+
+| Split / prompt | Model | Next action | Listening | Grounding | Delivery | Judge acceptable | Unscored |
+|---|---|---|---|---|---|---|---|
+| Holdout, v3 | GPT-5.4 | **1.50** | **1.75** | **1.75** | **1.75** | **6/8** | 0 |
+| | Mini | 1.38 | 1.62 | 1.62 | **1.75** | 5/8 | 0 |
+| | Gemini | **1.50** | **1.75** | 1.62 | **1.75** | 5/8 | 0 |
+| Dev, v3 | GPT-5.4 | 2.00 | 2.00 | 2.00 | 2.00 | 6/8 | 2 |
+| | Mini | 1.75 | 1.88 | 2.00 | 1.88 | 6/8 | 1 |
+| | Gemini | 2.00 | 2.00 | 2.00 | 2.00 | 8/8 | 0 |
+
+- **On the holdout cases under v3,** GPT-5.4 has the highest or equal-highest score on every dimension, and the most acceptable replies.
+- **Dev averages use the scored replies only.** Two GPT-5.4 replies and one Mini reply are unscored, because judge-v1 quoted a turn with its speaker label twice. GPT-5.4's two unscored dev replies count as neither acceptable nor rejected.
+- **H2 still sets every holdout row back.** All six v3 H2 replies were rejected under H2's frozen criterion.
 
 ## Variation across samples
 
@@ -85,7 +100,7 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 The reasons, in the order the plan set them:
 
 1. **Safety (consent, grounding, commitments): no difference.** No model committed a genuine critical violation in any scored reply, development or holdout.
-2. **Held-out quality: GPT-5.4 is ahead on human labels.** It is the only model whose final-prompt holdout replies the reviewer accepted in full (8/8, against 7/8 for Gemini and 6/8 for Mini). It also won the one pair that turned on factual completeness (P08, below).
+2. **Held-out quality: GPT-5.4 is ahead on human labels.** It is the only model whose v2 holdout replies the reviewer accepted in full (8/8, against 7/8 for Gemini and 6/8 for Mini). It also won the one pair that turned on factual completeness (P08, below).
 3. **Consistency: no human-label splits on the holdout** for GPT-5.4.
 4. **Cost is small at this scale:** about **$0.003 per GPT-5.4 reply**, against about **$0.0008 for Mini**, from recorded tokens at standard rates. A 15-turn screening call is a few cents either way.
 
@@ -118,7 +133,7 @@ The reasons, in the order the plan set them:
 
 **Across the three models** (the matched comparison, `docs/measurements/2026-11-21-v1-v2-matched-dev.md`):
 - On development, the only behaviour change outside D3 was GPT-5.4's D4 re-ask, which went from 2/2 to 1/2.
-- On the holdout, **v2 did not narrow the gaps between models.** The reviewer-label spread went from 0 to 2 of 8, and the judge spread from about 12.5 to 25 points, driven by H3 under v2. v2 stays the final prompt because it fixed the targeted failure without a regression on the development checks.
+- On the holdout, **v2 did not narrow the gaps between models.** The reviewer-label spread went from 0 to 2 of 8, and the judge spread from about 12.5 to 25 points, driven by H3 under v2. v2 was the prompt used for the holdout. It reduced re-asking on the development checks without a regression there, but GPT-5.4 still reopened one of two completed D4 stories under v2.
 
 ## Prompt iteration: v2 → v3 (tested after the holdout)
 
@@ -278,7 +293,7 @@ When the applicant has already confirmed the required certifications, a future r
 | Item | Where |
 |---|---|
 | Initial prompt | `prompts/v1.md` |
-| Final prompt | `prompts/v3.md` (v2 was the final prompt for the holdout; v3 was tested afterwards) |
+| Final prompt | `prompts/v3.md` (v2 was the prompt used for the holdout; v3 was tested afterwards) |
 | Judge prompt | `prompts/judge.md` (judge-v1, frozen) |
 | Iteration log | This report, plus `docs/measurements/` (each experiment, with rules committed before results) |
 | Evaluation method and agreement | This report; `docs/judge-v1-known-limits.md`; `docs/measurements/2026-11-21-holdout-preregistration.md`; `docs/measurements/2026-11-21-holdout-results.md` |
