@@ -7,7 +7,9 @@ Label each reply as Riley's next turn: `y` if it is an acceptable next turn, `n`
 - Please label every item before opening `holdout-private/h2-criteria/`, the plan's item table, or any score. Scoring refuses to start until every Accept line has y or n.
 - A reason is optional. Note below whether you used an AI assistant.
 
-Used an AI assistant while labelling (yes/no):
+Used an AI assistant while labelling (yes/no): yes
+
+Reviewed in full by Nishanth. ChatGPT drafted the labels and reasons using my guidance from earlier reviews. I then personally checked all 19 transcripts, proposed replies, labels, and reasons.
 
 ---
 
@@ -31,9 +33,9 @@ Riley's proposed next turn:
 
 > Nice, the pediatric cross-training sounds useful. Let's turn to a few experience questions. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?
 
-Accept K01? (y/n):
+Accept K01? (y/n): n
 
-Reason (optional):
+Reason (optional): Lucia lists BLS and ACLS alongside a PALS course from 2019. Riley moves to the behavioral question before confirming whether both required credentials are current.
 
 ---
 
@@ -53,9 +55,9 @@ Riley's proposed next turn:
 
 > Congratulations on the CCRN, that's a real plus for an ICU. Have you also completed the NIH Stroke Scale certification?
 
-Accept K02? (y/n):
+Accept K02? (y/n): y
 
-Reason (optional):
+Reason (optional): Fiona confirmed an active license, recent renewal of both required credentials, and her CCRN. Riley acknowledges the CCRN and asks about one credential she has not mentioned.
 
 ---
 
@@ -79,9 +81,9 @@ Riley's proposed next turn:
 
 > Thanks, that gives me a good picture. Now, tell me about a time you managed an upset patient or family member. What happened, and how did you resolve it?
 
-Accept K03? (y/n):
+Accept K03? (y/n): n
 
-Reason (optional):
+Reason (optional): Grant names BLS and ACLS and describes a class from 2018. Riley still needs to confirm that both required credentials are current before moving on.
 
 ---
 
@@ -101,9 +103,9 @@ Riley's proposed next turn:
 
 > Wonderful. Do you hold CCRN or PALS? Also, tell me about a time you managed an upset patient or family member, and how it was resolved.
 
-Accept K04? (y/n):
+Accept K04? (y/n): n
 
-Reason (optional):
+Reason (optional): Sabine’s recent renewals settle the required credentials. Either proposed topic works on its own, but Riley asks for a certification answer and a behavioral story in the same turn.
 
 ---
 
@@ -123,9 +125,9 @@ Riley's proposed next turn:
 
 > Perfect, thank you. Do you also hold any extra certifications like CCRN, PALS, or the NIH Stroke Scale?
 
-Accept K05? (y/n):
+Accept K05? (y/n): y
 
-Reason (optional):
+Reason (optional): Hollis gave a future validity date for both cards. The three examples help Hollis answer one question about additional certifications.
 
 ---
 
@@ -145,9 +147,9 @@ Riley's proposed next turn:
 
 > Wonderful, that's exactly what we need. Let's move to a couple of questions about your experience. Tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?
 
-Accept K06? (y/n):
+Accept K06? (y/n): y
 
-Reason (optional):
+Reason (optional): Joaquin explicitly confirmed his active license and both current certifications. Riley can move on and ask for the family-member example.
 
 ---
 
@@ -167,9 +169,9 @@ Riley's proposed next turn:
 
 > Great, thanks for confirming. Do you hold any of the extras we like to see in the ICU, such as CCRN or the NIH Stroke Scale?
 
-Accept K07? (y/n):
+Accept K07? (y/n): y
 
-Reason (optional):
+Reason (optional): Joaquin has confirmed the required credentials. Riley asks one focused question about optional credentials he has not mentioned.
 
 ---
 
@@ -189,9 +191,9 @@ Riley's proposed next turn:
 
 > Good to hear. Do you also have CCRN or PALS? And then tell me about a time you managed an upset patient or family member, and how it was resolved.
 
-Accept K08? (y/n):
+Accept K08? (y/n): n
 
-Reason (optional):
+Reason (optional): Riley asks Joaquin to answer a credential question and tell a separate story before he has had a chance to respond to either.
 
 ---
 
@@ -211,9 +213,9 @@ Riley's proposed next turn:
 
 > Good to hear, and thanks for that. Have you earned anything beyond those, such as CCRN, PALS, or NIH Stroke Scale certification?
 
-Accept K09? (y/n):
+Accept K09? (y/n): y
 
-Reason (optional):
+Reason (optional): Sabine renewed both credentials a few weeks ago. Riley can ask one question about any additional certifications, using the three credentials as examples.
 
 ---
 
@@ -233,9 +235,9 @@ Riley's proposed next turn:
 
 > Thank you, Sabine. Before we go on, are your BLS and ACLS both up to date right now?
 
-Accept K10? (y/n):
+Accept K10? (y/n): n
 
-Reason (optional):
+Reason (optional): Sabine already confirmed that she renewed both BLS and ACLS a few weeks ago. Asking whether they are up to date repeats what she just established.
 
 ---
 
@@ -255,9 +257,9 @@ Riley's proposed next turn:
 
 > Thanks, Joaquin. Just to be sure, are your BLS and ACLS both current right now?
 
-Accept K11? (y/n):
+Accept K11? (y/n): n
 
-Reason (optional):
+Reason (optional): Joaquin’s last words were “my BLS and ACLS are both current.” Riley asks him to confirm exactly that again.
 
 ---
 
@@ -277,9 +279,9 @@ Riley's proposed next turn:
 
 > Thanks, Hollis. Just to confirm, are your BLS and ACLS current at the moment?
 
-Accept K12? (y/n):
+Accept K12? (y/n): n
 
-Reason (optional):
+Reason (optional): Hollis said both cards are valid through the end of next June. That already answers whether they are current.
 
 ---
 
@@ -303,9 +305,9 @@ Riley's proposed next turn:
 
 > Okay, thanks Grant. Quick check: are your BLS and ACLS current right now?
 
-Accept K13? (y/n):
+Accept K13? (y/n): y
 
-Reason (optional):
+Reason (optional): Grant listed BLS and ACLS without saying when they were renewed or whether they remain current. Riley asks one question that resolves both.
 
 ---
 
@@ -329,9 +331,9 @@ Riley's proposed next turn:
 
 > Sounds good. Have you earned your CCRN or PALS, by any chance?
 
-Accept K14? (y/n):
+Accept K14? (y/n): n
 
-Reason (optional):
+Reason (optional): CCRN and PALS are reasonable topics after the required check. Grant has named BLS and ACLS, but Riley still needs to establish whether both are current.
 
 ---
 
@@ -355,9 +357,9 @@ Riley's proposed next turn:
 
 > Thanks for walking me through those, Lucia. Are your BLS and ACLS both current at this point?
 
-Accept K15? (y/n):
+Accept K15? (y/n): y
 
-Reason (optional):
+Reason (optional): Lucia identified the credentials she holds and separately dated an older course. Riley asks only for the missing detail about BLS and ACLS validity.
 
 ---
 
@@ -381,9 +383,9 @@ Riley's proposed next turn:
 
 > Got it, thank you. Do you also hold CCRN or the NIH Stroke Scale certification?
 
-Accept K16? (y/n):
+Accept K16? (y/n): n
 
-Reason (optional):
+Reason (optional): Riley goes straight to optional certifications while the current status of Lucia’s BLS and ACLS is still unclear.
 
 ---
 
@@ -403,9 +405,9 @@ Riley's proposed next turn:
 
 > Thanks, Fiona. And do you hold the CCRN?
 
-Accept K17? (y/n):
+Accept K17? (y/n): n
 
-Reason (optional):
+Reason (optional): Fiona just said “I also hold my CCRN.” The proposed question asks her to repeat that fact.
 
 ---
 
@@ -425,9 +427,9 @@ Riley's proposed next turn:
 
 > That's helpful. Before we continue, can you confirm your Colorado license is active at the moment?
 
-Accept K18? (y/n):
+Accept K18? (y/n): n
 
-Reason (optional):
+Reason (optional): Fiona already said her Colorado RN license is active. Nothing in her answer calls for another license check.
 
 ---
 
@@ -447,6 +449,6 @@ Riley's proposed next turn:
 
 > Great, that covers what we need. Now tell me about a time you managed an upset patient or family member. What was the situation, and how was it resolved?
 
-Accept K19? (y/n):
+Accept K19? (y/n): y
 
-Reason (optional):
+Reason (optional): Hollis confirmed an active license and gave the validity period for both required certifications. Riley can now ask for a behavioral example and its outcome.

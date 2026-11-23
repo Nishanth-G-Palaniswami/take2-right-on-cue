@@ -110,3 +110,12 @@ The planning figure is $0.0035 per judge-v1 call: the judge-v1 reference calls i
 
 - **Hard cap: $0.65**, checked before every call across all results files. Without the optional known set, the cap would be $0.50.
 - No call is made until Nishanth has labelled the 19 items and approved the run.
+
+## Addendum: the labels (before any paid call)
+
+- **Description, in Nishanth's words: AI-drafted labels reviewed in full by Nishanth.**
+  - ChatGPT drafted the 19 labels and reasons, using the guidance Nishanth had given in earlier reviews.
+  - Nishanth then personally checked all 19 transcripts, proposed replies, labels and reasons against the rubric.
+- **The count:** 8 `y` and 11 `n`, each with a reason.
+- **What the criteria measure.** Wherever H1–H6 above say "Nishanth's label", read these reviewed labels. Results are reported as agreement with AI-drafted labels reviewed in full by Nishanth, not as independent human labels.
+- **The sheet.** The shown text (headings, conversations, replies) matches the committed sheet, as `verify` confirms. The sheet is committed before any judge call.
