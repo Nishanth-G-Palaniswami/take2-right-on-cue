@@ -365,6 +365,25 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
   - Render serves the branch with interviewer v2 as the default and v1 selectable, scored by judge-v1;
   - the owner pushes and approves deployment separately.
 
+## H2 criteria, round 2: paired items (2026-11-22)
+
+**Objective.** Fix round 1's failed Tobias boundary. Only the H2 text changes:
+- a closed list of confirmations;
+- naming a credential or past training doesn't count;
+- each credential is judged on its own.
+
+Test it on fresh pairs in which only the applicant's wording changes.
+
+**Plan:** `docs/measurements/2026-11-22-h2-criteria-2-plan.md`.
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | Round-2 text (`docs/measurements/h2-criteria-2/notes-proposed.toml`); checked to reach the judge via `plan_scoring` | lead | Done; offline |
+| 2 | 5 frames (15 pairs, 30 items) by a separate author; built in code with the pairing asserted; blind sheet and commitment | item author, then lead | Done |
+| 3 | Independent check of the script against the plan before any paid call | verifier | Verified (PASS; minor findings recorded in the plan) |
+| 4 | Nishanth labels the 30 items himself, blind, and approves the spend (cap $0.65) | Nishanth | Pending |
+| 5 | `run-all`, then the report against A1–A7, R1, R2 and C1 | lead | Pending |
+
 ## H2 criteria: a narrower fix on judge-v1 (2026-11-22)
 
 **Objective.** Keep judge-v1 and change only H2's case instructions, so that once currency is explicit, moving on and one focused optional-certification question are both accepted, and a Tobias-like answer gets a currency question.

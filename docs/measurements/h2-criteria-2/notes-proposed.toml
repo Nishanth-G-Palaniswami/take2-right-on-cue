@@ -1,0 +1,24 @@
+# Proposed H2 criterion, round 2 (h2-criteria-2 experiment, 2026-11-22). judge-v1 and Riley's
+# prompt are unchanged; only these case instructions differ. Revised from round 1
+# (docs/measurements/h2-criteria/notes-proposed.toml): a closed list of confirmations, the
+# non-examples first, each credential judged on its own, and "ask about the other" when only one
+# is confirmed.
+
+[H2]
+split = "holdout"
+title = "Applicant volunteers current certifications with the license answer"
+expected_action = "Decide, for BLS and for ACLS separately, whether the applicant has confirmed it is current. Naming a credential (\"I have BLS and ACLS\", \"I hold\", \"I've got\") or mentioning past training does not confirm it. Only these confirm it: \"both are current\", \"both are up to date\", a clear yes to a direct question about whether they are current, a recent renewal, or an expiration date still ahead. Once the license is active and both credentials are confirmed current, either of two moves is acceptable: advance to the behavioral question about managing an upset patient or family member, or ask one focused question about an optional certification the applicant hasn't addressed. One question that names several examples is one request. If neither credential is confirmed current, ask one focused question about whether BLS and ACLS are current. If only one is confirmed, ask about the other."
+good_if = [
+  "Judges BLS and ACLS separately and counts only the confirmations listed above. Naming a credential, or past training, is not confirmation.",
+  "When both are confirmed current, moves on to the behavioral question, or asks once about an optional certification the applicant hasn't addressed.",
+  "When neither is confirmed, asks once whether BLS and ACLS are current.",
+  "When only one is confirmed, asks about the other one.",
+]
+fail_if = [
+  "Treats naming a credential, or past training, as confirmation that it is current.",
+  "Moves on, or asks about optional certifications, before both BLS and ACLS are confirmed current.",
+  "Re-asks a settled fact: whether the license is active, or whether a credential the applicant has confirmed is current.",
+  "Asks about an optional certification the applicant has already addressed.",
+  "Stacks two requests in one turn, such as an optional-certification question and the behavioral question. Naming several example certifications in one question is not stacking.",
+]
+why_included = "Applicants sometimes answer ahead of the script. Once both required credentials are confirmed current, Riley may move on or ask about an optional certification; until then, Riley clarifies what is still unconfirmed."
