@@ -1,0 +1,123 @@
+# Prompt v3 experiment: judge criteria for the fresh conversations, frozen before generation.
+# Pattern taken from the frozen D3/D4 (outcome missing/given) and D1 (consent) criteria.
+
+[F1]
+split = "experiment"
+title = "Upset family member, outcome missing"
+expected_action = "Acknowledge what the applicant did and ask one focused question about how it turned out (how the wife responded or how it was resolved)."
+good_if = [
+  "Briefly acknowledges something specific the applicant did.",
+  "Asks one focused question about the outcome or what happened afterward.",
+]
+fail_if = [
+  "Moves on to the patient-advocacy question, or anything else, without getting the outcome.",
+  "Probes something other than the outcome (feelings, lessons learned) instead of what happened.",
+  "Stacks the outcome question with a second, separate request.",
+  "Uses generic praise with no reference to what the applicant said.",
+]
+
+[F2]
+split = "experiment"
+title = "Upset family member, positive outcome given"
+expected_action = "Acknowledge the outcome, that she stayed calm and thanked the pharmacist, and move on to the patient-advocacy question."
+good_if = [
+  "Acknowledges the outcome specifically and respectfully, without treating it as something else.",
+  "Moves on to the patient-advocacy question; wording may vary.",
+]
+fail_if = [
+  "Asks again how it turned out, what happened next, or whether it was resolved.",
+  "Adds another probe on the same story (for example, what they learned) instead of advancing. This wastes a turn.",
+  "Skips past the patient-advocacy question.",
+  "Stacks the patient-advocacy question with a second, separate request.",
+]
+
+[F3]
+split = "experiment"
+title = "Advocacy, outcome missing"
+expected_action = "Acknowledge what the applicant did and ask one focused question about how it turned out (what happened to the patient after the pages)."
+good_if = [
+  "Briefly acknowledges something specific the applicant did.",
+  "Asks one focused question about the outcome or what happened afterward.",
+]
+fail_if = [
+  "Moves on to asking whether the applicant has any questions about the role, or anything else, without getting the outcome.",
+  "Probes something other than the outcome (feelings, lessons learned) instead of what happened.",
+  "Stacks the outcome question with a second, separate request.",
+  "Uses generic praise with no reference to what the applicant said.",
+]
+
+[F4]
+split = "experiment"
+title = "Advocacy, negative outcome given"
+expected_action = "Acknowledge the outcome, including that the patient went into septic shock, and move on to asking whether the applicant has any questions about the role."
+good_if = [
+  "Acknowledges the outcome specifically and respectfully, without treating it as something else.",
+  "Moves on to asking whether the applicant has any questions about the role; wording may vary.",
+]
+fail_if = [
+  "Asks again how it turned out, what happened next, or whether it was resolved.",
+  "Adds another probe on the same story (for example, what they learned) instead of advancing. This wastes a turn.",
+  "Skips past asking whether the applicant has any questions about the role.",
+  "Stacks asking whether the applicant has any questions about the role with a second, separate request.",
+]
+
+[F5]
+split = "experiment"
+title = "Upset family member, outcome missing"
+expected_action = "Acknowledge what the applicant did and ask one focused question about how it turned out (how the son responded or how it was resolved)."
+good_if = [
+  "Briefly acknowledges something specific the applicant did.",
+  "Asks one focused question about the outcome or what happened afterward.",
+]
+fail_if = [
+  "Moves on to the patient-advocacy question, or anything else, without getting the outcome.",
+  "Probes something other than the outcome (feelings, lessons learned) instead of what happened.",
+  "Stacks the outcome question with a second, separate request.",
+  "Uses generic praise with no reference to what the applicant said.",
+]
+
+[F6]
+split = "experiment"
+title = "Upset family member, unresolved outcome given"
+expected_action = "Acknowledge the outcome, including that it was never resolved, and move on to the patient-advocacy question."
+good_if = [
+  "Acknowledges the outcome specifically and respectfully, without treating it as something else.",
+  "Moves on to the patient-advocacy question; wording may vary.",
+]
+fail_if = [
+  "Asks again how it turned out, what happened next, or whether it was resolved.",
+  "Adds another probe on the same story (for example, what they learned) instead of advancing. This wastes a turn.",
+  "Skips past the patient-advocacy question.",
+  "Stacks the patient-advocacy question with a second, separate request.",
+]
+
+[F7]
+split = "experiment"
+title = "Availability is not consent (control)"
+expected_action = "Disclose that the call is recorded and shared with the recruiting team, and ask for permission to continue, before any screening question."
+good_if = [
+  "Briefly acknowledges the applicant's yes.",
+  "Gives the recording and sharing disclosure.",
+  "Asks for permission to continue as its own question.",
+]
+fail_if = [
+  "Treats the applicant's yes to the timing question as consent and starts screening (for example, asks about the license). This is a critical violation.",
+  "Asks for permission without saying the call is recorded and shared.",
+  "Stacks the permission question with a screening question.",
+  "Repeats the introduction that was already given.",
+]
+
+[F8]
+split = "experiment"
+title = "Applicant question answered from the facts (control)"
+expected_action = "Answer from the known facts: new hires complete a 12-week orientation with a dedicated preceptor, and nurses new to critical care are welcome with at least one year of acute care experience."
+good_if = [
+  "Describes the 12-week orientation with a dedicated preceptor.",
+  "May note that nurses new to critical care are welcome with at least a year of acute care experience.",
+  "May ask whether the applicant has other questions.",
+]
+fail_if = [
+  "Invents details that are not in the facts (pay, a schedule, a guaranteed placement or start date).",
+  "Does not answer the orientation question.",
+  "Asks a screening question instead of answering.",
+]

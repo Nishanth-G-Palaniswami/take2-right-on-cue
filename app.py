@@ -273,6 +273,14 @@ HISTORY: list[tuple[str, str, str | None]] = [
         "H1 to H4, pre-registered before any reply was generated: three models, two prompts, blind human review.",
         "docs/measurements/2026-11-21-holdout-results.md",
     ),
+    (
+        "Prompt v2 to v3",
+        "After the holdout, one line of the behavioral follow-up changed. On fresh conversations "
+        "and a regression check, we observed no regression for GPT-5.4, and an observed "
+        "regression for Mini on a follow-up case, consistent with the change. GPT-5.4 with v3 "
+        "is the recommended setup and the default in Run it yourself.",
+        "docs/measurements/2026-11-22-prompt-v3-results.md",
+    ),
 ]
 # Plain-language notes beside the two agreement metrics. Every count and quote comes
 # from the committed holdout records; tests/test_app.py checks them against those records.
@@ -310,8 +318,9 @@ PAIR_AGREEMENT_NOTE = (
     "two H3 pairs (P07, P08) the judge preferred the reply the reviewer did not."
 )
 AGREEMENT_DISCLOSURE = (
-    "Both figures compare the judge with AI-assisted human labels and pair choices: the "
-    "reviewer saw ChatGPT's suggestions before finalizing, so they are not an independent check."
+    "Both figures come from the original holdout, prompts v1 and v2, and compare the judge "
+    "with AI-assisted human labels and pair choices: the reviewer saw ChatGPT's suggestions "
+    "before finalizing, so they are not an independent check."
 )
 CHANGE_NEXT = (
     "When the applicant has already confirmed the required certifications, a future rubric "
@@ -417,7 +426,10 @@ LIVE_LEDGER_ERROR = (
     "written, so no paid call is allowed. The saved comparison is unaffected."
 )
 FRESH_LABEL = "Fresh run: generated just now, not part of the saved evaluation"
-HOSTED_DEFAULT_PROMPT = f"prompts/{DEFAULT_SELECTION['prompt']}.md"  # as the saved comparison
+# "Run it yourself" defaults to the recommended setup (GPT-5.4 with prompt v3); v1 and v2 stay
+# selectable. The saved comparison keeps its own default (H3, prompt v2: the holdout run).
+LIVE_DEFAULT_PROMPT = "prompts/v3.md"
+LIVE_DEFAULT_MODEL = "gpt-5.4"
 RETRY_NOTE = "one per reply, plus one retry for a judgment that needs review"
 SIMULATED_LABEL = "Simulated run: no model was called, not part of the saved evaluation"
 DRY_RUN_RESULT_NOTE = (
@@ -563,9 +575,9 @@ def render_hosted_form(cfg: live.LiveConfig, ledger: Any) -> None:
         f"{live.OUTPUT_CAP} output tokens{scored}"
     )
     st.caption(_spend_line(cfg, ledger))
-    prompt_file = _editable_input(  # v2 (the recommended prompt) by default; v1 to compare
+    prompt_file = _editable_input(  # v3 (the recommended prompt) by default; v1 and v2 to compare
         "Prompt", {f"prompts/{p.name}": p for p in review.list_prompt_files()}, "hl_prompt",
-        review.pasted_prompt, 200, default=HOSTED_DEFAULT_PROMPT,
+        review.pasted_prompt, 200, default=LIVE_DEFAULT_PROMPT,
     )
     case_file = _editable_input(
         "Transcript", {f"{p.parent.name}/{p.name}": p for p in review.list_case_files()}, "hl_case",
@@ -573,7 +585,7 @@ def render_hosted_form(cfg: live.LiveConfig, ledger: Any) -> None:
     )
     c1, c2 = st.columns([3, 1])
     models = c1.multiselect(
-        "Models", list(review.MODEL_CHOICES), default=["gpt-5.4-mini"], key="hl_models"
+        "Models", list(review.MODEL_CHOICES), default=[LIVE_DEFAULT_MODEL], key="hl_models"
     )
     samples = int(c2.number_input("Samples per model", 1, cfg.max_samples, 1, key="hl_samples"))
     errors = live.validate_run(prompt_file.text, case_file.text, models, samples, cfg.max_samples)
@@ -698,7 +710,10 @@ def render_local_live(cfg: live.LiveConfig) -> None:
     st.markdown("**Prompt**")
     prompt_files = review.list_prompt_files()
     names = [f"prompts/{p.name}" for p in prompt_files]
-    choice = st.radio("Prompt source", names + ["Paste text"], horizontal=True, key="live_prompt_src")
+    choice = st.radio(
+        "Prompt source", names + ["Paste text"], index=names.index(LIVE_DEFAULT_PROMPT),
+        horizontal=True, key="live_prompt_src",
+    )
     if choice == "Paste text":
         prompt_text = st.text_area("Prompt text", key="live_prompt_text", height=160)
         prompt_file = review.pasted_prompt(prompt_text)
@@ -735,7 +750,7 @@ def render_local_live(cfg: live.LiveConfig) -> None:
 
     st.markdown("**Settings**")
     models = st.multiselect(
-        "Models", list(review.MODEL_CHOICES), default=["gpt-5.4-mini"], key="live_models"
+        "Models", list(review.MODEL_CHOICES), default=[LIVE_DEFAULT_MODEL], key="live_models"
     )
     s1, s2, s3 = st.columns(3)
     samples = int(s1.number_input("Samples per model", 1, review.MAX_SAMPLES, 2, key="live_samples"))

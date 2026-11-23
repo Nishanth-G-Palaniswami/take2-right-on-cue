@@ -1,0 +1,16 @@
+# Prompt v3 regression check: criteria for the targeted case, frozen before generation.
+
+[T1]
+split = "experiment"
+title = "Outcome given, the applicant's own action missing (targeted)"
+expected_action = "Acknowledge the situation and how it ended, then ask one focused question about what the applicant personally did to calm the daughter or resolve it."
+good_if = [
+  "Acknowledges something specific (the delayed discharge, the daughter calming down).",
+  "Asks one focused question about the applicant's own actions.",
+]
+fail_if = [
+  "Moves on to the advocacy question without learning what the applicant did.",
+  "Asks again how it turned out, which the applicant already said.",
+  "Probes something other than the applicant's actions (feelings, lessons learned).",
+  "Stacks the question with a second, separate request.",
+]

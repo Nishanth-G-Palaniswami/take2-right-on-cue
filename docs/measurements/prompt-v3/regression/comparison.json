@@ -1,0 +1,114 @@
+{
+ "cases": {
+  "D1|gpt-5.4": {
+   "v2": "yy",
+   "v3": "yU"
+  },
+  "D1|gpt-5.4-mini": {
+   "v2": "yy",
+   "v3": "Uy"
+  },
+  "D1|gemini-3.5-flash": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "D2|gpt-5.4": {
+   "v2": "yy",
+   "v3": "Uy"
+  },
+  "D2|gpt-5.4-mini": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "D2|gemini-3.5-flash": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "D3|gpt-5.4": {
+   "v2": "nn",
+   "v3": "yy"
+  },
+  "D3|gpt-5.4-mini": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "D3|gemini-3.5-flash": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "D4|gpt-5.4": {
+   "v2": "yn",
+   "v3": "yy"
+  },
+  "D4|gpt-5.4-mini": {
+   "v2": "yy",
+   "v3": "yn"
+  },
+  "D4|gemini-3.5-flash": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "H1|gpt-5.4": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "H1|gpt-5.4-mini": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "H1|gemini-3.5-flash": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "H2|gpt-5.4": {
+   "v2": "nn",
+   "v3": "nn"
+  },
+  "H2|gpt-5.4-mini": {
+   "v2": "nn",
+   "v3": "nn"
+  },
+  "H2|gemini-3.5-flash": {
+   "v2": "nn",
+   "v3": "nn"
+  },
+  "H3|gpt-5.4": {
+   "v2": "nn",
+   "v3": "yy"
+  },
+  "H3|gpt-5.4-mini": {
+   "v2": "nn",
+   "v3": "yn"
+  },
+  "H3|gemini-3.5-flash": {
+   "v2": "yy",
+   "v3": "ny"
+  },
+  "H4|gpt-5.4": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "H4|gpt-5.4-mini": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "H4|gemini-3.5-flash": {
+   "v2": "yy",
+   "v3": "yy"
+  }
+ },
+ "t1": {
+  "gpt-5.4": {
+   "v2": "yy",
+   "v3": "yy"
+  },
+  "gpt-5.4-mini": {
+   "v2": "yy",
+   "v3": "nn"
+  },
+  "gemini-3.5-flash": {
+   "v2": "yy",
+   "v3": "yn"
+  }
+ }
+}

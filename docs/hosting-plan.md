@@ -5,7 +5,7 @@ Prepared on 2026-11-22. **Nothing has been pushed, deployed or changed in DNS.**
 **Goal.**
 - **The saved three-model comparison is open to everyone,** at the root of `https://rightoncue.nishanthgp.me`. It opens on H3, prompt v2, sample 1.
 - **Reviewers with the access code can run the tool live** on "Run it yourself":
-  - edit or load a prompt and transcript (the form starts from prompt v2, with v1 available for comparison);
+  - edit or load a prompt and transcript (the form starts from GPT-5.4 with prompt v3, the recommended setup, with v1 and v2 available for comparison);
   - choose models and a sample count;
   - generate fresh replies, scored by judge-v1, with one judge-only retry for a judgment that needs review.
 - **A shared $5.00 allowance** covers all reviewers' generation and judging, retries included.
@@ -164,7 +164,7 @@ The Render paid run is step 8 below, and needs your go-ahead.
    - mobile width works;
    - `http://` redirects to `https://`;
    - a wrong code is refused.
-8. **One paid smoke test** (your go-ahead): unlock, then run 1 model × 1 sample (`gpt-5.4-mini`; the form shows the maximum, about $0.045 with the retry counted). Then:
+8. **One paid smoke test** (your go-ahead): unlock, then run 1 model × 1 sample (`gpt-5.4`, the default; the form shows the maximum, $0.056270 on D1 with the retry counted). Then:
    - check the spend line;
    - redeploy, and check the spend line again (persistence on the real disk);
    - check the OpenAI usage page.

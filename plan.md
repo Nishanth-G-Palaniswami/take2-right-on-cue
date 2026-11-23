@@ -364,3 +364,23 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
   - push `judge-v3`;
   - Render serves the branch with interviewer v2 as the default and v1 selectable, scored by judge-v1;
   - the owner pushes and approves deployment separately.
+
+## Final recommendation and live default (2026-11-22)
+
+**Owner decisions (Nishanth).**
+- **Final recommendation: GPT-5.4 with prompt v3.** Stated at the strength the evidence supports:
+  - "We observed no regression for GPT-5.4 in this check."
+  - Mini's targeted-case (T1) behaviour is an observed regression consistent with the wording change.
+  - With two samples, we can't establish what caused every difference.
+- **The v3 experiment's labels are ChatGPT labels.** "ChatGPT assigned all 96 labels using the transcripts and Nishanth’s summary of feedback from two students who discussed sample interviews." The development and holdout reviews keep their own attribution.
+- **The column names say what they count:** "Accepted when the outcome was missing" and "Accepted when the outcome was given". These are accepted replies, not behaviours; see R01.
+- **The live demo matches the report.**
+  - "Run it yourself" defaults to GPT-5.4 with v3, with the projected maximum cost shown before generation, and v1 and v2 stay selectable.
+  - The saved comparison still opens on the H3/v2 holdout run.
+  - The published 31 of 47 and 2 of 12 come from the original holdout across v1 and v2.
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | Reporting corrections: ChatGPT-label wording, the column names, the evidence strength, unscored judgments shown apart from rejections | lead | Implemented; checked against the records |
+| 2 | App: `PROMPT_CHOICES` gains v3; hosted and local forms default to GPT-5.4 with v3; the saved comparison default (H3/v2) is unchanged; the method tab notes where 31/47 and 2/12 come from | lead | Implemented; tests updated on purpose |
+| 3 | Walkthrough: the F6 before/after (GPT-5.4) and Mini's T1 failure | lead | Implemented |
