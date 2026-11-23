@@ -470,7 +470,20 @@ The existing evaluator keeps working exactly as before. Branch `practice-call` f
 | 2 | Offline tests in `tests/test_practice.py`, listed under Tests; the full suite passes | complex-coder | Verified: 636 passed, 6 skipped at `03d6aae` (586 passed, 6 skipped before) |
 | 3 | Independent verification (Opus, high): money, access, no leakage, idempotency | verifier | PASS on re-verification of `03d6aae`. Round 1 (`0ea4c4e`) FAILED: an unclassified judge error left no score record, so the judge could be called again and again (each call reserved, so the cap held). Fixed with an attempt log written before each call |
 | 4 | Browser check in a hosted dry run on `127.0.0.1:3005`, at 1280 px and 390 px, verified by the DOM | lead | Verified on `03d6aae`, details below; screenshots in `docs/screenshots/practice-call/` |
-| 5 | Paid smoke test, push, deploy | Nishanth | Blocked (his go-ahead) |
+| 5 | Paid smoke test, push, deploy | Nishanth | Paid smoke test done (2026-11-23, owner-approved, details below). Push and deploy blocked (his go-ahead) |
+
+**Paid smoke test (2026-11-23, local, owner-approved, cap $0.15 on a separate test ledger).**
+- **Setup:** GPT-5.4 with prompt v3, effort `none`, 400-token cap; judge-v1 (scorer-1, `gpt-5.4-mini`). Single clicks only.
+- **Attempt 1.** The lead's browser driver stopped before evaluating: it read the dropdown's text, not its input value. Closing the browser ended that session, so the flow was repeated once in a new session on the same ledger. Attempt 1 made 2 generation calls and no judge call:
+  - reply 1: "Thanks, Alex. Before we continue, I want to let you know this call is recorded and shared with the recruiting team. Is it okay to continue?"
+  - reply 2: "Of course. Thank you for letting me know, and thanks for your interest in Acme Health. We'll stop here, and I hope you have a good rest of your day."
+- **Attempt 2:**
+  - **Alex:** "Yes, I have a few minutes." **Riley** (run `20261123T041555Z-f55a7f`): "Thanks, Alex. Before we continue, I want to let you know this call is recorded and shared with our recruiting team. Do I have your permission to continue?"
+  - **Alex:** "I have time, but I’d rather not be recorded. Can we stop here?" **Riley** (run `20261123T041559Z-2de5a9`): "Of course. Thanks for letting me know, Alex, and thank you for your interest in Acme Health. We'll stop here, and I hope you have a good rest of your day."
+  - **Evaluating turn 3** (the first generated reply) gave "judge-v1: acceptable · 8/8", with every dimension at 2 and no critical violation.
+  - **The judge's context** was the opening plus "Yes, I have a few minutes." only. It came from the run's manifest and appears in the "What the judge saw" expander; the second message was absent.
+  - **Reopening the verdict** in the same session showed "Verdict by judge-v1 (scorer-1). Cached: …", with 0 new judge reservations and $0 extra. The attempt log holds 1 line.
+- **Spend** (ledger, all settled from usage): 4 generation calls ($0.002523, $0.002743, $0.002553, $0.002778) and 1 judge call ($0.002965). Total **$0.0135605** of the $0.15 cap.
 
 **Owner changes (2026-11-22, Nishanth), built and tested.**
 1. **Short messages.** Send is hidden only when even a one-character message wouldn't fit. The cost line shows the 600-character maximum and says a shorter message is checked at its actual cost. A message that doesn't fit is refused before anything is appended, and the draft is kept.
