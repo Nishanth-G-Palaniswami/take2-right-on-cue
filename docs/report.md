@@ -3,7 +3,7 @@
 Nishanth G Palaniswami, for Take2's Forward Deployed Engineer take-home. Riley is a virtual recruiting assistant for Acme Health's Medical ICU RN role. The question is what Riley should say next, and which model and interviewer prompt to pilot.
 
 **At a glance**
-- **The models agree on safety.** None of the three committed a genuine critical violation in 87 scored replies. That covers screening without consent, invented facts, promises, and clinical or legal advice. Every critical flag the judge raised was reviewed and found absent.
+- **The models agree on safety.** None of the three committed a genuine critical violation in the 92 replies scored under prompts v1 and v2 (45 development, 47 holdout). That covers screening without consent, invented facts, promises, and clinical or legal advice. The judge flagged 17 of those replies, with 23 flag entries, and every one was reviewed and found absent. The judge's flags on the v3 replies (8 of the 45 scored in the regression check) have not been reviewed yet; their review sheet is `docs/measurements/prompt-v3/regression/critical_review.md`.
 - **They differ on next-move quality and completeness:**
   - **GPT-5.4** gives the most complete answers, but it stacks follow-up questions.
   - **GPT-5.4 Mini** is concise, and the reviewer preferred its tone, but it sometimes asks about actions instead of outcomes, and it once left out a known fact.
@@ -61,7 +61,7 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 **How to read it:**
 - **Next action separates the models most.** It is where the judge marks stacked or misdirected follow-ups.
 - **Grounding is nearly flat.** No model invented facts. The holdout grounding dips come almost entirely from H2 (below), where every model scored 1.
-- **H2 depresses every holdout row:** all 12 H2 replies were rejected. Eleven scored 3/8 and one scored 4/8 (GPT-5.4, v1, sample 1).
+- **H2 depresses every holdout row:** all 12 H2 replies were rejected.
 - **Missing cells:** one Gemini v1 holdout reply failed to generate, and three development replies were left unscored after their retry.
 
 **Under the final prompt, v3.** These are the 48 v3 judgments from the regression check (`docs/measurements/2026-11-22-prompt-v3-regression-results.md`), averaged the same way. They are judge-v1 only; no human labelled these replies.
@@ -75,7 +75,7 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 | | Mini | 1.75 | 1.88 | 2.00 | 1.88 | 6/8 | 1 |
 | | Gemini | 2.00 | 2.00 | 2.00 | 2.00 | 8/8 | 0 |
 
-- **On the holdout cases under v3,** GPT-5.4 has the highest or equal-highest score on every dimension, and the most acceptable replies.
+- **On the holdout cases under v3,** GPT-5.4 has the highest or equal-highest score on every dimension, and the most acceptable replies. This is not a measured improvement over v2. judge-v1 accepted 14 of 24 v2 replies and 16 of 24 v3 replies on these cases, but every change is on H3, where the reviewer had already accepted both GPT-5.4 v2 replies that judge-v1 rejected. A blind review sheet for the 24 v3 replies is in `docs/measurements/v3-retest-review/`.
 - **Dev averages use the scored replies only.** Two GPT-5.4 replies and one Mini reply are unscored, because judge-v1 quoted a turn with its speaker label twice. GPT-5.4's two unscored dev replies count as neither acceptable nor rejected.
 - **H2 still sets every holdout row back.** All six v3 H2 replies were rejected under H2's frozen criterion.
 
@@ -93,13 +93,11 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 ## Recommendation
 
 **Pilot GPT-5.4 with prompt v3,** time-boxed, with recruiters reviewing transcripts.
-- The holdout evidence in this section was measured with v2.
-- v3 was tested afterwards, on fresh conversations and as a regression check on the original cases. We observed no regression for GPT-5.4 in this check; see "Prompt iteration: v2 → v3".
-- v3 is not recommended for Mini as written: we observed regressions on Mini's follow-ups, consistent with the wording change.
+- The holdout evidence in this section was measured with v2. v3 was tested afterwards, on fresh conversations and as a regression check on the original cases: we observed no regression for GPT-5.4, and regressions on Mini's follow-ups, so v3 is not recommended for Mini as written. See "Prompt iteration: v2 → v3".
 
 The reasons, in the order the plan set them:
 
-1. **Safety (consent, grounding, commitments): no difference.** No model committed a genuine critical violation in any scored reply, development or holdout.
+1. **Safety (consent, grounding, commitments): no difference.** No model committed a genuine critical violation in the 92 development and holdout replies scored under v1 and v2. The judge's flags on v3 replies have not been reviewed yet (`docs/measurements/prompt-v3/regression/critical_review.md`).
 2. **Held-out quality: GPT-5.4 is ahead on human labels.** It is the only model whose v2 holdout replies the reviewer accepted in full (8/8, against 7/8 for Gemini and 6/8 for Mini). It also won the one pair that turned on factual completeness (P08, below).
 3. **Consistency: no human-label splits on the holdout** for GPT-5.4.
 4. **Cost is small at this scale:** about **$0.003 per GPT-5.4 reply**, against about **$0.0008 for Mini**, from recorded tokens at standard rates. A 15-turn screening call is a few cents either way.
@@ -133,7 +131,7 @@ The reasons, in the order the plan set them:
 
 **Across the three models** (the matched comparison, `docs/measurements/2026-11-21-v1-v2-matched-dev.md`):
 - On development, the only behaviour change outside D3 was GPT-5.4's D4 re-ask, which went from 2/2 to 1/2.
-- On the holdout, **v2 did not narrow the gaps between models.** The reviewer-label spread went from 0 to 2 of 8, and the judge spread from about 12.5 to 25 points, driven by H3 under v2. v2 was the prompt used for the holdout. It reduced re-asking on the development checks without a regression there, but GPT-5.4 still reopened one of two completed D4 stories under v2.
+- On the holdout, **v2 did not narrow the gaps between models.** The reviewer-label spread went from 0 to 2 of 8, and the judge spread from about 12.5 to 25 points, driven by H3 under v2.
 
 ## Prompt iteration: v2 → v3 (tested after the holdout)
 
@@ -155,8 +153,6 @@ The reasons, in the order the plan set them:
 | GPT-5.4 | **5 → 11** | 8 → 11 | **9 / 7 / 0 → 12 / 2 / 2** | 2 → 2 |
 | GPT-5.4 Mini | 5 → 11 | 5 → 11 | 12 / 4 / 0 → 11 / 4 / 1 | 2 → **0** |
 | Gemini 3.5 Flash | 6 → 6 | 5 → 10 | 14 / 2 / 0 → 13 / 3 / 0 | 2 → 2 |
-
-The three unscored v3 judgments are judge-v1's quote check failing twice on a speaker-label quote. They are reported apart from rejections.
 
 **Where the change helped: GPT-5.4, the same conversation and sample under each prompt.** The applicant describes calming an upset son and adds, "Honestly, it never really got resolved: he still filed a complaint, and I never heard what came of it."
 
@@ -182,8 +178,6 @@ Most of the 16 disagreements between the ChatGPT labels and judge-v1 in the pair
 
 We observed no regression for GPT-5.4 in this check. With two samples, we can't establish what caused every difference.
 
-**In the app,** "Run it yourself" defaults to GPT-5.4 with v3 and shows the projected maximum cost before anything is generated; v1 and v2 stay selectable. The saved comparison opens on H3 with v3, from the retest of v3 on the original holdout cases, and v2 is one click away on the same case and sample. On those cases, judge-v1 accepted 14 of 24 v2 replies and 16 of 24 v3 replies. Every change is on H3, where the reviewer had accepted both GPT-5.4 v2 replies that judge-v1 rejected, so this is not a measured improvement. A blind review sheet for the 24 v3 replies is in `docs/measurements/v3-retest-review/`. The published 31 of 47 and 2 of 12 come from the original holdout across v1 and v2.
-
 ## How quality was measured
 
 **Cases.**
@@ -198,6 +192,7 @@ We observed no regression for GPT-5.4 in this check. With two samples, we can't 
 - **Judge-v1 is frozen.** Its known limits are in `docs/judge-v1-known-limits.md`.
 
 **Human labels.**
+- **The reviewer is the author,** Nishanth.
 - **The review was blind.** Replies were shuffled under neutral IDs, with model and prompt hidden, and the mappings were committed as salted hashes before generation and verified at reveal.
 - **The labels are AI-assisted.** The reviewer formed initial judgments, read ChatGPT's suggested labels, and discussed the differences before finalizing. ChatGPT also suggested pair choices and helped review the critical flags.
 
@@ -265,7 +260,7 @@ This is an exploratory live example, outside the scored evaluation, with no reco
 - **The applicant had already said BLS was current through 2027:** "BLS is good through '27. ACLS actually lapsed in September, but I'm booked into a renewal class on the 30th. I've also got PALS and TNCC."
 - **Gemini asked them to confirm it again:** "Just to double-check, your BLS certification is currently active, correct?"
 - **judge-v1 awarded listening 2/2,** and rated the reply acceptable at 8/8.
-- **The effect of prompt v2 on this example is untested.**
+- **The effect of the final prompt, v3, on this example is untested.**
 
 ### judge-v4: a tested alternative, not adopted
 
@@ -276,9 +271,17 @@ This is an exploratory live example, outside the scored evaluation, with no reco
   - it separated "asks for the outcome" from "asks what you did" (14/14), which earlier attempts had missed.
 - **Why it wasn't adopted.** It still marked down D1 permission requests that mention "a few screening questions", following the frozen criterion's "as its own question". That missed one pre-registered criterion (1/4), so judge-v1 stays the submission default (`docs/measurements/2026-11-21-judge-v4-plan.md`).
 
+### judge-v5 and the H2 criteria: tested, not adopted
+
+Three later pre-registered experiments tried to fix the H2 boundary (judge-v5 also targeted the consent flags), with prompt v3 fixed. None passed, so judge-v1 and `cases/notes.toml` are unchanged, no published number changed, and the H2 work is closed. Their documents and code are on the `h2-criteria-2` branch, not on `main`.
+
+- **judge-v5** ([results](https://github.com/Nishanth-G-Palaniswami/take2-right-on-cue/blob/a2dd8d9d1604d79b526cf08bf1f65c2c0c1f37df/docs/measurements/2026-11-22-judge-v5-results.md)). judge-v1 with three changes: accept either move once the license and current BLS and ACLS are confirmed, judge consent on the new reply in context, and invalidate a flag that the judge's own rationale denies. It missed all six criteria. H2 stayed at 0 of 6, a new field left 8 of 54 judgments unscored, and "I have BLS and ACLS" was read as current. It did improve D1 (8 of 8) and H1 (6 of 6). Labels: 18 fresh items, labelled by the reviewer with AI assistance.
+- **H2 criteria, round 1** ([results](https://github.com/Nishanth-G-Palaniswami/take2-right-on-cue/blob/a2dd8d9d1604d79b526cf08bf1f65c2c0c1f37df/docs/measurements/2026-11-22-h2-criteria-results.md)). judge-v1 fixed; only H2's case instructions changed. Five of six checks passed: the six saved H2 replies, all rejected under the frozen criterion, were accepted in 12 of 12 judgments. It failed one boundary: when the applicant only named BLS and ACLS and mentioned past training, replies that moved on or asked about extras were accepted in 7 of 8 judgments. Labels: AI-drafted, reviewed in full by the reviewer.
+- **H2 criteria, round 2** ([results](https://github.com/Nishanth-G-Palaniswami/take2-right-on-cue/blob/a2dd8d9d1604d79b526cf08bf1f65c2c0c1f37df/docs/measurements/2026-11-22-h2-criteria-2-results.md)). A stricter text: naming a credential or past training doesn't confirm it is current. Six of ten criteria were met. "Moves on" after an unconfirmed status was still allowed in 4 of 7 scored judgments, and 4 of 60 fresh judgments stayed unscored. Labels: the reviewer's own, "dictated … without reading ChatGPT's draft".
+
 ### What I would change next
 
-When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. This is a proposed improvement, not a result: it needs fresh examples with independent human labels before it can be measured. The published measurements stay at 31 of 47 and 2 of 12.
+When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. Two rounds of revised H2 criteria showed that case wording alone doesn't get judge-v1 there: at temperature 1.0 with no reasoning effort, it doesn't reliably refuse to move on when currency is unconfirmed. A further attempt needs a change outside the wording, such as judge reasoning effort or a deterministic currency check, and a new fresh sheet. The published measurements stay at 31 of 47 and 2 of 12.
 
 ## Limits
 
@@ -297,10 +300,10 @@ When the applicant has already confirmed the required certifications, a future r
 | Initial prompt | `prompts/v1.md` |
 | Final prompt | `prompts/v3.md` (v2 was the prompt used for the holdout; v3 was tested afterwards) |
 | Judge prompt | `prompts/judge.md` (judge-v1, frozen) |
-| Iteration log | This report, plus `docs/measurements/` (each experiment, with rules committed before results) |
+| Iteration log | This report, plus `docs/measurements/` (each experiment, with rules committed before results). judge-v5 and the H2 criteria rounds are on branch `h2-criteria-2`, commit `a2dd8d9` |
 | Evaluation method and agreement | This report; `docs/judge-v1-known-limits.md`; `docs/measurements/2026-11-21-holdout-preregistration.md`; `docs/measurements/2026-11-21-holdout-results.md` |
 | The tool | `README.md`; the CLI (`uv run next-turn …`); the Streamlit app (`uv run streamlit run app.py`) |
 | Saved evidence | `runs/`, `scores/`, `holdout/` |
 | Prompt v3 experiment and regression check | `docs/measurements/2026-11-22-prompt-v3-results.md`, `docs/measurements/2026-11-22-prompt-v3-regression-results.md`, `docs/measurements/prompt-v3/` |
 | Exploratory live example of judge disagreement (outside the scored evaluation, no human label) | `examples/acls-lapse-judge-disagreement/` |
-| OpenAI usage | Recorded usage through the holdout comes to about **$1.33** at standard rates: generation $0.14, judging $0.94, judge-v4 calibration $0.23, preflights $0.01. The later experiments recorded **$0.898091** more: certification guidance $0.165581, prompt v3 $0.441581, v3 regression check $0.290929. Live demo runs are on top of that. The usage-page screenshot is authoritative |
+| OpenAI usage | Recorded usage through the holdout comes to about **$1.33** at standard rates: generation $0.14, judging $0.94, judge-v4 calibration $0.23, preflights $0.01. The later experiments recorded **$0.898091** more: certification guidance $0.165581, prompt v3 $0.441581, v3 regression check $0.290929. judge-v5 and the two H2 rounds recorded **$1.439267** more: $0.464140, $0.471435 and $0.503692. These estimates price every input token at the standard rate, with no cached-input discount; 70% of the judge's input tokens recorded on `main` were cached, so the bill can be lower. Live demo runs are on top of that. The usage-page screenshot is authoritative |
