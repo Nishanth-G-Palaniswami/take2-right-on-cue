@@ -5,11 +5,12 @@ from __future__ import annotations
 import html
 import math
 import os
+import time
 from typing import Any
 
 import streamlit as st
 
-from rightoncue import budget, dryrun, gemini, live, openai_responses, review, scoring
+from rightoncue import budget, dryrun, gemini, live, openai_responses, practice, review, scoring
 from rightoncue.transcript import parse_transcript
 
 # The judge prompt paths are relative to the repository root.
@@ -76,7 +77,11 @@ _FAILURE_TITLE = {
 }
 
 
-def render_card(card: review.Card, recommended: bool = False) -> None:
+def render_card(
+    card: review.Card, recommended: bool = False, *, judge_label: str | None = None
+) -> None:
+    """`recommended`: mark the recommended setup's card in the saved comparison.
+    `judge_label`: the judge version to name on the verdict (default: JUDGE)."""
     with st.container(border=True):
         para(card.model, size="1.05rem", weight=600)
         if recommended:
@@ -98,7 +103,7 @@ def render_card(card: review.Card, recommended: bool = False) -> None:
         if decision in ("needs review", "judge failed") and card.failed_judge_attempts >= live.JUDGE_ATTEMPTS:
             st.markdown(badge(_VERDICT_COLOR["needs review"], NO_VALID_SCORE))
         else:
-            st.markdown(badge(_VERDICT_COLOR[decision], f"{JUDGE}: {decision}{total}"))
+            st.markdown(badge(_VERDICT_COLOR[decision], f"{judge_label or JUDGE}: {decision}{total}"))
         if card.human_accept is not None:
             st.markdown(
                 badge(
@@ -633,13 +638,19 @@ def render_hosted_live(cfg: live.LiveConfig) -> None:
     st.markdown("### Run it yourself")
     if remaining <= 0:
         st.error("Live runs: budget exhausted. The saved comparison is still open to everyone.")
+        if st.session_state.get("hl_unlocked") and st.session_state.get("pc_turns"):
+            render_practice_turns(cfg)  # read-only: no Send, no Evaluate
         return
     st.caption("Live runs: budget available.")
     if not st.session_state.get("hl_unlocked"):
         render_gate(cfg)
         return
+    mode = render_mode_choice()
     try:
-        render_hosted_form(cfg, ledger)
+        if mode == MODE_PRACTICE:
+            render_practice(cfg, ledger)
+        else:
+            render_hosted_form(cfg, ledger)
     except Exception as exc:  # never let provider text or a traceback reach the page
         live.log.exception("hosted live run failed: %s", type(exc).__name__)
         st.error(LIVE_UNEXPECTED_ERROR)
@@ -816,6 +827,9 @@ def render_local_live(cfg: live.LiveConfig) -> None:
             st.error(f"Live runs are disabled: {exc}")
             return
     review.load_env()
+    if ledger is not None and render_mode_choice() == MODE_PRACTICE:
+        render_practice(cfg, ledger)
+        return
     st.markdown("### Run an evaluation with your own keys")
     if cfg.dry_run:
         st.caption(
@@ -824,6 +838,8 @@ def render_local_live(cfg: live.LiveConfig) -> None:
         )
     else:
         st.caption("Generation and scoring are paid API calls billed to your keys.")
+    if ledger is None:  # plain local mode: practice replies must never land in runs/
+        st.caption(PRACTICE_NEEDS_BUDGET)
     paid = "simulated" if cfg.dry_run else "paid"
     if ledger is not None:
         st.caption(f"{_spend_line(cfg, ledger)} Ledger: {ledger.path.as_posix()}")
@@ -1036,6 +1052,404 @@ def _local_guarded_score(cfg: live.LiveConfig, ledger: Any, run_dir: Any) -> Non
         review.score_run(run_dir, JUDGE, scores_dir=cfg.scores_dir, client=judge)
     finally:
         lock.release()
+
+
+# ------------------------------------------------------ live: practice call (Talk to Riley)
+
+MODE_EVALUATE = "Compare models on a transcript"
+MODE_PRACTICE = "Talk to Riley (practice call)"
+PRACTICE_TITLE = "Talk to Riley · text simulation"
+PRACTICE_INTRO = (
+    "A text simulation of Riley's phone screen: you type as the applicant, Alex. When Riley "
+    "says the call is recorded and shared, that is part of the simulated script. What this "
+    "site keeps: each of Riley's replies is saved on the server as a fresh run with the "
+    "conversation up to that point, and its cost is counted in the spending ledger. "
+    "Reloading the page ends the practice call. Practice calls are not part of the saved "
+    "evaluation."
+)
+PRACTICE_SETTINGS = (
+    f"Riley's replies: GPT-5.4 with prompt v3, reasoning effort {live.HOSTED_REASONING_EFFORT}, "
+    f"up to {live.OUTPUT_CAP} output tokens, one reply per message. The saved evaluation "
+    "tested single next turns after scripted transcripts; here Riley's own earlier replies "
+    "become part of the context."
+)
+PRACTICE_ACK = "I understand each reply and each evaluation is a paid API call, counted against the shared cap."
+PRACTICE_FICTIONAL = "Use fictional details. Your typed conversation is saved on the server."
+OPENING_LABEL = "Scripted opening · written in advance, not generated"
+APPLICANT_LABEL = "You, as Alex"
+OPENING_NOT_EVALUABLE = "The scripted opening (turn 1) was not generated, so it can't be evaluated."
+PRACTICE_OVER_BUDGET = "The remaining budget can't cover another reply. The conversation stays here."
+PRACTICE_LIMIT = (
+    f"This practice call has reached its length limit ({live.MAX_TURNS} turns or "
+    f"{live.MAX_TRANSCRIPT_CHARS:,} characters). End it, evaluate a reply, or start a new call."
+)
+PRACTICE_ENDED = "Practice call ended. You can still evaluate any of Riley's replies."
+PRACTICE_INTERRUPTED = (
+    "The last send was interrupted before Riley's reply was saved. Your message is kept; "
+    "Retry sends the same conversation again."
+)
+PRACTICE_NEEDS_BUDGET = (
+    "Talk to Riley (practice call) needs RIGHTONCUE_BUDGET_USD, so practice replies go to "
+    "the data folder behind the spending cap, never to the committed runs/."
+)
+PRACTICE_UNCERTAIN = (
+    "Riley's reply didn't arrive. The request may still have been processed and charged "
+    "(the cap counted its maximum). Retry sends the conversation again and may be charged again."
+)
+PRACTICE_EVAL_UNCERTAIN = (
+    "The judge's answer didn't arrive. The request may still have been processed and "
+    "charged (the cap counted its maximum). Retry evaluation sends it again and may be "
+    "charged again."
+)
+PRACTICE_EVAL_UNCERTAIN_FINAL = (
+    "The judge's answer didn't arrive. The request may still have been processed and "
+    "charged (the cap counted its maximum). No further judge call is allowed for this reply."
+)
+PRACTICE_EVAL_NO_MORE = "No further judge call is allowed for this reply."
+PRACTICE_POLLING = "Checking again automatically."
+PRACTICE_POLL_STOPPED = "Stopped checking automatically. Use Check again."
+PRACTICE_WAITING = "Riley's reply is still being generated."
+PRACTICE_EVAL_WAITING = "This evaluation is still running."
+PRACTICE_RETRY_HINT = "Your message is kept; Retry sends the same conversation again."
+PRACTICE_CACHED = " Cached: this reply was already scored, so no new judge call was made."
+
+
+def render_mode_choice() -> str:
+    return st.radio("Mode", [MODE_EVALUATE, MODE_PRACTICE], horizontal=True, key="pc_mode")
+
+
+def _riley_label(cfg: live.LiveConfig, run_id: str) -> str:
+    if cfg.dry_run:
+        return f"Simulated reply (dry run) · run {run_id}"
+    return f"Riley · GPT-5.4 · run {run_id}"
+
+
+def render_practice_turns(cfg: live.LiveConfig) -> None:
+    for t in st.session_state.get("pc_turns", []):
+        if t["role"] == "agent":
+            with st.chat_message("assistant"):
+                label = OPENING_LABEL if t["run_id"] is None else _riley_label(cfg, t["run_id"])
+                para(label, size="0.78rem", muted=True)
+                para(t["utterance"])
+        else:
+            with st.chat_message("user"):
+                para(APPLICANT_LABEL, size="0.78rem", muted=True)
+                para(t["utterance"])
+
+
+def _failure_text(record: dict[str, Any]) -> tuple[str, str]:
+    """(severity, safe text) for a failed send or evaluation. Never provider text."""
+    kind = record.get("kind")
+    if kind == "busy":
+        return "warning", BUSY
+    if kind in ("budget", "input"):
+        return "error", str(record.get("detail"))
+    if kind == "ledger":
+        return "error", LIVE_LEDGER_ERROR
+    if kind == "provider":
+        status = record.get("error_status")
+        http = f", HTTP {status}" if status is not None else ""
+        return "error", f"Riley's reply failed: a provider error ({record.get('error_type')}{http}). {PRACTICE_RETRY_HINT}"
+    if kind == "incomplete":
+        return "error", (
+            f"Riley's reply reached the {live.OUTPUT_CAP}-token cap and was cut off, so it is not "
+            f"shown. {PRACTICE_RETRY_HINT}"
+        )
+    if kind == "empty":
+        return "error", f"Riley's reply came back empty. {PRACTICE_RETRY_HINT}"
+    if kind == "uncertain":
+        return "warning", PRACTICE_UNCERTAIN
+    if kind == "interrupted":
+        return "warning", PRACTICE_INTERRUPTED
+    return "error", (
+        "This stopped on an unexpected error. Its details are in the server log; any call "
+        "already made is counted against the cap."
+    )
+
+
+def _show(severity: str, text: str) -> None:
+    (st.warning if severity == "warning" else st.error)(text)
+
+
+def _practice_send(cfg: live.LiveConfig, token: str) -> None:
+    """One paid reply. Between the call returning and its result being stored there are
+    only session-state writes (no element). If even those are interrupted, the result is
+    on disk and the next run's reconcile adopts it."""
+    ss = st.session_state
+    started: list[str] = []
+
+    def on_start(run_id: str) -> None:  # before the paid call
+        started.append(run_id)
+        practice.note_run_id(ss, token, run_id)
+
+    with st.spinner("Simulating Riley's reply..." if cfg.dry_run else "Riley is replying..."):
+        try:
+            out = practice.send(cfg, practice.turns_of(ss), on_start=on_start)
+        except live.RunBusy:
+            practice.fail(ss, token, "busy")
+        except live.BudgetExceeded as exc:
+            practice.fail(ss, token, "budget", detail=f"{exc} {PRACTICE_RETRY_HINT}")
+        except live.LedgerError as exc:
+            live.log_once(f"practice reply stopped: {exc}")
+            practice.fail(ss, token, "ledger")
+        except live.RunInputError as exc:
+            practice.fail(ss, token, "input", detail=str(exc))
+        except Exception as exc:  # never provider text on the page; the details go to the log
+            live.log.exception("practice reply failed: %s", type(exc).__name__)
+            practice.fail(ss, token, "uncertain" if started else "unexpected")
+        else:
+            practice.record_outcome(ss, token, out)
+
+
+def _practice_evaluate(cfg: live.LiveConfig, run_id: str, token: str) -> None:
+    ss = st.session_state
+    with st.spinner("Evaluating..."):
+        try:
+            out = practice.evaluate(cfg, run_id)
+        except live.RunBusy:
+            practice.finish_evaluation(ss, run_id, token, state="failed", kind="busy")
+        except live.BudgetExceeded as exc:
+            practice.finish_evaluation(ss, run_id, token, state="failed", kind="budget", detail=str(exc))
+        except live.LedgerError as exc:
+            live.log_once(f"practice evaluation stopped: {exc}")
+            practice.finish_evaluation(ss, run_id, token, state="failed", kind="ledger")
+        except live.RunInputError as exc:
+            practice.finish_evaluation(ss, run_id, token, state="failed", kind="input", detail=str(exc))
+        except Exception as exc:  # e.g. an unclassified judge error: logged and charged at its maximum
+            live.log.exception("practice evaluation failed: %s", type(exc).__name__)
+            practice.finish_evaluation(ss, run_id, token, state="failed", kind="uncertain")
+        else:
+            practice.finish_evaluation(
+                ss, run_id, token, state="done", calls=out.calls, messages=out.messages
+            )
+
+
+def _short(text: str) -> str:
+    flat = " ".join(text.split())
+    return flat if len(flat) <= 60 else flat[:60] + "…"
+
+
+def _practice_send_area(cfg: live.LiveConfig, ledger: Any, turns: list[Any]) -> None:
+    if practice.next_turn_limit_errors(turns):
+        st.warning(PRACTICE_LIMIT)
+        return
+    worst = practice.next_reply_max_nano(turns)
+    smallest = practice.next_reply_max_nano(turns, 1)
+    remaining = ledger.remaining()
+    line = (
+        f"Next reply: up to {fmt_usd(worst)} for a message of up to {practice.MAX_MESSAGE_CHARS} "
+        "characters; a shorter message is checked at its actual cost when you send. "
+        f"Budget remaining: {fmt_usd(remaining)}."
+    )
+    if cfg.dry_run:
+        line = "Simulated: " + line.replace("Budget remaining", "Simulated budget remaining")
+    st.caption(line)
+    if smallest > remaining:  # not even a one-character message fits
+        st.error(PRACTICE_OVER_BUDGET)
+        return
+    ss = st.session_state
+    n = ss.setdefault("pc_n", 0)
+    with st.form(key=f"pc_form_{n}", clear_on_submit=False):  # a refused draft stays
+        raw = st.text_area(
+            f"Your reply, as {practice.APPLICANT_NAME}", max_chars=practice.MAX_MESSAGE_CHARS,
+            key=f"pc_msg_{n}",
+        )
+        submitted = st.form_submit_button("Send")
+    if not submitted:
+        return
+    try:
+        text = practice.clean_message(raw)
+    except practice.MessageError as exc:
+        st.error(str(exc))
+        return
+    would = [*turns, practice.Turn(role="user", utterance=text)]
+    if errors := practice.limit_errors(would):
+        st.warning(" ".join(errors) + " Your draft is kept; shorten it or end the call.")
+        return
+    actual = practice.reply_max_nano(would)
+    remaining = ledger.remaining()
+    if actual > remaining:
+        st.error(
+            f"This message's maximum cost is {fmt_usd(actual)}, more than the "
+            f"{fmt_usd(remaining)} left in the budget. Your draft is kept; shorten it or end the call."
+        )
+        return
+    token = practice.begin_send(ss, text)  # turn, pending record and counter, before the call
+    _practice_send(cfg, token)
+    st.rerun()
+
+
+def _practice_evaluations(cfg: live.LiveConfig, ledger: Any, waiting: list[str]) -> None:
+    ss = st.session_state
+    turns = ss.get("pc_turns", [])
+    riley = [(i + 1, t) for i, t in enumerate(turns) if t["role"] == "agent" and t["run_id"]]
+    st.markdown("#### Evaluate one of Riley's replies")
+    st.caption(OPENING_NOT_EVALUABLE)
+    if not riley:
+        return
+    labels = {f"Turn {n}: {_short(t['utterance'])}": t["run_id"] for n, t in riley}
+    pick = st.selectbox("Riley's reply to evaluate", list(labels), key="pc_eval_pick")
+    run_id = labels[pick]
+    state = practice.judgment(cfg, run_id)
+    jmax = practice.judge_max_nano(cfg, run_id)
+    remaining = ledger.remaining()
+    line = (
+        f"Evaluation: up to {fmt_usd(jmax)} ({live.JUDGE_VERSION}, one call plus one retry if the "
+        f"judgment needs review). Budget remaining: {fmt_usd(remaining)}."
+    )
+    if cfg.dry_run:
+        line = "Simulated: " + line.replace("Budget remaining", "Simulated budget remaining")
+    st.caption(line)
+    ev = ss.get("pc_evals", {}).get(run_id, {})
+    if run_id in waiting:
+        st.info(PRACTICE_EVAL_WAITING)
+        st.button("Check again", key="pc_eval_check")  # a rerun only, never a call
+    else:
+        allowed = state.calls_allowed
+        if not state.scored and (state.charge_uncertain or ev.get("kind") == "uncertain"):
+            st.warning(PRACTICE_EVAL_UNCERTAIN if allowed > 0 else PRACTICE_EVAL_UNCERTAIN_FINAL)
+        elif not state.scored and allowed == 0:
+            st.caption(PRACTICE_EVAL_NO_MORE)
+        if allowed > 0 or state.scored:  # a scored reply shows its cached verdict, with no call
+            retry = allowed > 0 and (state.attempts_used > 0 or ev.get("state") == "failed")
+            over = allowed > 0 and jmax > remaining
+            if over:
+                st.error("The remaining budget can't cover this evaluation.")
+            if st.button("Retry evaluation" if retry else "Evaluate this turn", key="pc_eval", disabled=over):
+                token = practice.begin_evaluation(ss, run_id)
+                _practice_evaluate(cfg, run_id, token)
+                st.rerun()
+    numbers = {t["run_id"]: n for n, t in riley}
+    for rid in sorted(ss.get("pc_evals", {}), key=lambda r: numbers.get(r, 0)):
+        if rid in numbers:
+            _practice_evaluation(cfg, rid, numbers[rid])
+
+
+def _practice_evaluation(cfg: live.LiveConfig, run_id: str, number: int) -> None:
+    """One evaluated reply: the card, under the judge version its own record names."""
+    ev = st.session_state["pc_evals"][run_id]
+    st.markdown(f"##### Turn {number}")
+    if ev.get("state") == "failed" and ev.get("kind") != "uncertain":
+        _show(*_failure_text(ev))
+    state = practice.judgment(cfg, run_id)
+    version = state.judge_version
+    scores_path = review.scores_path_for(run_id, cfg.scores_dir)
+    view = review.load_run_view(
+        practice.run_dir(cfg, run_id), scores_path if scores_path.exists() else None, version
+    )
+    review.redact_provider_errors(view)
+    [card] = view.all_cards()
+    render_card(card, judge_label=version)
+    if version is not None:
+        if card.reported_model == dryrun.DRY_MODEL:
+            st.caption(
+                f"Simulated: a placeholder judgment was recorded by {version} "
+                f"({state.scorer_version}); it is not a verdict."
+            )
+        elif state.scored:
+            no_call = ev.get("state") == "done" and ev.get("calls") == 0
+            cached = PRACTICE_CACHED if no_call else ""
+            st.caption(f"Verdict by {version} ({state.scorer_version}).{cached}")
+        else:  # needs_review / judge_failed: not a verdict
+            st.caption(f"No valid verdict from {version} ({state.scorer_version}).")
+    for message in ev.get("messages", []):
+        st.warning(message)
+    seen = view.cases[0].turns
+    if state.scored and card.reported_model != dryrun.DRY_MODEL:
+        st.caption(
+            f"Scored by {version} against only the {len(seen)} turns before this reply. "
+            "No case criteria: the general rubric."
+        )
+    elif version is not None or state.logged_attempts:
+        st.caption(
+            f"The judge saw only the {len(seen)} turns before this reply. "
+            "No case criteria: the general rubric."
+        )
+    with st.expander(f"What the judge saw (the {len(seen)} turns before this reply)"):
+        for t in seen:
+            para(f"{'Riley' if t.role == 'agent' else 'Applicant'}: {t.utterance}", size="0.92rem")
+
+
+@st.fragment(run_every=practice.WAIT_POLL_S)
+def _practice_wait_poll(cfg: live.LiveConfig) -> None:
+    """While a reply or an evaluation is pending, re-check disk and the lock every
+    WAIT_POLL_S seconds (practice.poll_waiting: never a call, never takes the run lock),
+    and redraw the page once it is resolved or the bound is reached."""
+    ss = st.session_state
+    try:
+        still = practice.poll_waiting(ss, cfg)
+        expired = time.monotonic() - ss.get("pc_wait_since", time.monotonic()) > practice.WAIT_POLL_MAX_S
+    except Exception as exc:  # a fragment run is outside the hosted wrapper: never a traceback
+        live.log.exception("practice wait check failed: %s", type(exc).__name__)
+        st.caption(PRACTICE_POLL_STOPPED)
+        return
+    if not still or expired:
+        st.rerun(scope="app")
+    st.caption(PRACTICE_POLLING)
+
+
+def _practice_waiting_refresh(cfg: live.LiveConfig, waiting: bool) -> None:
+    ss = st.session_state
+    if not waiting:
+        if "pc_wait_since" in ss:
+            del ss["pc_wait_since"]
+        return
+    since = ss.setdefault("pc_wait_since", time.monotonic())
+    if time.monotonic() - since <= practice.WAIT_POLL_MAX_S:
+        _practice_wait_poll(cfg)
+    else:
+        st.caption(PRACTICE_POLL_STOPPED)
+
+
+def render_practice(cfg: live.LiveConfig, ledger: Any) -> None:
+    ss = st.session_state
+    # Reconcile from disk before any element of this view: a reply or judgment that was
+    # saved but never stored in the session is adopted, with no call.
+    waiting = practice.reconcile(ss, cfg) == "waiting"
+    eval_waiting = practice.reconcile_evaluations(ss, cfg) if ss.get("pc_evals") else []
+    st.markdown(f"### {PRACTICE_TITLE}")
+    st.caption(PRACTICE_INTRO)
+    st.caption(PRACTICE_SETTINGS)
+    if not cfg.dry_run and not review.key_present(openai_responses.PROVIDER):
+        st.error(f"{review.key_env(openai_responses.PROVIDER)} is not set, so Riley can't reply.")
+        return
+    if not ss.get("pc_started"):
+        st.warning(PRACTICE_FICTIONAL)
+        if cfg.dry_run:  # the flag that makes live.guarded_clients build only the offline fakes
+            para(DRY_RUN_NO_CHARGE, weight=600)
+            confirmed = True
+        else:
+            confirmed = st.checkbox(PRACTICE_ACK, key="pc_ack")
+        if st.button("Start practice call", key="pc_start", disabled=not confirmed):
+            practice.start(ss)
+            st.rerun()
+        return
+    render_practice_turns(cfg)
+    pending = ss.get("pc_pending")
+    ended = bool(ss.get("pc_ended"))
+    if waiting:
+        st.info(PRACTICE_WAITING)
+        st.button("Check again", key="pc_check")  # a rerun only, never a call
+    elif pending is not None:  # failed: the applicant's message awaits a reply
+        _show(*_failure_text(pending))
+        if not ended and st.button("Retry", key="pc_retry"):
+            if not practice.adopt_saved(ss, cfg):  # an earlier attempt's reply, if saved
+                token = practice.begin_retry(ss)
+                _practice_send(cfg, token)
+            st.rerun()
+    elif not ended:
+        _practice_send_area(cfg, ledger, practice.turns_of(ss))
+    if ended:
+        st.info(PRACTICE_ENDED)
+    elif not waiting and st.button("End practice call", key="pc_end"):
+        ss["pc_ended"] = True
+        st.rerun()
+    _practice_evaluations(cfg, ledger, eval_waiting)
+    _practice_waiting_refresh(cfg, waiting or bool(eval_waiting))
+    st.divider()
+    if st.button("Start a new practice call", key="pc_new"):
+        practice.clear(ss)
+        st.rerun()
 
 
 # ---------------------------------------------------------------------------- page
