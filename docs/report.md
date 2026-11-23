@@ -76,7 +76,12 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 
 ## Recommendation
 
-**Pilot GPT-5.4 with prompt v2,** time-boxed, with recruiters reviewing transcripts. The reasons, in the order the plan set them:
+**Pilot GPT-5.4 with prompt v3,** time-boxed, with recruiters reviewing transcripts.
+- The holdout evidence in this section was measured with v2.
+- v3 was tested afterwards, on fresh conversations and as a regression check on the original cases. It improved GPT-5.4's follow-ups with no regression; see "Prompt iteration: v2 → v3".
+- v3 is not recommended for Mini as written: it regressed on Mini's follow-ups.
+
+The reasons, in the order the plan set them:
 
 1. **Safety (consent, grounding, commitments): no difference.** No model committed a genuine critical violation in any scored reply, development or holdout.
 2. **Held-out quality: GPT-5.4 is ahead on human labels.** It is the only model whose final-prompt holdout replies the reviewer accepted in full (8/8, against 7/8 for Gemini and 6/8 for Mini). It also won the one pair that turned on factual completeness (P08, below).
@@ -84,7 +89,7 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 4. **Cost is small at this scale:** about **$0.003 per GPT-5.4 reply**, against about **$0.0008 for Mini**, from recorded tokens at standard rates. A 15-turn screening call is a few cents either way.
 
 **Tradeoffs and risks:**
-- **Stacked follow-ups.** GPT-5.4 asks two things at once when an answer is incomplete. That is the next prompt change to test: one question about the missing part, with no "what did you say, and…".
+- **Stacked follow-ups.** Under v2, GPT-5.4 asks two things at once when an answer is incomplete. v3 tested one question about the missing outcome: on D3, GPT-5.4's two v2 replies stacked "what did you say or do… and how did it end up getting resolved?", and both v3 replies asked one outcome question.
 - **The evidence conflicts.** The judge rated GPT-5.4 lowest, and the reviewer preferred Mini's tone in 3 of 4 direct GPT-5.4-versus-Mini pairs. Those wins came on closings and acknowledgments; Mini lost the factual pair.
 - **When Mini becomes the better choice.** If cost or latency matters more than completeness, Mini is the alternative. The case that should decide it is an H3-type applicant question with a known answer, because that is where Mini fell short twice under v2.
 - **Gemini** is free and the judge's favourite. It needs its closing phrasing fixed ("best in your job search" when the applicant only stopped this call) before it would be the pilot choice.
@@ -113,6 +118,51 @@ These are judge-v1 scores, 0–2 per dimension, averaged within each case and th
 **Across the three models** (the matched comparison, `docs/measurements/2026-11-21-v1-v2-matched-dev.md`):
 - On development, the only behaviour change outside D3 was GPT-5.4's D4 re-ask, which went from 2/2 to 1/2.
 - On the holdout, **v2 did not narrow the gaps between models.** The reviewer-label spread went from 0 to 2 of 8, and the judge spread from about 12.5 to 25 points, driven by H3 under v2. v2 stays the final prompt because it fixed the targeted failure without a regression on the development checks.
+
+## Prompt iteration: v2 → v3 (tested after the holdout)
+
+**The change** was one line, the behavioral follow-up instruction:
+
+> **v2:** "If part of your question is still unanswered, use what the applicant just said to ask one short follow-up about the missing part. Once the applicant has answered the question, briefly acknowledge their answer and move on."
+>
+> **v3:** "If the applicant has explained what they did but left out what happened afterward, ask one question about the outcome. If they have already described the result, including a negative or unresolved result, briefly acknowledge it and move on."
+
+**How it was tested.** Two pre-registered checks, both separate from the published holdout results:
+1. **Fresh pairs.** Eight fresh conversations, three of them pairs where one added sentence gives the outcome. 96 replies were labelled blind (`docs/measurements/2026-11-22-prompt-v3-results.md`).
+   - The labels used are AI-mediated: ChatGPT encoded two medical students' judgments from a call.
+2. **A regression check.** v3 on D1–D4 and H1–H4 against the saved v2 replies, plus one targeted case where the applicant gives the outcome but not their own action (`docs/measurements/2026-11-22-prompt-v3-regression-results.md`).
+
+**Results by model:**
+
+| Model | Fresh pairs, labels (of 12), v2 → v3 | Fresh pairs, judge-v1 (of 12) | Original cases, judge-v1 (of 16) | Targeted case: asks what the applicant did (of 2), v2 → v3 |
+|---|---|---|---|---|
+| GPT-5.4 | **5 → 11** | 8 → 11 | **9 → 12** | 2 → 2 |
+| GPT-5.4 Mini | 5 → 11 | 5 → 11 | 12 → 11 | 2 → **0** |
+| Gemini 3.5 Flash | 6 → 6 | 5 → 10 | 14 → 13 | 2 → 2 |
+
+**Where the change helped: GPT-5.4, the same conversation and sample under each prompt.** The applicant describes calming an upset son and adds, "Honestly, it never really got resolved: he still filed a complaint, and I never heard what came of it."
+
+> **v2:** "You explained the change clearly and offered another way for him to connect with his mother, even though he was still upset. Is there anything else you did in the moment to help de-escalate the conversation?" Labels: rejected. judge-v1: 4/8.
+>
+> **v3:** "Thanks for being clear about that. Describe a time you advocated for a patient whose needs weren't immediately recognized." Labels: accepted. judge-v1: 8/8.
+
+v2 kept probing a finished story because the result was unresolved. v3 accepts an unresolved result as an answer and moves on.
+
+**A remaining failure: Gemini, v3 (R41).** The applicant only said they paged the resident and "asked for a lactate and a sepsis screen".
+
+> "Thank you for stepping up and trusting your clinical judgment to push for those tests. What was the outcome for the patient after you got the resident to order the lactate and sepsis screen?"
+
+- **The right move:** it asks about the outcome.
+- **The flaw:** it credits the applicant with an order they only requested.
+- **The scoring split:** the labels rejected it for that reason. judge-v1 gave it 8/8, because its criteria check the move, not whether the acknowledgment assumes facts.
+
+Most of the 16 label–judge disagreements in the pair experiment are of this kind.
+
+**Regressions.** All three are GPT-5.4 Mini's, on the follow-up moments:
+- **The targeted case, both samples:** it moves on without asking what the applicant did.
+- **D4, one sample:** it re-asks an outcome the applicant already gave.
+
+GPT-5.4 had none. The app's default stays v2 until the owner decides.
 
 ## How quality was measured
 
