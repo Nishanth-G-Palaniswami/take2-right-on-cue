@@ -1,0 +1,15 @@
+{
+  "schema": "v3-retest-review-key-commitment-1",
+  "algorithm": "sha256((salt + \"\\n\" + canonical_json({\"entries\": entries})).encode(\"utf-8\")).hexdigest(), where canonical_json(obj) = json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(\",\", \":\"))",
+  "sha256": "0247791006eaac98688cd3597f5be5a8abcbf522b3cad58ec98de98c531e632a",
+  "run_id": "20261123T004511Z-b08ea8",
+  "scores_file_sha256": "b67211fd479b6fbb460f44916267306af45279e1ed89a7e1706ea3a313088609",
+  "case_ids": [
+    "H1",
+    "H2",
+    "H3",
+    "H4"
+  ],
+  "replies": 24,
+  "review_sheet_sha256": "0c1ee74969408fb7a8ea12b23e1554f9cb16c97fc052ab23716b1d30fafc5bb8"
+}

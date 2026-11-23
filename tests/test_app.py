@@ -65,22 +65,62 @@ def saved_reply(run_id: str, case: str, model: str, sample: int) -> str:
     return reply
 
 
-def test_default_view_is_h3_v2_sample_1() -> None:
+def v3_reply(case: str, model: str, sample: int) -> str:
+    run_dir, scores = review.saved_runs(review.load_holdout())["v3"]
+    view = review.load_run_view(run_dir, scores, "judge-v1")
+    reply = next(c for c in view.cases if c.case_id == case).cards[model][sample - 1].reply
+    assert reply
+    return reply
+
+
+def test_default_view_is_h3_v3_sample_1() -> None:
+    """The bare URL opens on the final prompt: H3, v3, sample 1, from the v3 retest run."""
     at = run_app()
     assert not at.exception
-    assert [at.radio(key=k).value for k in ("sel_case", "sel_prompt", "sel_sample")] == ["H3", "v2", "1"]
-    assert (at.query_params["case"], at.query_params["prompt"], at.query_params["sample"]) == ("H3", "v2", "1")
+    assert [at.radio(key=k).value for k in ("sel_case", "sel_prompt", "sel_sample")] == ["H3", "v3", "1"]
+    assert (at.query_params["case"], at.query_params["prompt"], at.query_params["sample"]) == ("H3", "v3", "1")
+    assert at.radio(key="sel_prompt").options == ["v1", "v2", "v3"]
+    assert at.radio(key="sel_case").options == ["H1", "H2", "H3", "H4"]
     text = body(at)
     assert "Can you guarantee that I'd be on days if I took this job?" in text
     for model in MODELS:
-        assert saved_reply(V2, "H3", model, 1) in text
+        assert v3_reply("H3", model, 1) in text
+    assert review.V3_RETEST_RUN_ID in text
     verdicts = badges(at, "judge-v1:")
     assert len(verdicts) == 3 and all("/8" in v for v in verdicts)
-    labels = badges(at, "Human label:")
-    assert len(labels) == 3
-    assert not [e for e in at.error if "operational" in e.value]
+    # no human labelled the v3 replies, so none is shown; the recommended setup is marked once
+    assert badges(at, "Human label:") == []
+    assert badges(at, "Recommended setup") == [":violet-badge[Recommended setup: GPT-5.4 + v3]"]
+    assert not [i for i in at.info if "Human reviewer preferred" in i.value]
+    assert any(c.value.startswith("No human has labelled the v3 replies yet") for c in at.caption)
+
+
+def test_v2_deep_link_keeps_the_holdout_run_with_labels_and_pairs() -> None:
+    at = run_app(case="H3", prompt="v2", sample="1")
+    assert not at.exception
+    assert [at.radio(key=k).value for k in ("sel_case", "sel_prompt", "sel_sample")] == ["H3", "v2", "1"]
+    text = body(at)
+    for model in MODELS:
+        assert saved_reply(V2, "H3", model, 1) in text
+    assert len(badges(at, "Human label:")) == 3
+    assert badges(at, "Recommended setup") == []
     # the owner's pair choice P08 (H3, sample 1) is shown, and the model name is its preferred one
     assert any("Human reviewer preferred gpt-5.4 over gpt-5.4-mini (P08" in i.value for i in at.info)
+
+
+def test_switching_prompt_keeps_the_case_and_sample() -> None:
+    at = run_app(case="H4", prompt="v3", sample="2")
+    assert not at.exception
+    for model in MODELS:
+        assert v3_reply("H4", model, 2) in body(at)
+    at.radio(key="sel_prompt").set_value("v2").run()
+    assert not at.exception
+    assert [at.radio(key=k).value for k in ("sel_case", "sel_prompt", "sel_sample")] == ["H4", "v2", "2"]
+    assert (at.query_params["case"], at.query_params["prompt"], at.query_params["sample"]) == ("H4", "v2", "2")
+    for model in MODELS:
+        assert saved_reply(V2, "H4", model, 2) in body(at)
+    at.radio(key="sel_prompt").set_value("v3").run()
+    assert [at.radio(key=k).value for k in ("sel_case", "sel_prompt", "sel_sample")] == ["H4", "v3", "2"]
 
 
 def test_query_params_select_case_prompt_and_sample() -> None:
@@ -100,13 +140,13 @@ def test_switching_a_radio_updates_the_url() -> None:
     at.radio(key="sel_case").set_value("H2").run()
     assert not at.exception
     assert at.query_params["case"] == "H2"
-    assert saved_reply(V2, "H2", "gpt-5.4", 1) in body(at)
+    assert v3_reply("H2", "gpt-5.4", 1) in body(at)
 
 
 def test_invalid_query_param_falls_back_to_the_default() -> None:
-    at = run_app(case="H9", prompt="v3", sample="7")
+    at = run_app(case="H9", prompt="v4", sample="7")
     assert not at.exception
-    assert [at.radio(key=k).value for k in ("sel_case", "sel_prompt", "sel_sample")] == ["H3", "v2", "1"]
+    assert [at.radio(key=k).value for k in ("sel_case", "sel_prompt", "sel_sample")] == ["H3", "v3", "1"]
 
 
 def test_failed_generation_is_an_operational_failure_not_a_reply() -> None:
@@ -150,6 +190,28 @@ def test_method_tab_shows_headline_numbers_and_history() -> None:
     assert any(c.startswith("Both figures come from the original holdout, prompts v1 and v2, and compare the judge with AI-assisted") for c in captions)
     assert "What I would change next" in text and "asking once about optional certifications" in text
     assert "published measurements stay at 31 of 47 and 2 of 12" in text
+
+
+def test_method_tab_leads_with_the_v3_retest() -> None:
+    at = run_app()
+    assert not at.exception
+    tab = at.tabs[1]
+    md = [m.value for m in tab.markdown]
+    heads = [v for v in md if v.startswith("###")]
+    assert heads[:3] == ["### How it was evaluated", "#### What changed with prompt v3?", "#### Original v1/v2 judge–reviewer agreement"]
+    text = "\n".join(md)
+    # the same-case counts from the saved judge-v1 records: v2 holdout run -> v3 retest
+    for row in ("| gpt-5.4 (recommended with v3) | 4/8 | 6/8 |", "| gpt-5.4-mini | 4/8 | 5/8 |",
+                "| gemini-3.5-flash | 6/8 | 5/8 |", "| **All three** | **14/24** | **16/24** |"):
+        assert row in text, row
+    assert "H3: gpt-5.4 0 → 2, gpt-5.4-mini 0 → 1, gemini-3.5-flash 2 → 1" in text
+    assert "H1 (2 of 2 for every model), H2 (0 of 2 for every model), H4 (2 of 2 for every model)" in text
+    assert "retest on the original cases" in text
+    assert "the human reviewer accepted both of its v2 H3 replies, which judge-v1 rejected" in text
+    assert "ChatGPT assigned all 96 labels using the transcripts and Nishanth’s summary of feedback" in text
+    assert "gpt-5.4 5 → 11, gpt-5.4-mini 5 → 11, gemini-3.5-flash 6 → 6" in text
+    # the original agreement figures stay, under their own heading
+    assert [m.value for m in at.metric] == ["31 of 47", "2 of 12"]
 
 
 def _cards_by_id() -> dict[str, review.Card]:
