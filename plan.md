@@ -365,6 +365,21 @@ judge work is closed at `632075c`. judge-v1 is the submission default, and judge
   - Render serves the branch with interviewer v2 as the default and v1 selectable, scored by judge-v1;
   - the owner pushes and approves deployment separately.
 
+## Saved comparison opens on the final prompt v3 (2026-11-22)
+
+**Objective.** A reviewer opening the site sees prompt v3 and can compare it with v2 on the same case and sample. No new model calls.
+
+**Supersedes** the line "The saved comparison still opens on the H3/v2 holdout run" in the section below.
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | Saved comparison: v1, v2 and v3 on H1–H4. v3 comes from run `20261123T004511Z-b08ea8` (the regression check's run A, judge-v1 scored). The bare URL opens on H3/v3/1. Explicit links are kept. Switching prompt keeps the case and sample. GPT-5.4 + v3 is marked as recommended. Human labels appear only on reviewed replies | lead | Implemented; tests added |
+| 2 | Method tab leads with "What changed with prompt v3?": the same-case judge-v1 counts (14/24 → 16/24), the changed and unchanged cases, a caveat that every change is on H3, and the fresh experiment with its ChatGPT labels. 31/47 and 2/12 sit under "Original v1/v2 judge–reviewer agreement" | lead | Implemented; tests added |
+| 3 | Blind review sheet for the 24 v3 replies (`docs/measurements/v3-retest-review/`), with the key in `holdout-private/` and a salted-hash commitment | lead | Prepared; waiting for Nishanth's labels |
+| 4 | Production image check, desktop and mobile; README and walkthrough | lead | See the commit |
+
+**Risk.** The v3 replies, with model names and verdicts, are public in the repo and in the app. The sheet is blind only if Nishanth labels it before looking at them.
+
 ## Final recommendation and live default (2026-11-22)
 
 **Owner decisions (Nishanth).**

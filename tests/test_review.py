@@ -284,3 +284,44 @@ def test_blocked_models_and_call_count(monkeypatch: pytest.MonkeyPatch) -> None:
     assert review.generation_calls(["a", "b", "c"], 2) == 6
     assert review.transcript_error('{"role":"agent","utterance":"Hi"}') == "line 1: last turn must be from 'user'"
     assert review.transcript_error(CASE.decode()) is None
+
+
+# --------------------------------------------------------------- the v3 retest
+
+
+def test_saved_runs_add_the_v3_retest_beside_the_holdout_runs() -> None:
+    runs = review.saved_runs(review.load_holdout())
+    assert list(runs) == ["v1", "v2", "v3"]
+    assert runs["v2"][0].name == V2 and runs["v1"][0].name == V1
+    assert runs["v3"][0].name == review.V3_RETEST_RUN_ID and runs["v3"][1].is_file()
+    view = review.restrict_cases(review.load_run_view(runs["v3"][0], runs["v3"][1], "judge-v1"), review.HOLDOUT_CASES)
+    assert view.case_ids == ["H1", "H2", "H3", "H4"] and view.prompt_version == "v3" and view.samples == 2
+    # the app annotates every view; no v3 reply was reviewed, so none gets a label or a neutral ID
+    review.annotate_holdout(view, review.load_holdout())
+    cards = view.all_cards()
+    assert len(cards) == 24 and all(c.state == "reply" and c.reply for c in cards)
+    assert all(c.human_accept is None and c.neutral_id is None for c in cards)
+
+
+def test_v2_h3_gpt54_replies_were_accepted_by_the_reviewer_and_rejected_by_the_judge() -> None:
+    """Pins the method tab's caveat: the v2 -> v3 change for GPT-5.4 is on a known disagreement."""
+    h = review.load_holdout()
+    run_dir, scores = review.saved_runs(h)["v2"]
+    view = review.load_run_view(run_dir, scores, "judge-v1")
+    review.annotate_holdout(view, h)
+    cards = next(c for c in view.cases if c.case_id == "H3").cards["gpt-5.4"]
+    assert [(c.human_accept, c.decision) for c in cards] == [(True, "not acceptable"), (True, "not acceptable")]
+
+
+def test_v3_retest_counts_from_the_saved_judge_records() -> None:
+    table = review.v3_retest(review.load_holdout(), "judge-v1")
+    totals = {m: (sum(c.v2 for c in cases.values()), sum(c.v3 for c in cases.values())) for m, cases in table.items()}
+    assert totals == {"gpt-5.4": (4, 6), "gpt-5.4-mini": (4, 5), "gemini-3.5-flash": (6, 5)}
+    assert sum(v2 for v2, _ in totals.values()) == 14 and sum(v3 for _, v3 in totals.values()) == 16
+    changed = sorted({case for cases in table.values() for case, c in cases.items() if c.v2 != c.v3})
+    assert changed == ["H3"]
+    assert all(c.v2_unscored == 0 and c.v3_unscored == 0 for cases in table.values() for c in cases.values())
+
+
+def test_v3_fresh_pairs_come_from_the_committed_report() -> None:
+    assert review.v3_fresh_pairs() == {"gpt-5.4": (5, 11), "gpt-5.4-mini": (5, 11), "gemini-3.5-flash": (6, 6)}

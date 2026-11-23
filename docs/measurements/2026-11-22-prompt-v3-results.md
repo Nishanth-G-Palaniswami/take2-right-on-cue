@@ -3,7 +3,7 @@
 **A separate experiment.**
 - **v2 was the prompt used for the holdout.**
 - **v3 is the final prompt.** After this experiment and the regression check, Nishanth chose GPT-5.4 with v3 as the final recommendation (2026-11-22), and "Run it yourself" now defaults to it.
-- **What stays as it was.** The saved comparison still opens on the v2 holdout run.
+- **The saved comparison.** It now opens on H3 with v3, from the regression check's retest on the original cases, and v2 is one click away.
 
  The published holdout results (31 of 47, 2 of 12), judge-v1, `cases/notes.toml` and the saved runs are unchanged. The plan was pre-registered in `docs/measurements/2026-11-22-prompt-v3-plan.md`.
 

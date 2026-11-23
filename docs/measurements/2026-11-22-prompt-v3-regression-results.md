@@ -1,6 +1,6 @@
 # Prompt v3 regression check: results
 
-**A separate check.** The plan was pre-registered in `docs/measurements/2026-11-22-prompt-v3-regression-plan.md` (`d2520cb`) before generation. v2 was the prompt used for the holdout. Nishanth later chose GPT-5.4 with v3 as the final recommendation, and "Run it yourself" now defaults to it. The saved comparison still opens on the v2 holdout run, and the published results, judge-v1 and the saved runs are unchanged.
+**A separate check.** The plan was pre-registered in `docs/measurements/2026-11-22-prompt-v3-regression-plan.md` (`d2520cb`) before generation. v2 was the prompt used for the holdout. Nishanth later chose GPT-5.4 with v3 as the final recommendation, and "Run it yourself" now defaults to it. The saved comparison now opens on H3 with v3, using run A of this check, and v2 is one click away. The published results, judge-v1 and the saved runs are unchanged.
 
 **What was run.**
 - **The replies.** v3 on D1–D4 and H1–H4, with gpt-5.4, gpt-5.4-mini and gemini-3.5-flash, 2 samples each, at the saved v2 settings: run `20261123T004511Z-b08ea8`. Plus the targeted case T1 under v2 and v3: runs `…b68051` and `…25803f`.

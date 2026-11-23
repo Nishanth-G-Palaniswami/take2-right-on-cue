@@ -19,7 +19,10 @@ os.chdir(review.REPO_ROOT)
 st.set_page_config(page_title="Right on Cue", layout="wide", initial_sidebar_state="collapsed")
 
 JUDGE = scoring.DEFAULT_JUDGE_VERSION
-DEFAULT_SELECTION = {"case": "H3", "prompt": "v2", "sample": "1"}
+DEFAULT_SELECTION = {"case": "H3", "prompt": "v3", "sample": "1"}
+# The final recommendation, marked on its card in the saved comparison.
+RECOMMENDED_MODEL, RECOMMENDED_PROMPT = "gpt-5.4", "v3"
+RECOMMENDED_BADGE = "Recommended setup: GPT-5.4 + v3"
 MUTED = "#6b7280"
 DRY_RUN_BANNER = "Dry run: no API calls or charges. Replies are placeholders and are not scored."
 # Dry run, at the click and on the result. Keyed on cfg.dry_run (the flag that builds
@@ -74,10 +77,15 @@ _FAILURE_TITLE = {
 }
 
 
-def render_card(card: review.Card, *, judge_label: str | None = None) -> None:
-    """`judge_label`: the judge version to name on the verdict (default: JUDGE)."""
+def render_card(
+    card: review.Card, recommended: bool = False, *, judge_label: str | None = None
+) -> None:
+    """`recommended`: mark the recommended setup's card in the saved comparison.
+    `judge_label`: the judge version to name on the verdict (default: JUDGE)."""
     with st.container(border=True):
         para(card.model, size="1.05rem", weight=600)
+        if recommended:
+            st.markdown(badge("violet", RECOMMENDED_BADGE))
         if card.reported_model:
             para(f"reported: {card.reported_model}", size="0.78rem", muted=True)
         elif card.state == "reply":
@@ -180,17 +188,19 @@ def render_comparison() -> None:
     try:
         holdout = review.load_holdout()
         views: dict[str, review.RunView] = {}
-        for prompt, run_id in sorted(holdout.run_by_prompt.items()):
-            view = review.load_run_view(
-                review.RUNS_DIR / run_id, review.scores_path_for(run_id), JUDGE
+        # v1 and v2: the holdout runs, with human labels. v3: the retest on the same cases,
+        # judge-v1 only. Every view shows H1-H4, so a case and sample carry across prompts.
+        for prompt, (run_dir, scores_path) in review.saved_runs(holdout).items():
+            view = review.restrict_cases(
+                review.load_run_view(run_dir, scores_path, JUDGE), review.HOLDOUT_CASES
             )
-            review.annotate_holdout(view, holdout)
+            review.annotate_holdout(view, holdout)  # labels only the slots that were reviewed
             views[prompt] = view
-    except (OSError, ValueError, KeyError) as exc:
+    except (OSError, ValueError, KeyError, StopIteration) as exc:
         st.error(f"The saved holdout results could not be loaded: {exc}")
         return
     prompts = list(views)
-    first = views[prompts[-1]]
+    first = views["v2"]
     c1, c2, c3 = st.columns(3)
     with c1:
         case_id = select("Case", "case", first.case_ids)
@@ -202,17 +212,24 @@ def render_comparison() -> None:
     case = next(c for c in view.cases if c.case_id == case_id)
 
     render_conversation(case)
-    st.markdown(badge("blue", f"Saved example · run {view.run_id}"))
+    if prompt == "v3":
+        st.markdown(badge("blue", f"Saved example · v3 retest on the original holdout cases · run {view.run_id}"))
+    else:
+        st.markdown(badge("blue", f"Saved example · run {view.run_id}"))
     st.markdown("##### What each model said next")
     para(
-        f"Prompt {prompt} · sample {sample} · run {view.run_id} · verdicts from {JUDGE}",
+        f"Prompt {prompt} · sample {sample} · run {view.run_id} · verdicts from {JUDGE} · "
+        "recommended setup: GPT-5.4 with prompt v3",
         size="0.82rem",
         muted=True,
     )
     cols = st.columns(len(view.models), gap="medium")
     for col, info in zip(cols, view.models):
         with col:
-            render_card(case.cards[info.requested][sample - 1])
+            render_card(
+                case.cards[info.requested][sample - 1],
+                recommended=(prompt, info.requested) == (RECOMMENDED_PROMPT, RECOMMENDED_MODEL),
+            )
 
     if prompt == "v2":
         pairs = review.pairs_for(holdout, case_id)
@@ -240,10 +257,16 @@ def render_comparison() -> None:
                         f"s{p.right_sample}. Preferred: {pick}. {p.reason}",
                         size="0.9rem",
                     )
-    st.caption(
-        "The human labels and pair choices are AI-assisted, so they are "
-        "not an independent check. See the next tab."
-    )
+    if prompt == "v3":
+        st.caption(
+            "No human has labelled the v3 replies yet; the verdicts are judge-v1's. Switch to "
+            "v2 to see the same case and sample with the human labels and pair choices."
+        )
+    else:
+        st.caption(
+            "The human labels and pair choices are AI-assisted, so they are "
+            "not an independent check. See the next tab."
+        )
 
 
 # --------------------------------------------------------------- view 2: methodology
@@ -332,10 +355,40 @@ CHANGE_NEXT = (
     "result: it needs fresh examples with independent human labels before it can be "
     "measured. The published measurements stay at 31 of 47 and 2 of 12."
 )
+V3_LEAD = (
+    "**Prompt v3 is the final prompt, and GPT-5.4 + v3 is the recommended setup.** v3 changes "
+    "one line of Riley's behavioral follow-up. When the outcome is missing, ask one question "
+    "about it. When it is given, even a negative or unresolved one, acknowledge it and move "
+    "on.\n\n"
+    "To compare v3 with v2 on the same scenarios, v3 was run again on the original holdout "
+    "cases H1–H4, with the same three models, settings and two samples, and scored by judge-v1 "
+    "with the same criteria. This is a **retest on the original cases**, which had been seen "
+    "before, not a fresh holdout. No human has labelled the v3 replies yet."
+)
+V3_CAVEAT_TITLE = "How much to read into this."
+V3_CAVEAT = (
+    "Every change is on H3, where the applicant asks about shifts. v3 changed only the "
+    "behavioral follow-up. GPT-5.4's H3 replies say much the same under both prompts, and the "
+    "human reviewer accepted both of its v2 H3 replies, which judge-v1 rejected. With two "
+    "samples per cell, these counts show judge-v1's verdicts, not a measured improvement. A "
+    "blind review sheet for the 24 v3 replies is prepared, so agreement on v3 can be measured."
+)
+V3_FRESH = (
+    "**A separate, fresh experiment on the behavioral follow-up.** It used 8 new "
+    "conversations and 96 replies (`docs/measurements/2026-11-22-prompt-v3-results.md`). "
+    "ChatGPT assigned all 96 labels using the transcripts and Nishanth’s summary of feedback "
+    "from two students who discussed sample interviews."
+)
+V3_REGRESSION = (
+    "In the v3 regression check we observed no regression for GPT-5.4. We observed a "
+    "regression for Mini on a targeted follow-up case, consistent with the wording change "
+    "(`docs/measurements/2026-11-22-prompt-v3-regression-results.md`)."
+)
 DOCS = [
     ("Report", "docs/report.md"),
     ("Holdout results", "docs/measurements/2026-11-21-holdout-results.md"),
     ("judge-v1 known limits", "docs/judge-v1-known-limits.md"),
+    ("Prompt v3 regression check", "docs/measurements/2026-11-22-prompt-v3-regression-results.md"),
 ]
 
 
@@ -365,13 +418,63 @@ def render_agreement(h: review.Headline) -> None:
     st.caption(AGREEMENT_DISCLOSURE)
 
 
+def render_v3_change() -> None:
+    """The v2 -> v3 retest on the original holdout cases, from the saved judge-v1 records."""
+    st.markdown("#### What changed with prompt v3?")
+    st.markdown(V3_LEAD)
+    try:
+        table = review.v3_retest(review.load_holdout(), JUDGE)
+        fresh = review.v3_fresh_pairs()
+    except (OSError, ValueError, KeyError, StopIteration) as exc:
+        st.error(f"The v3 comparison could not be loaded: {exc}")
+        return
+    rows = ["| Model | v2, holdout run | v3, retest |", "|---|---|---|"]
+    for model, cases in table.items():
+        v2, v3 = sum(c.v2 for c in cases.values()), sum(c.v3 for c in cases.values())
+        n = 2 * len(cases)
+        name = f"{model} (recommended with v3)" if model == RECOMMENDED_MODEL else model
+        rows.append(f"| {name} | {v2}/{n} | {v3}/{n} |")
+    tv2 = sum(c.v2 for cases in table.values() for c in cases.values())
+    tv3 = sum(c.v3 for cases in table.values() for c in cases.values())
+    tn = sum(2 * len(cases) for cases in table.values())
+    rows.append(f"| **All three** | **{tv2}/{tn}** | **{tv3}/{tn}** |")
+    para("judge-v1 acceptable replies on H1–H4, the same cases and samples under each prompt", size="0.82rem", muted=True)
+    st.markdown("\n".join(rows))
+    changed, same = [], []
+    for case_id in review.HOLDOUT_CASES:
+        cells = {m: cases[case_id] for m, cases in table.items()}
+        if any(c.v2 != c.v3 for c in cells.values()):
+            changed.append(f"{case_id}: " + ", ".join(f"{m} {c.v2} → {c.v3}" for m, c in cells.items()))
+        else:
+            values = {c.v3 for c in cells.values()}
+            same.append(f"{case_id} ({values.pop()} of 2 for every model)" if len(values) == 1 else case_id)
+    unscored = sum(c.v2_unscored + c.v3_unscored for cases in table.values() for c in cases.values())
+    st.markdown(
+        f"- **Changed (acceptable of 2):** {'; '.join(changed) or 'none'}.\n"
+        f"- **The same:** {', '.join(same) or 'none'}. Under both prompts, every H2 reply asks about "
+        "optional certifications, which H2's frozen criterion rejects.\n"
+        f"- **Unscored on H1–H4:** {unscored}.\n"
+        f"- **{V3_CAVEAT_TITLE}** {V3_CAVEAT}"
+    )
+    st.markdown(
+        V3_FRESH
+        + " Pair-conversation replies accepted by the ChatGPT labels, v2 → v3 (of 12): "
+        + ", ".join(f"{m} {v2} → {v3}" for m, (v2, v3) in fresh.items())
+        + ".\n\n"
+        + V3_REGRESSION
+    )
+
+
 def render_method() -> None:
     st.markdown("### How it was evaluated")
+    render_v3_change()
+    st.markdown("#### Original v1/v2 judge–reviewer agreement")
     st.markdown(
         "Right on Cue asks which reply an AI recruiter (Riley, for a Medical ICU RN phone "
-        "screen) should give next. Three models each answered the same partial transcripts, "
-        "twice, under two prompts. Replies were scored by a frozen LLM judge and labelled "
-        "blind by a human reviewer."
+        "screen) should give next. In the original evaluation, three models each answered the "
+        "same partial transcripts, twice, under prompts v1 and v2. Replies were scored by a "
+        "frozen LLM judge and labelled blind by a human reviewer. The two figures below answer "
+        "that question: how often the judge agreed with the reviewer."
     )
     try:
         h = review.load_holdout().headline
@@ -429,7 +532,7 @@ LIVE_LEDGER_ERROR = (
 )
 FRESH_LABEL = "Fresh run: generated just now, not part of the saved evaluation"
 # "Run it yourself" defaults to the recommended setup (GPT-5.4 with prompt v3); v1 and v2 stay
-# selectable. The saved comparison keeps its own default (H3, prompt v2: the holdout run).
+# selectable. The saved comparison has its own default (DEFAULT_SELECTION: H3, prompt v3).
 LIVE_DEFAULT_PROMPT = "prompts/v3.md"
 LIVE_DEFAULT_MODEL = "gpt-5.4"
 RETRY_NOTE = "one per reply, plus one retry for a judgment that needs review"
@@ -1335,14 +1438,18 @@ st.html(
     # Badges carry the verdict and score: wrap them, never clip to "…" in a narrow card
     # (Streamlit's badge is nowrap + overflow hidden + ellipsis; A4 print truncated "5/8").
     " span.stMarkdownBadge{white-space:normal !important;overflow:visible !important;"
-    "text-overflow:clip !important;max-width:100%}</style>"
+    "text-overflow:clip !important;max-width:100%}"
+    # A markdown table wider than the screen (the source documents on a phone) scrolls
+    # sideways inside its own box instead of being cut off at the page edge.
+    " [data-testid='stMarkdownContainer'] table{display:block;width:fit-content;"
+    "max-width:100%;overflow-x:auto}</style>"
 )
 st.title("Right on Cue")
 if os.environ.get(live.DRY_RUN_ENV) == "1":
     st.warning(DRY_RUN_BANNER)
 st.caption(
     "Three AI models answer the same recruiter phone-screen moment. A frozen LLM judge "
-    "and a human reviewer each give a verdict."
+    "gives a verdict on every reply; a human reviewer labelled the v1 and v2 holdout replies."
 )
 tab_compare, tab_method, tab_live = st.tabs(
     ["Compare replies", "How it was evaluated", "Run it yourself"]
