@@ -353,8 +353,83 @@ def test_no_third_judge_attempt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     at.button(key="pc_eval").click().run()
     no_unexpected(at)
     assert len(o.calls) == 3
+    assert not [c for c in at.caption if CACHED.strip() in c.value]  # nothing was scored
     rid = at.session_state["pc_turns"][-1]["run_id"]
     assert practice.evaluate(cfg_now(), rid).calls == 0 and len(o.calls) == 3
+
+
+def test_a_later_evaluation_makes_only_the_one_remaining_attempt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Entered with one failed attempt on disk (its retry was refused): one call, never a third."""
+    hosted_env(monkeypatch, tmp_path)
+    o = fake(monkeypatch, ["Thanks. Are your BLS and ACLS both current?", invalid_judge(), judge(), "never sent"])
+    cfg = cfg_now()
+    rid = practice.send(cfg, [*opening(), user("Yes, now works.")]).run_id
+
+    def refuse(*a: Any, **k: Any) -> Any:
+        raise BudgetExceeded("budget reached: no request was made")
+
+    real = live.retry_invalid_judgments
+    monkeypatch.setattr(live, "retry_invalid_judgments", refuse)
+    first = practice.evaluate(cfg, rid)
+    assert first.calls == 1 and first.messages[0].startswith("The judge retry stopped: budget reached")
+    monkeypatch.setattr(live, "retry_invalid_judgments", real)
+    state = practice.judgment(cfg, rid)
+    assert (state.failed_attempts, state.calls_allowed) == (1, 1)
+    assert practice.evaluate(cfg, rid).calls == 1
+    assert practice.evaluate(cfg, rid).calls == 0
+    assert len(o.calls) == 3  # 1 generation + 2 judge calls in total
+    assert practice.judgment(cfg, rid).scored
+
+
+def test_no_evaluation_after_a_fatal_judge_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    hosted_env(monkeypatch, tmp_path)
+    fatal = openai.AuthenticationError(
+        "bad key", response=httpx2.Response(401, request=httpx2.Request("POST", "https://x")), body=None
+    )
+    o = fake(monkeypatch, ["Thanks. What drew you to the ICU?", fatal, "never sent"])
+    cfg = cfg_now()
+    rid = practice.send(cfg, [*opening(), user("Yes, now works.")]).run_id
+    first = practice.evaluate(cfg, rid)
+    assert first.calls == 1 and first.messages == [
+        "Scoring stopped after a fatal judge error (AuthenticationError, HTTP 401); no further judge calls were made."
+    ]
+    assert practice.evaluate(cfg, rid).calls == 0 and len(o.calls) == 2
+
+
+def test_judge_timeouts_show_the_uncertain_charge(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    timeout = lambda: openai.APITimeoutError(request=httpx2.Request("POST", "https://x"))  # noqa: E731
+    o = fake(monkeypatch, ["Thanks. What drew you to the ICU?", timeout(), timeout(), "never sent"])
+    at, _ = hosted_practice(monkeypatch, tmp_path)
+    say(at, "Yes, now works.")
+    at.button(key="pc_eval").click().run()
+    no_unexpected(at)
+    assert len(o.calls) == 3  # the first judge call timed out, then its one retry
+    assert ("The judge's answer didn't arrive. The request may still have been processed and charged "
+            "(the cap counted its maximum). No further judge call is allowed for this reply.") in [w.value for w in at.warning]
+    assert not [c for c in at.caption if CACHED.strip() in c.value]
+
+
+def test_retry_evaluation_after_a_judge_timeout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    o = fake(monkeypatch, ["Thanks. What drew you to the ICU?",
+                           openai.APITimeoutError(request=httpx2.Request("POST", "https://x")), judge(), "never sent"])
+    at, _ = hosted_practice(monkeypatch, tmp_path)
+    say(at, "Yes, now works.")
+
+    def refuse(*a: Any, **k: Any) -> Any:
+        raise BudgetExceeded("budget reached: no request was made")
+
+    real = live.retry_invalid_judgments
+    monkeypatch.setattr(live, "retry_invalid_judgments", refuse)
+    at.button(key="pc_eval").click().run()
+    no_unexpected(at)
+    assert len(o.calls) == 2
+    assert ("The judge's answer didn't arrive. The request may still have been processed and charged (the cap "
+            "counted its maximum). Retry evaluation sends it again and may be charged again.") in [w.value for w in at.warning]
+    assert at.button(key="pc_eval").label == "Retry evaluation"
+    monkeypatch.setattr(live, "retry_invalid_judgments", real)
+    at.button(key="pc_eval").click().run()
+    no_unexpected(at)
+    assert len(o.calls) == 3 and "Verdict by judge-v1 (scorer-1)." in [c.value for c in at.caption]
 
 
 # ---------------------------------------------------------- 5. failure and retry

@@ -975,6 +975,10 @@ PRACTICE_EVAL_UNCERTAIN = (
     "charged (the cap counted its maximum). Retry evaluation sends it again and may be "
     "charged again."
 )
+PRACTICE_EVAL_UNCERTAIN_FINAL = (
+    "The judge's answer didn't arrive. The request may still have been processed and "
+    "charged (the cap counted its maximum). No further judge call is allowed for this reply."
+)
 PRACTICE_WAITING = "Riley's reply is still being generated."
 PRACTICE_EVAL_WAITING = "This evaluation is still running."
 PRACTICE_RETRY_HINT = "Your message is kept; Retry sends the same conversation again."
@@ -1173,8 +1177,8 @@ def _practice_evaluations(cfg: live.LiveConfig, ledger: Any, waiting: list[str])
         st.button("Check again", key="pc_eval_check")  # a rerun only, never a call
     else:
         retry = state.calls_allowed > 0 and (state.failed_attempts > 0 or ev.get("state") == "failed")
-        if state.calls_allowed > 0 and (state.last_uncertain or ev.get("kind") == "uncertain"):
-            st.warning(PRACTICE_EVAL_UNCERTAIN)
+        if state.last_uncertain or ev.get("kind") == "uncertain":
+            st.warning(PRACTICE_EVAL_UNCERTAIN if state.calls_allowed > 0 else PRACTICE_EVAL_UNCERTAIN_FINAL)
         over = state.calls_allowed > 0 and jmax > remaining
         if over:
             st.error("The remaining budget can't cover this evaluation.")
@@ -1210,7 +1214,8 @@ def _practice_evaluation(cfg: live.LiveConfig, run_id: str, number: int) -> None
                 f"({state.scorer_version}); it is not a verdict."
             )
         else:
-            cached = PRACTICE_CACHED if ev.get("state") == "done" and ev.get("calls") == 0 else ""
+            no_call = ev.get("state") == "done" and ev.get("calls") == 0
+            cached = PRACTICE_CACHED if no_call and state.scored else ""
             st.caption(f"Verdict by {version} ({state.scorer_version}).{cached}")
     for message in ev.get("messages", []):
         st.warning(message)
