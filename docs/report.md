@@ -293,6 +293,19 @@ This is an exploratory live example, outside the scored evaluation, with no reco
   - "I have BLS and ACLS" was read as current.
   - judge-v1 stays live (`docs/measurements/2026-11-22-judge-v5-results.md`).
 
+### H2 criteria: five checks passed, one failed
+
+- **The change.** judge-v1 and Riley's prompt were fixed. Only H2's case instructions were revised, to accept moving on or one focused optional-certification question once the license and current BLS and ACLS are confirmed, and to ask about currency otherwise.
+- **The test.** A pre-registered check on 19 fresh items, labelled with AI-drafted labels reviewed in full by Nishanth, plus the six saved H2 replies.
+- **Passed (5 of 6):**
+  - the clear-currency replies (12 of 12 accepted);
+  - the clarifying currency question (4 of 4);
+  - re-asks and stacking still rejected (0 accepted);
+  - the saved H2 replies, which went from 0 of 6 to 12 of 12 accepted;
+  - unscored judgments (1 of 38).
+- **Failed (1 of 6), the Tobias boundary.** When the applicant only named BLS and ACLS and mentioned past training, replies that moved on or asked about extras were accepted in 7 of 8 judgments, because the judge read "I hold BLS and ACLS" as current.
+- **Not adopted.** judge-v1 and `cases/notes.toml` are unchanged (`docs/measurements/2026-11-22-h2-criteria-results.md`).
+
 ### What I would change next
 
 When the applicant has already confirmed the required certifications, a future rubric should accept either moving on to the behavioral questions or asking once about optional certifications the applicant hasn't mentioned. Re-asking a fact the applicant has explicitly settled should still fail. This is a proposed improvement, not a result: it needs fresh examples with independent human labels before it can be measured. The published measurements stay at 31 of 47 and 2 of 12.

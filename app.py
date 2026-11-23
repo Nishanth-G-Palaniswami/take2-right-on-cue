@@ -307,6 +307,14 @@ HISTORY: list[tuple[str, str, str | None]] = [
         "missed all six pre-registered criteria and was not adopted. judge-v1 stays live.",
         "docs/measurements/2026-11-22-judge-v5-results.md",
     ),
+    (
+        "H2 criteria",
+        "judge-v1 unchanged; only H2's case instructions revised. Five of six pre-registered "
+        "checks passed (the saved H2 replies went from 0 of 6 to 12 of 12 accepted); the "
+        "Tobias boundary failed, because the judge read \"I hold BLS and ACLS\" as current. "
+        "Not adopted.",
+        "docs/measurements/2026-11-22-h2-criteria-results.md",
+    ),
 ]
 # Plain-language notes beside the two agreement metrics. Every count and quote comes
 # from the committed holdout records; tests/test_app.py checks them against those records.
