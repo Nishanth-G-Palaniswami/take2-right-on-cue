@@ -16,7 +16,7 @@ The plan's primary measure was Nishanth's own blind labels. The labels used are 
 - **Where they come from.** Two medical students said on a call which replies looked right or wrong, and ChatGPT turned the call transcript into the per-item decisions and reasons.
 - **What the sheet says.** Its attribution line was revised before the reveal and now says the decisions "were generated after reviewing the conversation between the students and the owner of the project". The first version called them "AI-generated judgments". No decision changed.
 - **What isn't recorded.** Whether the students judged every reply individually.
-- **What the judgers saw.** Neither ChatGPT nor the students saw model, prompt or score.
+- **Blindness.** Model, prompt and score were not available to anyone until after the labels were fixed: they stayed in the gitignored private folder, and nothing was scored before the reveal.
 
 `label_notes.md` quotes Nishanth's decision. These labels are AI-mediated, not an unaided human check.
 

@@ -28,5 +28,5 @@
   - They are not Nishanth's own labels, and they are not an unaided human check.
   - The record doesn't show whether the students judged each of the 96 replies individually or ChatGPT applied their feedback to the items.
 - **The deviation.** The plan's primary measure was Nishanth's own blind labels. These labels replace that measure, and the deviation is reported with the results.
-- **Blindness.** ChatGPT and the students saw only the blind sheet: conversations and replies under neutral IDs, with no model, prompt or score. Nothing had been revealed.
+- **Blindness.** Until the reveal, which model and prompt wrote each reply existed only in the gitignored `holdout-private/prompt-v3/`, and no reply had been scored. So the labels could not have used model, prompt or score. What the students themselves were shown is not recorded.
 - `review_sheet.md` stays blank, as committed in `032930b`.
